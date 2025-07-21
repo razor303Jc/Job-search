@@ -219,5 +219,25 @@ export const configManager = ConfigManager.getInstance();
 // Export convenience function to get current config
 export const getConfig = (): AppConfig => configManager.getConfig();
 
+// Export additional convenience functions
+export const loadConfig = (): Promise<AppConfig> => Promise.resolve(configManager.getConfig());
+export const saveConfig = (config: Partial<AppConfig>): Promise<void> => {
+  configManager.saveConfig(config);
+  return Promise.resolve();
+};
+export const resetConfig = (): Promise<void> => {
+  configManager.resetConfig();
+  return Promise.resolve();
+};
+
 // Export default config for testing
 export { defaultConfig };
+
+// Export types for external use
+export type {
+  AppConfig,
+  ScraperConfig,
+  GoogleDorkConfig,
+  JobSearchCriteria,
+  ReportOptions,
+} from './schemas.js';

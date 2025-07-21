@@ -17,12 +17,11 @@
     "lint": "biome check .",
     "lint:fix": "biome check --apply .",
     "format": "biome format --write .",
+    "type-check": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "prepare": "husky install",
     "prebuild": "npm run clean && npm run typecheck",
-    "profile": "clinic doctor -- node dist/index.js",
-    "benchmark": "autocannon -c 10 -d 30 http://localhost:3000",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts"
   },
@@ -80,12 +79,9 @@
     "@types/tough-cookie": "^4.0.5",
     "@types/validator": "^13.11.7",
     "@vitest/coverage-v8": "^1.1.0",
-    "autocannon": "^7.14.0",
-    "clinic": "^13.0.0",
     "concurrently": "^8.2.2",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
-    "pkg": "^5.8.1",
     "prettier": "^3.6.2",
     "rimraf": "^5.0.5",
     "semantic-release": "^22.0.12",
@@ -95,13 +91,25 @@
     "vitest": "^1.1.0"
   },
   "lint-staged": {
-    "*.{ts,js}": ["biome format --write", "biome check --apply"],
-    "*.json": ["prettier --write"],
-    "*.md": ["prettier --write"]
+    "*.{ts,js}": [
+      "biome format --write",
+      "biome check --apply"
+    ],
+    "*.json": [
+      "prettier --write"
+    ],
+    "*.md": [
+      "prettier --write"
+    ]
   },
   "tsup": {
-    "entry": ["src/index.ts", "src/cli/index.ts"],
-    "format": ["esm"],
+    "entry": [
+      "src/index.ts",
+      "src/cli/index.ts"
+    ],
+    "format": [
+      "esm"
+    ],
     "dts": true,
     "clean": true,
     "minify": true,
