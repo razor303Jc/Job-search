@@ -27,7 +27,7 @@ class SimpleCLITester {
    */
   async executeCommand(command: string, args: string[] = []): Promise<CommandResult> {
     const startTime = Date.now();
-    
+
     return new Promise((resolve) => {
       const child = spawn(command, args, {
         cwd: this.workingDir,
@@ -90,10 +90,10 @@ class SimpleCLITester {
     for (const test of tests) {
       console.info(`  Testing: ${test.name}`);
       const result = await this.executeCommand(test.cmd, test.args);
-      
+
       const success = result.exitCode === 0;
       console.info(`    ${success ? '✅' : '❌'} ${test.name} (${result.duration}ms)`);
-      
+
       if (!success) {
         console.info(`    Error: ${result.stderr.substring(0, 200)}...`);
         allPassed = false;

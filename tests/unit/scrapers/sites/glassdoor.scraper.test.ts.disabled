@@ -1,0 +1,444 @@
+/**
+ * Tests for Glassdoor scraper
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GlassdoorScraper } from '@/scrapers/sites/glassdoor.scraper.js';
+import type { SiteConfig } from '@/config/sites.js';
+import type { ScraperConfig } from '@/config/schemas.js';
+
+describe('GlassdoorScraper', () => {
+  let scraper: GlassdoorScraper;
+  let mockSiteConfig: SiteConfig;
+  let mockScraperConfig: ScraperConfig;
+
+  beforeEach(() => {
+    mockSiteConfig = {
+      id: 'glassdoor',
+      name: 'Glassdoor',
+      baseUrl: 'https://www.glassdoor.com',
+      enabled: true,
+      scraping: {
+        rateLimit: {
+          requestsPerMinute: 10,
+          burstLimit: 5,
+        },
+        userAgent: 'test-agent',
+        timeout: 30000,
+        maxRetries: 3,
+        respectRobotsTxt: true,
+      },
+      search: {
+        pathTemplate: '/Job/jobs.htm',
+        queryParams: {
+          sc: 'keywords',
+          locId: 'location',
+        },
+        paginationParam: 'p',
+        resultsPerPage: 30,
+      },
+    };
+
+    mockScraperConfig = {
+      userAgent: 'test-agent',
+      delay: 1000,
+      retries: 3,
+      timeout: 30000,
+      respectRobotsTxt: true,
+      rateLimit: {
+        requestsPerSecond: 0.5,
+        burst: 5,
+      },
+    };
+
+    scraper = new GlassdoorScraper(mockSiteConfig, mockScraperConfig);
+  });
+
+  describe('buildSearchUrl', () => {
+    it('should build basic search URL with keywords and location', () => {
+      const params = {
+        keywords: 'data scientist',
+        location: 'New York',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('glassdoor.com/Job/jobs.htm');
+      expect(url).toContain('sc=data%20scientist');
+      expect(url).toContain('locId=New%20York');
+      expect(url).toContain('locT=C'); // City type
+    });
+
+    it('should handle remote work preference', () => {
+      const params = {
+        keywords: 'developer',
+        remote: 'true',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('locT=N'); // National/Remote
+      expect(url).toContain('locId=11047'); // Remote location ID
+    });
+
+    it('should handle employment type mapping', () => {
+      const params = {
+        keywords: 'engineer',
+        employment_type: 'full-time',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('jobType=fulltime');
+    });
+
+    it('should handle experience level mapping', () => {
+      const params = {
+        keywords: 'manager',
+        experience_level: 'senior',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('seniorityType=SENIOR_LEVEL');
+    });
+
+    it('should handle salary range parameters', () => {
+      const params = {
+        keywords: 'analyst',
+        salary_min: '60000',
+        salary_max: '100000',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('minSalary=60000');
+      expect(url).toContain('maxSalary=100000');
+    });
+
+    it('should handle sort type', () => {
+      const params = {
+        keywords: 'developer',
+        sort: 'salary',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('sortType=salary');
+    });
+
+    it('should handle date posted filter', () => {
+      const params = {
+        keywords: 'engineer',
+        date_posted: 'past-week',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('fromAge=7');
+    });
+
+    it('should use alternative parameter names (q, l)', () => {
+      const params = {
+        q: 'python developer',
+        l: 'San Francisco',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('sc=python%20developer');
+      expect(url).toContain('locId=San%20Francisco');
+    });
+  });
+
+  describe('parsePage', () => {
+    it('should parse basic job listing structure', () => {
+      const mockHtml = `
+        <ul class="jobsList">
+          <li data-test="jobListing" data-id="12345">
+            <h2>
+              <a data-test="job-title" href="/partner/jobListing.htm?pos=123&jobListingId=12345">
+                Senior Software Engineer
+              </a>
+            </h2>
+            <span data-test="employer-name">
+              Tech Solutions Inc
+            </span>
+            <div data-test="job-location">
+              San Francisco, CA
+            </div>
+            <span data-test="detailSalary">
+              $140K - $180K (Glassdoor est.)
+            </span>
+            <div data-test="job-description">
+              We are looking for a senior software engineer with 5+ years of experience...
+            </div>
+            <span data-test="rating">4.2</span>
+            <div data-test="job-age">2d</div>
+          </li>
+        </ul>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]).toMatchObject({
+        id: 'glassdoor_12345',
+        title: 'Senior Software Engineer',
+        company: 'Tech Solutions Inc',
+        location: 'San Francisco, CA',
+        salary: '$140K - $180K (Glassdoor est.)',
+        description: 'We are looking for a senior software engineer with 5+ years of experience...',
+        postedDate: '2d',
+        source: 'glassdoor',
+      });
+      expect(jobs[0].raw?.rating).toBe('4.2');
+      expect(jobs[0].metadata.confidence).toBeGreaterThan(0);
+    });
+
+    it('should handle alternative selectors', () => {
+      const mockHtml = `
+        <div class="jobsSearch-SerpJobCard">
+          <div class="jobLink" href="/partner/jobListing.htm?jobListingId=67890">
+            Full Stack Developer
+          </div>
+          <div class="employerName">
+            Startup Co
+          </div>
+          <div class="jobLocation">
+            Remote
+          </div>
+          <div class="salaryText">
+            $90K - $120K
+          </div>
+          <div class="jobDescription">
+            Join our remote team...
+          </div>
+        </div>
+      `;
+
+      // Since this HTML doesn't have proper job ID extraction points, 
+      // we need to modify it slightly
+      const modifiedHtml = mockHtml.replace(
+        'class="jobsSearch-SerpJobCard"',
+        'class="jobsSearch-SerpJobCard" data-id="67890"'
+      ).replace(
+        'class="jobLink"',
+        'class="jobLink" href="/partner/jobListing.htm?jobListingId=67890"'
+      );
+
+      const jobs = (scraper as any).parsePage(modifiedHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]).toMatchObject({
+        id: 'glassdoor_67890',
+        title: 'Full Stack Developer',
+        company: 'Startup Co',
+        location: 'Remote',
+        salary: '$90K - $120K',
+      });
+    });
+
+    it('should detect easy apply and sponsored jobs', () => {
+      const mockHtml = `
+        <li data-test="jobListing" data-id="99999">
+          <h2>
+            <a data-test="job-title" href="/partner/jobListing.htm?jobListingId=99999">
+              Product Manager
+            </a>
+          </h2>
+          <span data-test="employer-name">
+            Big Corp
+          </span>
+          <div data-test="job-location">
+            Seattle, WA
+          </div>
+          <div data-test="easy-apply">Easy Apply</div>
+          <div data-test="sponsored">Sponsored</div>
+        </li>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].raw?.hasEasyApply).toBe(true);
+      expect(jobs[0].raw?.isSponsored).toBe(true);
+    });
+
+    it('should clean up job titles by removing new prefix', () => {
+      const mockHtml = `
+        <li data-test="jobListing" data-id="11111">
+          <h2>
+            <a data-test="job-title" href="/partner/jobListing.htm?jobListingId=11111">
+              New Marketing Director
+            </a>
+          </h2>
+          <span data-test="employer-name">
+            Marketing Agency
+          </span>
+          <div data-test="job-location">
+            Austin, TX
+          </div>
+        </li>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].title).toBe('Marketing Director');
+    });
+
+    it('should return empty array when no jobs found', () => {
+      const mockHtml = `
+        <div class="no-results">
+          <p>No jobs found matching your search criteria</p>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(0);
+    });
+
+    it('should handle missing company gracefully', () => {
+      const mockHtml = `
+        <li data-test="jobListing" data-id="77777">
+          <h2>
+            <a data-test="job-title" href="/partner/jobListing.htm?jobListingId=77777">
+              Data Analyst
+            </a>
+          </h2>
+          <div data-test="job-location">
+            Boston, MA
+          </div>
+        </li>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].company).toBe('Unknown Company');
+    });
+
+    it('should skip elements without job ID', () => {
+      const mockHtml = `
+        <div class="jobsList">
+          <div class="some-other-element">
+            <h3>Not a job listing</h3>
+          </div>
+          <li data-test="jobListing" data-id="88888">
+            <h2>
+              <a data-test="job-title" href="/partner/jobListing.htm?jobListingId=88888">
+                Valid Job
+              </a>
+            </h2>
+            <span data-test="employer-name">
+              Real Company
+            </span>
+          </li>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].title).toBe('Valid Job');
+    });
+
+    it('should extract company ratings when present', () => {
+      const mockHtml = `
+        <li data-test="jobListing" data-id="55555">
+          <h2>
+            <a data-test="job-title" href="/partner/jobListing.htm?jobListingId=55555">
+              UX Designer
+            </a>
+          </h2>
+          <span data-test="employer-name">
+            Design Studio
+          </span>
+          <div data-test="job-location">
+            Portland, OR
+          </div>
+          <span data-test="rating">4.7</span>
+        </li>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://glassdoor.com/Job/jobs.htm');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].raw?.rating).toBe('4.7');
+    });
+  });
+
+  describe('employment type mapping', () => {
+    it('should map employment types correctly', () => {
+      const testCases = [
+        { input: 'full-time', expected: 'fulltime' },
+        { input: 'part-time', expected: 'parttime' },
+        { input: 'contract', expected: 'contract' },
+        { input: 'temporary', expected: 'temporary' },
+        { input: 'internship', expected: 'internship' },
+        { input: 'unknown-type', expected: 'unknown-type' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = (scraper as any).mapEmploymentType(input);
+        expect(result).toBe(expected);
+      });
+    });
+  });
+
+  describe('experience level mapping', () => {
+    it('should map experience levels correctly', () => {
+      const testCases = [
+        { input: 'entry-level', expected: 'ENTRY_LEVEL' },
+        { input: 'mid-level', expected: 'MID_LEVEL' },
+        { input: 'senior', expected: 'SENIOR_LEVEL' },
+        { input: 'executive', expected: 'EXECUTIVE' },
+        { input: 'internship', expected: 'INTERNSHIP' },
+        { input: 'student', expected: 'STUDENT' },
+        { input: 'unknown-level', expected: 'unknown-level' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = (scraper as any).mapExperienceLevel(input);
+        expect(result).toBe(expected);
+      });
+    });
+  });
+
+  describe('sort type mapping', () => {
+    it('should map sort types correctly', () => {
+      const testCases = [
+        { input: 'relevance', expected: 'relevance' },
+        { input: 'date', expected: 'date' },
+        { input: 'salary', expected: 'salary' },
+        { input: 'rating', expected: 'rating' },
+        { input: 'unknown-sort', expected: 'relevance' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = (scraper as any).mapSortType(input);
+        expect(result).toBe(expected);
+      });
+    });
+  });
+
+  describe('date posted mapping', () => {
+    it('should map date filters correctly', () => {
+      const testCases = [
+        { input: 'past-24-hours', expected: '1' },
+        { input: 'past-3-days', expected: '3' },
+        { input: 'past-week', expected: '7' },
+        { input: 'past-2-weeks', expected: '14' },
+        { input: 'past-month', expected: '30' },
+        { input: 'custom-date', expected: 'custom-date' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = (scraper as any).mapDatePosted(input);
+        expect(result).toBe(expected);
+      });
+    });
+  });
+});

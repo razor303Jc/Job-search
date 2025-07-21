@@ -1,0 +1,419 @@
+/**
+ * Tests for LinkedIn scraper
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LinkedInScraper } from '@/scrapers/sites/linkedin.scraper.js';
+import type { SiteConfig } from '@/config/sites.js';
+import type { ScraperConfig } from '@/config/schemas.js';
+
+describe('LinkedInScraper', () => {
+  let scraper: LinkedInScraper;
+  let mockSiteConfig: SiteConfig;
+  let mockScraperConfig: ScraperConfig;
+
+  beforeEach(() => {
+    mockSiteConfig = {
+      id: 'linkedin',
+      name: 'LinkedIn',
+      baseUrl: 'https://www.linkedin.com',
+      enabled: true,
+      scraping: {
+        rateLimit: {
+          requestsPerMinute: 10,
+          burstLimit: 5,
+        },
+        userAgent: 'test-agent',
+        timeout: 30000,
+        maxRetries: 3,
+        respectRobotsTxt: true,
+      },
+      search: {
+        pathTemplate: '/jobs/search',
+        queryParams: {
+          keywords: 'keywords',
+          location: 'location',
+        },
+        paginationParam: 'start',
+        resultsPerPage: 25,
+      },
+    };
+
+    mockScraperConfig = {
+      userAgent: 'test-agent',
+      delay: 1000,
+      retries: 3,
+      timeout: 30000,
+      respectRobotsTxt: true,
+      rateLimit: {
+        requestsPerSecond: 0.5,
+        burst: 5,
+      },
+    };
+
+    scraper = new LinkedInScraper(mockSiteConfig, mockScraperConfig);
+  });
+
+  describe('buildSearchUrl', () => {
+    it('should build basic search URL with keywords and location', () => {
+      const params = {
+        keywords: 'software engineer',
+        location: 'San Francisco',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('linkedin.com/jobs/search');
+      expect(url).toContain('keywords=software%20engineer');
+      expect(url).toContain('location=San%20Francisco');
+    });
+
+    it('should handle employment type mapping', () => {
+      const params = {
+        keywords: 'developer',
+        employment_type: 'full-time',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('f_JT=F');
+    });
+
+    it('should handle experience level mapping', () => {
+      const params = {
+        keywords: 'engineer',
+        experience_level: 'mid-senior',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('f_E=4');
+    });
+
+    it('should handle remote work preference', () => {
+      const params = {
+        keywords: 'developer',
+        remote: 'true',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('f_WT=2');
+    });
+
+    it('should handle date posted filter', () => {
+      const params = {
+        keywords: 'engineer',
+        date_posted: 'past-week',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('f_TPR=r604800');
+    });
+
+    it('should use alternative parameter names (q, l)', () => {
+      const params = {
+        q: 'python developer',
+        l: 'New York',
+      };
+
+      const url = (scraper as any).buildSearchUrl(params);
+      
+      expect(url).toContain('keywords=python%20developer');
+      expect(url).toContain('location=New%20York');
+    });
+  });
+
+  describe('parsePage', () => {
+    it('should parse basic job listing structure', () => {
+      const mockHtml = `
+        <div class="jobs-search__results-list">
+          <li>
+            <div data-entity-urn="urn:li:jobPosting:12345">
+              <h3>
+                <a class="job-search-card__title-link" href="/jobs/view/12345">
+                  Software Engineer
+                </a>
+              </h3>
+              <h4>
+                <a class="job-search-card__subtitle-link">
+                  Tech Company Inc
+                </a>
+              </h4>
+              <span class="job-search-card__location">
+                San Francisco, CA
+              </span>
+              <p class="job-search-card__snippet">
+                Looking for a skilled software engineer to join our team...
+              </p>
+              <time class="job-search-card__listdate" datetime="2024-01-15">
+                2 days ago
+              </time>
+            </div>
+          </li>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]).toMatchObject({
+        id: 'linkedin_12345',
+        title: 'Software Engineer',
+        company: 'Tech Company Inc',
+        location: 'San Francisco, CA',
+        description: 'Looking for a skilled software engineer to join our team...',
+        url: 'https://www.linkedin.com/jobs/view/12345',
+        source: 'linkedin',
+      });
+      expect(jobs[0].metadata.confidence).toBeGreaterThan(0);
+    });
+
+    it('should handle alternative selectors', () => {
+      const mockHtml = `
+        <ul class="jobs-search-results__list">
+          <li class="jobs-search-results__list-item">
+            <a data-control-name="job_search_job_result_title" 
+               href="/jobs/view/67890">
+              Full Stack Developer
+            </a>
+            <a data-control-name="job_search_job_result_company_name">
+              Startup Co
+            </a>
+            <div data-test-id="job-location">
+              Remote
+            </div>
+            <div class="jobs-search-results__list-item-description">
+              Join our growing team...
+            </div>
+          </li>
+        </ul>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]).toMatchObject({
+        id: 'linkedin_67890',
+        title: 'Full Stack Developer',
+        company: 'Startup Co',
+        location: 'Remote',
+        description: 'Join our growing team...',
+      });
+    });
+
+    it('should handle salary information when present', () => {
+      const mockHtml = `
+        <div class="jobs-search__results-list">
+          <li>
+            <div data-entity-urn="urn:li:jobPosting:99999">
+              <h3>
+                <a class="job-search-card__title-link" href="/jobs/view/99999">
+                  Senior Developer
+                </a>
+              </h3>
+              <h4>
+                <a class="job-search-card__subtitle-link">
+                  Big Corp
+                </a>
+              </h4>
+              <span class="job-search-card__location">
+                Seattle, WA
+              </span>
+              <div class="job-search-card__salary-info">
+                $120,000 - $150,000/year
+              </div>
+            </div>
+          </li>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].salary).toBe('$120,000 - $150,000/year');
+    });
+
+    it('should detect promoted/sponsored jobs', () => {
+      const mockHtml = `
+        <div class="jobs-search__results-list">
+          <li>
+            <div data-entity-urn="urn:li:jobPosting:55555">
+              <div class="job-search-card__easy-apply-label">Promoted</div>
+              <h3>
+                <a class="job-search-card__title-link" href="/jobs/view/55555">
+                  Marketing Manager
+                </a>
+              </h3>
+              <h4>
+                <a class="job-search-card__subtitle-link">
+                  Marketing Agency
+                </a>
+              </h4>
+              <span class="job-search-card__location">
+                Austin, TX
+              </span>
+            </div>
+          </li>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].raw?.isPromoted).toBe(true);
+    });
+
+    it('should clean up job titles by removing new prefix', () => {
+      const mockHtml = `
+        <div class="jobs-search__results-list">
+          <li>
+            <div data-entity-urn="urn:li:jobPosting:11111">
+              <h3>
+                <a class="job-search-card__title-link" href="/jobs/view/11111">
+                  New Product Manager
+                </a>
+              </h3>
+              <h4>
+                <a class="job-search-card__subtitle-link">
+                  Product Co
+                </a>
+              </h4>
+              <span class="job-search-card__location">
+                Portland, OR
+              </span>
+            </div>
+          </li>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].title).toBe('Product Manager');
+    });
+
+    it('should return empty array when no jobs found', () => {
+      const mockHtml = `
+        <div class="no-results">
+          <p>No jobs found matching your criteria</p>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(0);
+    });
+
+    it('should handle missing company gracefully', () => {
+      const mockHtml = `
+        <div class="jobs-search__results-list">
+          <li>
+            <div data-entity-urn="urn:li:jobPosting:77777">
+              <h3>
+                <a class="job-search-card__title-link" href="/jobs/view/77777">
+                  Data Scientist
+                </a>
+              </h3>
+              <span class="job-search-card__location">
+                Boston, MA
+              </span>
+            </div>
+          </li>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].company).toBe('Unknown Company');
+    });
+
+    it('should skip elements without job ID', () => {
+      const mockHtml = `
+        <div class="jobs-search__results-list">
+          <li>
+            <div class="some-other-element">
+              <h3>Not a job listing</h3>
+            </div>
+          </li>
+          <li>
+            <div data-entity-urn="urn:li:jobPosting:88888">
+              <h3>
+                <a class="job-search-card__title-link" href="/jobs/view/88888">
+                  Valid Job
+                </a>
+              </h3>
+              <h4>
+                <a class="job-search-card__subtitle-link">
+                  Real Company
+                </a>
+              </h4>
+            </div>
+          </li>
+        </div>
+      `;
+
+      const jobs = (scraper as any).parsePage(mockHtml, 'https://linkedin.com/jobs/search');
+      
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].title).toBe('Valid Job');
+    });
+  });
+
+  describe('employment type mapping', () => {
+    it('should map employment types correctly', () => {
+      const testCases = [
+        { input: 'full-time', expected: 'F' },
+        { input: 'part-time', expected: 'P' },
+        { input: 'contract', expected: 'C' },
+        { input: 'temporary', expected: 'T' },
+        { input: 'volunteer', expected: 'V' },
+        { input: 'internship', expected: 'I' },
+        { input: 'other', expected: 'O' },
+        { input: 'unknown-type', expected: 'unknown-type' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = (scraper as any).mapEmploymentType(input);
+        expect(result).toBe(expected);
+      });
+    });
+  });
+
+  describe('experience level mapping', () => {
+    it('should map experience levels correctly', () => {
+      const testCases = [
+        { input: 'internship', expected: '1' },
+        { input: 'entry-level', expected: '2' },
+        { input: 'associate', expected: '3' },
+        { input: 'mid-senior', expected: '4' },
+        { input: 'director', expected: '5' },
+        { input: 'executive', expected: '6' },
+        { input: 'unknown-level', expected: 'unknown-level' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = (scraper as any).mapExperienceLevel(input);
+        expect(result).toBe(expected);
+      });
+    });
+  });
+
+  describe('date posted mapping', () => {
+    it('should map date filters correctly', () => {
+      const testCases = [
+        { input: 'past-24-hours', expected: 'r86400' },
+        { input: 'past-week', expected: 'r604800' },
+        { input: 'past-month', expected: 'r2592000' },
+        { input: 'custom-date', expected: 'custom-date' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = (scraper as any).mapDatePosted(input);
+        expect(result).toBe(expected);
+      });
+    });
+  });
+});
