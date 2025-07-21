@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # Main Node.js application
+  job-dorker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job-dorker-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - DB_PATH=/app/data/jobs.db
+      - WEB_PORT=3000
+      - WEB_HOST=0.0.0.0
+      - TOR_ENABLED=true
+      - TOR_SOCKS_HOST=tor
+      - TOR_SOCKS_PORT=9050
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - tor
+    networks:
+      - job-dorker-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: job-dorker-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot
+    depends_on:
+      - job-dorker
+    networks:
+      - job-dorker-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Tor proxy for anonymous scraping
+  tor:
+    image: dperson/torproxy
+    container_name: job-dorker-tor
+    restart: unless-stopped
+    environment:
+      - PASSWORD=your-tor-control-password
+    ports:
+      - "9050:9050"  # SOCKS proxy
+      - "9051:9051"  # Control port
+    volumes:
+      - tor-data:/var/lib/tor
+    networks:
+      - job-dorker-network
+    healthcheck:
+      test: ["CMD", "curl", "--socks5", "localhost:9050", "https://check.torproject.org/"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+
+  # Redis for caching and queues
+  redis:
+    image: redis:alpine
+    container_name: job-dorker-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass your-redis-password
+    volumes:
+      - redis-data:/data
+    networks:
+      - job-dorker-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: job-dorker-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - job-dorker-network
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: job-dorker-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - job-dorker-network
+
+  # Certbot for Let's Encrypt certificates
+  certbot:
+    image: certbot/certbot
+    container_name: job-dorker-certbot
+    restart: "no"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  tor-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  job-dorker-network:
+    driver: bridge

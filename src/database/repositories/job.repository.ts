@@ -118,7 +118,7 @@ export class JobRepository {
         job.salary?.currency || 'USD',
         job.salary?.period || 'yearly',
         job.employmentType || 'full-time',
-        job.remote || false,
+        job.remote ? 1 : 0,
         job.postedDate?.toISOString() || null,
         job.expiryDate?.toISOString() || null,
         JSON.stringify(job.requirements || []),
@@ -145,6 +145,14 @@ export class JobRepository {
   async saveJobs(jobs: JobListing[]): Promise<void> {
     if (jobs.length === 0) return;
 
+    if (!this.insertJobStmt) {
+      this.prepareStatements();
+    }
+
+    if (!this.insertJobStmt) {
+      throw new Error('Failed to prepare insert statement');
+    }
+
     const saveTransaction = this.db.transaction(() => {
       for (const job of jobs) {
         const params = [
@@ -159,7 +167,7 @@ export class JobRepository {
           job.salary?.currency || 'USD',
           job.salary?.period || 'yearly',
           job.employmentType || 'full-time',
-          job.remote || false,
+          job.remote ? 1 : 0,
           job.postedDate?.toISOString() || null,
           job.expiryDate?.toISOString() || null,
           JSON.stringify(job.requirements || []),
@@ -299,7 +307,7 @@ export class JobRepository {
     // Remote filter
     if (filters.remote !== undefined) {
       conditions.push('remote = ?');
-      params.push(filters.remote);
+      params.push(filters.remote ? 1 : 0);
     }
 
     // Date range
