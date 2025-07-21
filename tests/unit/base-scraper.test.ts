@@ -1,12 +1,13 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+/* biome-ignore lint/suspicious/noExplicitAny: test mocking requires any types */
 import { BaseScraper } from '@/scrapers/base-scraper.js';
-import type { ScraperConfig, ScrapeResult } from '@/types/index.js';
+import type { ScrapeResult, ScraperConfig } from '@/types/index.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Create a concrete implementation for testing
 class TestScraper extends BaseScraper {
-  async scrape(searchTerms: string[], maxResults?: number): Promise<ScrapeResult> {
+  async scrape(searchTerms: string[], _maxResults?: number): Promise<ScrapeResult> {
     this.emit('scraping:start');
-    
+
     // Simulate scraping work
     const jobs = searchTerms.map((term, index) => ({
       id: `test-${index}`,
@@ -74,11 +75,11 @@ describe('BaseScraper', () => {
   describe('Initialization', () => {
     it('should initialize with provided config', () => {
       expect(scraper).toBeDefined();
-      expect(scraper['config']).toEqual(config);
+      expect(scraper.config).toEqual(config);
     });
 
     it('should set up rate limiter', () => {
-      expect(scraper['rateLimiter']).toBeDefined();
+      expect(scraper.rateLimiter).toBeDefined();
     });
 
     it('should start with clean stats', () => {
@@ -108,11 +109,11 @@ describe('BaseScraper', () => {
       expect(scraper.getStats().isRunning).toBe(false);
 
       const promise = scraper.scrape(['react']);
-      
-      // Note: Since our test implementation is simple, 
+
+      // Note: Since our test implementation is simple,
       // we can't easily test the running state during execution
       await promise;
-      
+
       expect(scraper.getStats().isRunning).toBe(false);
     });
   });
@@ -131,7 +132,7 @@ describe('BaseScraper', () => {
       const mockResponse = new Response('test content', { status: 200 });
       (global.fetch as any).mockResolvedValue(mockResponse);
 
-      const response = await scraper['makeRequest']('https://example.com');
+      const response = await scraper.makeRequest('https://example.com');
 
       expect(global.fetch).toHaveBeenCalledWith(
         'https://example.com',
@@ -140,7 +141,7 @@ describe('BaseScraper', () => {
           headers: expect.objectContaining({
             'User-Agent': config.userAgent,
           }),
-        })
+        }),
       );
 
       expect(response).toBe(mockResponse);
@@ -150,13 +151,13 @@ describe('BaseScraper', () => {
       const mockResponse = new Response('Not Found', { status: 404 });
       (global.fetch as any).mockResolvedValue(mockResponse);
 
-      await expect(scraper['makeRequest']('https://example.com')).rejects.toThrow('HTTP 404');
+      await expect(scraper.makeRequest('https://example.com')).rejects.toThrow('HTTP 404');
     });
 
     it('should handle network errors', async () => {
       (global.fetch as any).mockRejectedValue(new Error('Network error'));
 
-      await expect(scraper['makeRequest']('https://example.com')).rejects.toThrow();
+      await expect(scraper.makeRequest('https://example.com')).rejects.toThrow();
     });
 
     it.skip('should apply timeout', async () => {
@@ -182,19 +183,17 @@ describe('BaseScraper', () => {
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValue(new Response('success', { status: 200 }));
 
-      const response = await scraper['makeRequestWithRetry']('https://example.com');
-      
+      const response = await scraper.makeRequestWithRetry('https://example.com');
+
       expect(global.fetch).toHaveBeenCalledTimes(3);
       expect(response.status).toBe(200);
     });
 
     it('should not retry permanent errors', async () => {
-      (global.fetch as any).mockResolvedValue(
-        new Response('Forbidden', { status: 403 })
-      );
+      (global.fetch as any).mockResolvedValue(new Response('Forbidden', { status: 403 }));
 
-      await expect(scraper['makeRequestWithRetry']('https://example.com')).rejects.toThrow();
-      
+      await expect(scraper.makeRequestWithRetry('https://example.com')).rejects.toThrow();
+
       // Should only be called once (no retries for 403)
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
@@ -202,8 +201,8 @@ describe('BaseScraper', () => {
     it('should respect retry limit', async () => {
       (global.fetch as any).mockRejectedValue(new Error('Network error'));
 
-      await expect(scraper['makeRequestWithRetry']('https://example.com')).rejects.toThrow();
-      
+      await expect(scraper.makeRequestWithRetry('https://example.com')).rejects.toThrow();
+
       // Should be called retries + 1 times (initial + retries)
       expect(global.fetch).toHaveBeenCalledTimes(config.retries + 1);
     });
@@ -215,12 +214,12 @@ describe('BaseScraper', () => {
         textContent: '  Test Content  ',
       };
 
-      const text = scraper['extractText'](mockElement);
+      const text = scraper.extractText(mockElement);
       expect(text).toBe('Test Content');
     });
 
     it('should handle missing elements gracefully', () => {
-      const text = scraper['extractText'](null);
+      const text = scraper.extractText(null);
       expect(text).toBe('');
     });
 
@@ -229,7 +228,7 @@ describe('BaseScraper', () => {
         getAttribute: vi.fn().mockReturnValue('  test-value  '),
       };
 
-      const value = scraper['extractAttribute'](mockElement, 'href');
+      const value = scraper.extractAttribute(mockElement, 'href');
       expect(value).toBe('test-value');
       expect(mockElement.getAttribute).toHaveBeenCalledWith('href');
     });
@@ -238,20 +237,32 @@ describe('BaseScraper', () => {
   describe('Data Parsing Helpers', () => {
     it('should parse salary information', () => {
       const testCases = [
-        { input: '$50,000 - $80,000 per year', expected: { min: 50000, max: 80000, currency: 'USD', period: 'yearly' } },
-        { input: '$50k - $80k', expected: { min: 50000, max: 80000, currency: 'USD', period: 'yearly' } },
-        { input: '£40,000 - £60,000', expected: { min: 40000, max: 60000, currency: 'GBP', period: 'yearly' } },
-        { input: '$25 - $35 per hour', expected: { min: 25, max: 35, currency: 'USD', period: 'hourly' } },
+        {
+          input: '$50,000 - $80,000 per year',
+          expected: { min: 50000, max: 80000, currency: 'USD', period: 'yearly' },
+        },
+        {
+          input: '$50k - $80k',
+          expected: { min: 50000, max: 80000, currency: 'USD', period: 'yearly' },
+        },
+        {
+          input: '£40,000 - £60,000',
+          expected: { min: 40000, max: 60000, currency: 'GBP', period: 'yearly' },
+        },
+        {
+          input: '$25 - $35 per hour',
+          expected: { min: 25, max: 35, currency: 'USD', period: 'hourly' },
+        },
       ];
 
       for (const testCase of testCases) {
-        const result = scraper['parseSalary'](testCase.input);
+        const result = scraper.parseSalary(testCase.input);
         expect(result).toEqual(testCase.expected);
       }
     });
 
     it('should return undefined for invalid salary text', () => {
-      const result = scraper['parseSalary']('No salary information');
+      const result = scraper.parseSalary('No salary information');
       expect(result).toBeUndefined();
     });
 
@@ -267,7 +278,7 @@ describe('BaseScraper', () => {
       ];
 
       for (const testCase of testCases) {
-        const result = scraper['parseEmploymentType'](testCase.input);
+        const result = scraper.parseEmploymentType(testCase.input);
         expect(result).toBe(testCase.expected);
       }
     });
@@ -281,15 +292,15 @@ describe('BaseScraper', () => {
       ];
 
       for (const testCase of testCases) {
-        const result = scraper['isRemoteJob'](testCase.location, testCase.description);
+        const result = scraper.isRemoteJob(testCase.location, testCase.description);
         expect(result).toBe(testCase.expected);
       }
     });
 
     it('should generate consistent job IDs', () => {
-      const id1 = scraper['generateJobId']('Software Engineer', 'Google', 'https://example.com/1');
-      const id2 = scraper['generateJobId']('Software Engineer', 'Google', 'https://example.com/1');
-      const id3 = scraper['generateJobId']('Data Scientist', 'Google', 'https://example.com/1');
+      const id1 = scraper.generateJobId('Software Engineer', 'Google', 'https://example.com/1');
+      const id2 = scraper.generateJobId('Software Engineer', 'Google', 'https://example.com/1');
+      const id3 = scraper.generateJobId('Data Scientist', 'Google', 'https://example.com/1');
 
       expect(id1).toBe(id2); // Same inputs should generate same ID
       expect(id1).not.toBe(id3); // Different inputs should generate different IDs
@@ -299,20 +310,20 @@ describe('BaseScraper', () => {
 
   describe('Statistics and Monitoring', () => {
     it('should track statistics', async () => {
-      const result = await scraper.scrape(['test']);
-      
+      const _result = await scraper.scrape(['test']);
+
       const stats = scraper.getStats();
       expect(stats.isRunning).toBe(false);
-      
+
       // Note: Our test implementation doesn't make real HTTP requests,
       // so request stats won't be incremented
     });
 
     it('should reset statistics', () => {
       // Manually set some stats
-      scraper['totalRequests'] = 10;
-      scraper['successfulRequests'] = 8;
-      scraper['errors'] = [
+      scraper.totalRequests = 10;
+      scraper.successfulRequests = 8;
+      scraper.errors = [
         {
           type: 'network',
           message: 'Test error',
@@ -329,8 +340,8 @@ describe('BaseScraper', () => {
     });
 
     it('should calculate success rate correctly', () => {
-      scraper['totalRequests'] = 10;
-      scraper['successfulRequests'] = 8;
+      scraper.totalRequests = 10;
+      scraper.successfulRequests = 8;
 
       const stats = scraper.getStats();
       expect(stats.successRate).toBe(80);

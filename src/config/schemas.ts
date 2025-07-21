@@ -30,7 +30,9 @@ export const jobSearchCriteriaSchema = z.object({
   remote: z.boolean().optional(),
   salaryMin: z.number().min(0).optional(),
   salaryMax: z.number().min(0).optional(),
-  employmentTypes: z.array(z.enum(['full-time', 'part-time', 'contract', 'temporary', 'internship', 'freelance'])).optional(),
+  employmentTypes: z
+    .array(z.enum(['full-time', 'part-time', 'contract', 'temporary', 'internship', 'freelance']))
+    .optional(),
   excludeKeywords: z.array(z.string()).optional(),
   datePosted: z.enum(['today', 'week', 'month', 'any']).optional(),
   experienceLevel: z.enum(['entry', 'mid', 'senior', 'executive']).optional(),
@@ -41,13 +43,15 @@ export const reportOptionsSchema = z.object({
   format: z.enum(['csv', 'json', 'pdf']).default('json'),
   outputPath: z.string().optional(),
   template: z.string().optional(),
-  filters: z.object({
-    minSalary: z.number().min(0).optional(),
-    maxSalary: z.number().min(0).optional(),
-    location: z.string().optional(),
-    remote: z.boolean().optional(),
-    keywords: z.array(z.string()).optional(),
-  }).optional(),
+  filters: z
+    .object({
+      minSalary: z.number().min(0).optional(),
+      maxSalary: z.number().min(0).optional(),
+      location: z.string().optional(),
+      remote: z.boolean().optional(),
+      keywords: z.array(z.string()).optional(),
+    })
+    .optional(),
   analytics: z.boolean().default(false),
   groupBy: z.enum(['company', 'location', 'salary', 'employmentType']).optional(),
 });

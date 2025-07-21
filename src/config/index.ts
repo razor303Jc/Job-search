@@ -1,9 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { logger } from '@/utils/logger.js';
 import * as dotenv from 'dotenv';
 import { type AppConfig, appConfigSchema } from './schemas.js';
-import { logger } from '@/utils/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -130,22 +130,30 @@ export class ConfigManager {
           scraperDelay: validatedConfig.scraper.delay,
           webEnabled: validatedConfig.web.enabled,
         },
-        'Configuration loaded and validated successfully'
+        'Configuration loaded and validated successfully',
       );
 
       return validatedConfig;
     } catch (error) {
       logger.error({ err: error, configPath: this.configPath }, 'Failed to load configuration');
-      throw new Error(`Configuration loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Configuration loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
-  private deepMerge(target: any, source: any): any {
+  private deepMerge(
+    target: Record<string, unknown>,
+    source: Record<string, unknown>,
+  ): Record<string, unknown> {
     const result = { ...target };
 
     for (const key in source) {
       if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-        result[key] = this.deepMerge(result[key] || {}, source[key]);
+        result[key] = this.deepMerge(
+          (result[key] as Record<string, unknown>) || {},
+          source[key] as Record<string, unknown>,
+        );
       } else {
         result[key] = source[key];
       }
@@ -184,14 +192,16 @@ export class ConfigManager {
       logger.info({ configPath: this.configPath }, 'Configuration saved successfully');
     } catch (error) {
       logger.error({ err: error, configPath: this.configPath }, 'Failed to save configuration');
-      throw new Error(`Configuration saving failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Configuration saving failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
   public resetConfig(): void {
     logger.info('Resetting configuration to defaults...');
     this.config = appConfigSchema.parse(defaultConfig);
-    
+
     if (fs.existsSync(this.configPath)) {
       fs.unlinkSync(this.configPath);
       logger.info({ configPath: this.configPath }, 'Configuration file deleted');

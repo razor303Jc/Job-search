@@ -1,15 +1,15 @@
-import { describe, expect, it } from 'vitest';
 import {
-  generateDorkQuery,
-  getDorksForCategory,
-  getAllDorks,
-  createCustomDork,
-  getRecommendedDorks,
+  EXCLUDE_KEYWORDS,
   JOB_SITES,
   KEYWORD_GROUPS,
-  EXCLUDE_KEYWORDS,
   PREDEFINED_DORKS,
+  createCustomDork,
+  generateDorkQuery,
+  getAllDorks,
+  getDorksForCategory,
+  getRecommendedDorks,
 } from '@/config/dorks.js';
+import { describe, expect, it } from 'vitest';
 
 describe('Google Dorks Configuration', () => {
   describe('Constants', () => {
@@ -107,7 +107,7 @@ describe('Google Dorks Configuration', () => {
   describe('getDorksForCategory', () => {
     it('should return dorks for LinkedIn category', () => {
       const dorks = getDorksForCategory('linkedin');
-      
+
       expect(dorks).toHaveLength(4);
       expect(dorks[0].site).toBe(JOB_SITES.LINKEDIN);
       expect(dorks[0].keywords).toContain('software engineer');
@@ -115,14 +115,14 @@ describe('Google Dorks Configuration', () => {
 
     it('should return dorks for remote category', () => {
       const dorks = getDorksForCategory('remote');
-      
+
       expect(dorks.length).toBeGreaterThan(0);
-      expect(dorks.some(dork => dork.site === JOB_SITES.REMOTEOK)).toBe(true);
-      expect(dorks.some(dork => dork.site === JOB_SITES.WEWORKREMOTELY)).toBe(true);
+      expect(dorks.some((dork) => dork.site === JOB_SITES.REMOTEOK)).toBe(true);
+      expect(dorks.some((dork) => dork.site === JOB_SITES.WEWORKREMOTELY)).toBe(true);
     });
 
     it('should return empty array for non-existent category', () => {
-      const dorks = getDorksForCategory('nonexistent' as any);
+      const dorks = getDorksForCategory('nonexistent' as never);
       expect(dorks).toEqual([]);
     });
   });
@@ -130,11 +130,11 @@ describe('Google Dorks Configuration', () => {
   describe('getAllDorks', () => {
     it('should return all predefined dorks', () => {
       const allDorks = getAllDorks();
-      
+
       expect(allDorks.length).toBeGreaterThan(0);
-      
+
       // Should contain dorks from different categories
-      const sites = allDorks.map(dork => dork.site);
+      const sites = allDorks.map((dork) => dork.site);
       expect(sites).toContain(JOB_SITES.LINKEDIN);
       expect(sites).toContain(JOB_SITES.INDEED);
       expect(sites).toContain(JOB_SITES.GLASSDOOR);
@@ -142,7 +142,7 @@ describe('Google Dorks Configuration', () => {
 
     it('should have valid structure for all dorks', () => {
       const allDorks = getAllDorks();
-      
+
       for (const dork of allDorks) {
         expect(dork.site).toBeDefined();
         expect(dork.keywords).toBeDefined();
@@ -160,7 +160,7 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = createCustomDork(options);
-      
+
       expect(dorks).toHaveLength(2);
       expect(dorks[0].site).toBe('linkedin.com/jobs');
       expect(dorks[1].site).toBe('indeed.com');
@@ -176,7 +176,7 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = createCustomDork(options);
-      
+
       expect(dorks[0].keywords).toContain('developer');
       expect(dorks[0].keywords).toContain('San Francisco');
       expect(dorks[0].keywords).not.toContain('remote');
@@ -190,7 +190,7 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = createCustomDork(options);
-      
+
       expect(dorks[0].keywords).toContain('developer');
       expect(dorks[0].keywords).toContain('remote');
     });
@@ -203,7 +203,7 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = createCustomDork(options);
-      
+
       expect(dorks[0].keywords).toContain('developer');
       expect(dorks[0].keywords).toContain('senior');
     });
@@ -216,7 +216,7 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = createCustomDork(options);
-      
+
       expect(dorks[0].excludeKeywords).toContain('bootcamp');
       expect(dorks[0].excludeKeywords).toContain('internship'); // Default exclude
     });
@@ -229,12 +229,12 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = getRecommendedDorks(criteria);
-      
+
       expect(dorks.length).toBeGreaterThan(0);
       expect(dorks[0].keywords).toContain('javascript developer');
-      
+
       // Should use default sites
-      const sites = dorks.map(dork => dork.site);
+      const sites = dorks.map((dork) => dork.site);
       expect(sites).toContain(JOB_SITES.LINKEDIN);
       expect(sites).toContain(JOB_SITES.INDEED);
     });
@@ -246,8 +246,8 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = getRecommendedDorks(criteria);
-      
-      expect(dorks.every(dork => dork.keywords.includes('remote'))).toBe(true);
+
+      expect(dorks.every((dork) => dork.keywords.includes('remote'))).toBe(true);
     });
 
     it('should handle location criteria', () => {
@@ -257,8 +257,8 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = getRecommendedDorks(criteria);
-      
-      expect(dorks.every(dork => dork.keywords.includes('New York'))).toBe(true);
+
+      expect(dorks.every((dork) => dork.keywords.includes('New York'))).toBe(true);
     });
 
     it('should handle custom sites', () => {
@@ -268,8 +268,8 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = getRecommendedDorks(criteria);
-      
-      const sites = dorks.map(dork => dork.site);
+
+      const sites = dorks.map((dork) => dork.site);
       expect(sites).toContain('stackoverflow.com/jobs');
       expect(sites).toContain('dice.com');
       expect(sites).not.toContain(JOB_SITES.LINKEDIN);
@@ -282,18 +282,18 @@ describe('Google Dorks Configuration', () => {
       };
 
       const dorks = getRecommendedDorks(criteria);
-      
-      expect(dorks.every(dork => dork.keywords.includes('senior'))).toBe(true);
+
+      expect(dorks.every((dork) => dork.keywords.includes('senior'))).toBe(true);
     });
   });
 
   describe('Predefined Dorks Structure', () => {
     it('should have valid LinkedIn dorks', () => {
       const linkedinDorks = PREDEFINED_DORKS.linkedin;
-      
+
       expect(linkedinDorks).toBeDefined();
       expect(linkedinDorks.length).toBeGreaterThan(0);
-      
+
       for (const dork of linkedinDorks) {
         expect(dork.site).toBe(JOB_SITES.LINKEDIN);
         expect(dork.keywords.length).toBeGreaterThan(0);
@@ -303,23 +303,21 @@ describe('Google Dorks Configuration', () => {
 
     it('should have valid remote work dorks', () => {
       const remoteDorks = PREDEFINED_DORKS.remote;
-      
+
       expect(remoteDorks).toBeDefined();
       expect(remoteDorks.length).toBeGreaterThan(0);
-      
-      const sites = remoteDorks.map(dork => dork.site);
+
+      const sites = remoteDorks.map((dork) => dork.site);
       expect(sites).toContain(JOB_SITES.REMOTEOK);
       expect(sites).toContain(JOB_SITES.WEWORKREMOTELY);
     });
 
     it('should exclude internships in all predefined dorks', () => {
       const allDorks = getAllDorks();
-      
+
       for (const dork of allDorks) {
         if (dork.excludeKeywords) {
-          expect(dork.excludeKeywords.some(keyword => 
-            keyword.includes('intern')
-          )).toBe(true);
+          expect(dork.excludeKeywords.some((keyword) => keyword.includes('intern'))).toBe(true);
         }
       }
     });

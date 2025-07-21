@@ -1,8 +1,8 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { z } from 'zod';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { appConfigSchema } from '@/config/schemas.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 describe('Configuration System', () => {
   let testConfigPath: string;
@@ -11,10 +11,10 @@ describe('Configuration System', () => {
   beforeEach(() => {
     // Store original environment
     originalEnv = { ...process.env };
-    
+
     // Create a test config file path
     testConfigPath = path.join(process.cwd(), 'test-config.json');
-    
+
     // Clean up any existing test config
     if (fs.existsSync(testConfigPath)) {
       fs.unlinkSync(testConfigPath);
@@ -24,7 +24,7 @@ describe('Configuration System', () => {
   afterEach(() => {
     // Restore original environment
     process.env = originalEnv;
-    
+
     // Clean up test config file
     if (fs.existsSync(testConfigPath)) {
       fs.unlinkSync(testConfigPath);
@@ -44,7 +44,7 @@ describe('Configuration System', () => {
           burst: 2,
         },
       };
-      
+
       const result = appConfigSchema.shape.scraper.safeParse(validScraperConfig);
       expect(result.success).toBe(true);
     });
@@ -54,7 +54,7 @@ describe('Configuration System', () => {
         url: 'sqlite:./test.db',
         enableWal: true,
       };
-      
+
       const result = appConfigSchema.shape.database.safeParse(validDbConfig);
       expect(result.success).toBe(true);
     });
@@ -69,7 +69,7 @@ describe('Configuration System', () => {
           credentials: true,
         },
       };
-      
+
       const result = appConfigSchema.shape.web.safeParse(validWebConfig);
       expect(result.success).toBe(true);
     });
@@ -80,7 +80,7 @@ describe('Configuration System', () => {
         maxFileSize: 50 * 1024 * 1024,
         cleanupAfterDays: 30,
       };
-      
+
       const result = appConfigSchema.shape.reports.safeParse(validReportsConfig);
       expect(result.success).toBe(true);
     });
@@ -137,7 +137,7 @@ describe('Configuration System', () => {
           cleanupAfterDays: 30,
         },
       };
-      
+
       const result = appConfigSchema.safeParse(validAppConfig);
       expect(result.success).toBe(true);
     });
@@ -151,7 +151,7 @@ describe('Configuration System', () => {
           retries: 10, // Invalid: too many retries
         },
       };
-      
+
       const result = appConfigSchema.safeParse(invalidConfig);
       expect(result.success).toBe(false);
     });
@@ -163,7 +163,7 @@ describe('Configuration System', () => {
           level: 'invalid-level', // Invalid log level
         },
       };
-      
+
       const result = appConfigSchema.safeParse(invalidConfig);
       expect(result.success).toBe(false);
     });
@@ -220,7 +220,7 @@ describe('Configuration System', () => {
           cleanupAfterDays: 30,
         },
       };
-      
+
       const result = appConfigSchema.safeParse(validConfig);
       expect(result.success).toBe(false);
     });

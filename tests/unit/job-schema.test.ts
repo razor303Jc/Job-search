@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { JobValidator } from '@/parsers/schemas/job.schema.js';
 import type { JobListing, RawJobData } from '@/parsers/schemas/job.schema.js';
+import { describe, expect, it } from 'vitest';
 
 describe('Job Schema Validation', () => {
   const mockSource = {
@@ -38,7 +38,7 @@ describe('Job Schema Validation', () => {
   describe('JobValidator.validateJob', () => {
     it('should validate a complete valid job listing', () => {
       const result = JobValidator.validateJob(validJobListing);
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.id).toBe('test-123');
@@ -75,7 +75,7 @@ describe('Job Schema Validation', () => {
     it('should reject job with invalid employment type', () => {
       const invalidJob = {
         ...validJobListing,
-        employmentType: 'invalid-type' as any,
+        employmentType: 'invalid-type' as never,
       };
 
       const result = JobValidator.validateJob(invalidJob);
@@ -227,7 +227,7 @@ describe('Job Schema Validation', () => {
       const incompleteTransformed = JobValidator.transformRawToJob(incompleteRawData, mockSource);
 
       expect(completeTransformed.metadata?.confidence).toBeGreaterThan(
-        incompleteTransformed.metadata?.confidence || 0
+        incompleteTransformed.metadata?.confidence || 0,
       );
     });
   });
@@ -324,13 +324,7 @@ describe('Job Schema Validation', () => {
 
   describe('Date Parsing', () => {
     it('should parse relative dates', () => {
-      const testCases = [
-        'today',
-        'yesterday', 
-        '2 days ago',
-        '1 week ago',
-        'just now',
-      ];
+      const testCases = ['today', 'yesterday', '2 days ago', '1 week ago', 'just now'];
 
       for (const dateText of testCases) {
         const rawData = { postedDateText: dateText };
@@ -370,13 +364,13 @@ describe('Job Schema Validation', () => {
       ];
 
       for (const testCase of testCases) {
-        const rawData = { 
+        const rawData = {
           requirementsText: testCase.input,
           benefitsText: testCase.input,
           tagsText: testCase.input,
         };
         const transformed = JobValidator.transformRawToJob(rawData, mockSource);
-        
+
         expect(transformed.requirements).toEqual(testCase.expected);
         expect(transformed.benefits).toEqual(testCase.expected);
         expect(transformed.tags).toEqual(testCase.expected);
@@ -386,10 +380,10 @@ describe('Job Schema Validation', () => {
     it('should parse newline-separated lists', () => {
       const input = 'JavaScript\nReact\nNode.js';
       const expected = ['JavaScript', 'React', 'Node.js'];
-      
+
       const rawData = { requirementsText: input };
       const transformed = JobValidator.transformRawToJob(rawData, mockSource);
-      
+
       expect(transformed.requirements).toEqual(expected);
     });
 

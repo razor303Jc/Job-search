@@ -4,15 +4,16 @@ import { z } from 'zod';
  * Zod schemas for job data validation and parsing
  */
 
-export const salarySchema = z.object({
-  min: z.number().min(0).optional(),
-  max: z.number().min(0).optional(),
-  currency: z.string().length(3).default('USD'), // ISO 4217 currency codes
-  period: z.enum(['hourly', 'daily', 'weekly', 'monthly', 'yearly']).default('yearly'),
-}).refine(
-  data => !data.min || !data.max || data.min <= data.max,
-  { message: 'Minimum salary must be less than or equal to maximum salary' }
-);
+export const salarySchema = z
+  .object({
+    min: z.number().min(0).optional(),
+    max: z.number().min(0).optional(),
+    currency: z.string().length(3).default('USD'), // ISO 4217 currency codes
+    period: z.enum(['hourly', 'daily', 'weekly', 'monthly', 'yearly']).default('yearly'),
+  })
+  .refine((data) => !data.min || !data.max || data.min <= data.max, {
+    message: 'Minimum salary must be less than or equal to maximum salary',
+  });
 
 export const jobSourceSchema = z.object({
   site: z.string().min(1),
@@ -33,7 +34,14 @@ export const jobListingSchema = z.object({
   description: z.string().min(1),
   url: z.string().url(),
   salary: salarySchema.optional(),
-  employmentType: z.enum(['full-time', 'part-time', 'contract', 'temporary', 'internship', 'freelance']),
+  employmentType: z.enum([
+    'full-time',
+    'part-time',
+    'contract',
+    'temporary',
+    'internship',
+    'freelance',
+  ]),
   remote: z.boolean(),
   postedDate: z.date().optional(),
   expiryDate: z.date().optional(),
@@ -87,13 +95,15 @@ export const rawJobDataSchema = z.object({
 /**
  * Database job listing schema (with string dates for SQLite)
  */
-export const dbJobListingSchema = jobListingSchema.extend({
-  postedDate: z.string().optional(), // ISO string for SQLite
-  expiryDate: z.string().optional(), // ISO string for SQLite
-  sourceData: z.string(), // JSON string
-  createdAt: z.string(),
-  updatedAt: z.string(),
-}).omit({ source: true });
+export const dbJobListingSchema = jobListingSchema
+  .extend({
+    postedDate: z.string().optional(), // ISO string for SQLite
+    expiryDate: z.string().optional(), // ISO string for SQLite
+    sourceData: z.string(), // JSON string
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  .omit({ source: true });
 
 /**
  * Job validation and transformation utilities
@@ -102,23 +112,34 @@ export class JobValidator {
   /**
    * Validate a job listing against the schema
    */
-  static validateJob(data: unknown): z.SafeParseReturnType<unknown, z.infer<typeof jobListingSchema>> {
+  static validateJob(
+    data: unknown,
+  ): z.SafeParseReturnType<unknown, z.infer<typeof jobListingSchema>> {
     return jobListingSchema.safeParse(data);
   }
 
   /**
    * Validate raw job data
    */
-  static validateRawJobData(data: unknown): z.SafeParseReturnType<unknown, z.infer<typeof rawJobDataSchema>> {
+  static validateRawJobData(
+    data: unknown,
+  ): z.SafeParseReturnType<unknown, z.infer<typeof rawJobDataSchema>> {
     return rawJobDataSchema.safeParse(data);
   }
 
   /**
    * Transform raw job data to validated job listing
    */
-  static transformRawToJob(rawData: z.infer<typeof rawJobDataSchema>, source: z.infer<typeof jobSourceSchema>): Partial<z.infer<typeof jobListingSchema>> {
-    const id = this.generateJobId(rawData.title || '', rawData.company || '', rawData.url || '');
-    
+  static transformRawToJob(
+    rawData: z.infer<typeof rawJobDataSchema>,
+    source: z.infer<typeof jobSourceSchema>,
+  ): Partial<z.infer<typeof jobListingSchema>> {
+    const id = JobValidator.generateJobId(
+      rawData.title || '',
+      rawData.company || '',
+      rawData.url || '',
+    );
+
     return {
       id,
       title: rawData.title?.trim() || 'Unknown Title',
@@ -126,16 +147,16 @@ export class JobValidator {
       location: rawData.location?.trim() || 'Unknown Location',
       description: rawData.description?.trim() || '',
       url: rawData.url || source.originalUrl,
-      salary: this.parseSalary(rawData.salaryText),
-      employmentType: this.parseEmploymentType(rawData.employmentTypeText),
-      remote: this.isRemoteJob(rawData.location, rawData.description),
-      postedDate: this.parseDate(rawData.postedDateText),
-      requirements: this.parseList(rawData.requirementsText),
-      benefits: this.parseList(rawData.benefitsText),
-      tags: this.parseList(rawData.tagsText),
+      salary: JobValidator.parseSalary(rawData.salaryText),
+      employmentType: JobValidator.parseEmploymentType(rawData.employmentTypeText),
+      remote: JobValidator.isRemoteJob(rawData.location, rawData.description),
+      postedDate: JobValidator.parseDate(rawData.postedDateText),
+      requirements: JobValidator.parseList(rawData.requirementsText),
+      benefits: JobValidator.parseList(rawData.benefitsText),
+      tags: JobValidator.parseList(rawData.tagsText),
       source,
       metadata: {
-        confidence: this.calculateConfidence(rawData),
+        confidence: JobValidator.calculateConfidence(rawData),
         rawData: rawData.rawHtml ? { html: rawData.rawHtml } : undefined,
       },
     };
@@ -148,10 +169,10 @@ export class JobValidator {
     let score = 0;
     const weights = {
       title: 0.25,
-      company: 0.20,
+      company: 0.2,
       location: 0.15,
       description: 0.15,
-      url: 0.10,
+      url: 0.1,
       salaryText: 0.05,
       employmentTypeText: 0.05,
       postedDateText: 0.05,
@@ -171,15 +192,15 @@ export class JobValidator {
    */
   private static generateJobId(title: string, company: string, url: string): string {
     const baseString = `${title}-${company}-${url}`.toLowerCase().replace(/[^a-z0-9]/g, '');
-    
+
     // Simple hash function
     let hash = 0;
     for (let i = 0; i < baseString.length; i++) {
       const char = baseString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
-    
+
     return Math.abs(hash).toString(36);
   }
 
@@ -191,7 +212,7 @@ export class JobValidator {
 
     // Clean up the text but keep original for currency/period detection
     const cleanText = text.toLowerCase().replace(/[,\s]/g, '');
-    
+
     const patterns = [
       // $80,000 - $110,000 per year (with commas)
       /\$(\d+)(?:,\d{3})*-\$?(\d+)(?:,\d{3})*(?:peryear|annually|yearly)?/,
@@ -207,7 +228,7 @@ export class JobValidator {
 
     for (const pattern of patterns) {
       const match = cleanText.match(pattern);
-      if (match && match[1] && match[2]) {
+      if (match?.[1] && match[2]) {
         let min = Number.parseInt(match[1], 10);
         let max = Number.parseInt(match[2], 10);
 
@@ -237,18 +258,20 @@ export class JobValidator {
   /**
    * Parse employment type from text
    */
-  private static parseEmploymentType(text?: string): z.infer<typeof jobListingSchema>['employmentType'] {
+  private static parseEmploymentType(
+    text?: string,
+  ): z.infer<typeof jobListingSchema>['employmentType'] {
     if (!text) return 'full-time';
 
     const normalized = text.toLowerCase().trim();
-    
+
     if (normalized.includes('full') && normalized.includes('time')) return 'full-time';
     if (normalized.includes('part') && normalized.includes('time')) return 'part-time';
     if (normalized.includes('contract')) return 'contract';
     if (normalized.includes('temporary') || normalized.includes('temp')) return 'temporary';
     if (normalized.includes('intern')) return 'internship';
     if (normalized.includes('freelance') || normalized.includes('consultant')) return 'freelance';
-    
+
     return 'full-time';
   }
 
@@ -258,8 +281,8 @@ export class JobValidator {
   private static isRemoteJob(location?: string, description?: string): boolean {
     const text = `${location || ''} ${description || ''}`.toLowerCase();
     const remoteKeywords = ['remote', 'work from home', 'wfh', 'distributed', 'anywhere'];
-    
-    return remoteKeywords.some(keyword => text.includes(keyword));
+
+    return remoteKeywords.some((keyword) => text.includes(keyword));
   }
 
   /**
@@ -282,20 +305,20 @@ export class JobValidator {
       }
 
       const daysMatch = normalized.match(/(\d+)\s*days?\s*ago/);
-      if (daysMatch && daysMatch[1]) {
+      if (daysMatch?.[1]) {
         const days = Number.parseInt(daysMatch[1], 10);
         return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
       }
 
       const weeksMatch = normalized.match(/(\d+)\s*weeks?\s*ago/);
-      if (weeksMatch && weeksMatch[1]) {
+      if (weeksMatch?.[1]) {
         const weeks = Number.parseInt(weeksMatch[1], 10);
         return new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
       }
 
       // Try to parse as regular date
       const parsedDate = new Date(text);
-      return isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+      return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
     } catch {
       return undefined;
     }
@@ -309,8 +332,8 @@ export class JobValidator {
 
     return text
       .split(/[,\n]/)
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
   }
 }
 

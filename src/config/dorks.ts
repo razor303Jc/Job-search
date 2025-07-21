@@ -24,32 +24,49 @@ export const JOB_SITES = {
  */
 export const KEYWORD_GROUPS = {
   // Frontend Technologies
-  FRONTEND: ['frontend', 'front-end', 'react', 'vue', 'angular', 'typescript', 'javascript', 'css', 'html'],
-  
+  FRONTEND: [
+    'frontend',
+    'front-end',
+    'react',
+    'vue',
+    'angular',
+    'typescript',
+    'javascript',
+    'css',
+    'html',
+  ],
+
   // Backend Technologies
   BACKEND: ['backend', 'back-end', 'node.js', 'python', 'java', 'go', 'rust', 'c#', 'php', 'ruby'],
-  
+
   // Full Stack
   FULLSTACK: ['full-stack', 'fullstack', 'full stack'],
-  
+
   // DevOps & Infrastructure
   DEVOPS: ['devops', 'kubernetes', 'docker', 'aws', 'azure', 'gcp', 'terraform', 'ansible'],
-  
+
   // Data & AI
-  DATA: ['data scientist', 'data engineer', 'machine learning', 'ml engineer', 'ai engineer', 'data analyst'],
-  
+  DATA: [
+    'data scientist',
+    'data engineer',
+    'machine learning',
+    'ml engineer',
+    'ai engineer',
+    'data analyst',
+  ],
+
   // Mobile Development
   MOBILE: ['mobile developer', 'ios developer', 'android developer', 'react native', 'flutter'],
-  
+
   // Management & Leadership
   MANAGEMENT: ['engineering manager', 'tech lead', 'team lead', 'cto', 'vp engineering'],
-  
+
   // Common Job Types
   COMMON_ROLES: ['software engineer', 'developer', 'programmer', 'software developer', 'engineer'],
-  
+
   // Experience Levels
   EXPERIENCE_LEVELS: ['junior', 'senior', 'lead', 'principal', 'staff', 'entry level', 'mid level'],
-  
+
   // Employment Types
   EMPLOYMENT_TYPES: ['remote', 'full-time', 'part-time', 'contract', 'freelance', 'internship'],
 } as const;
@@ -208,28 +225,28 @@ export function generateDorkQuery(config: GoogleDorkConfig): string {
 
   // Add keywords (wrapped in quotes for exact phrases)
   if (config.keywords.length > 0) {
-    const keywordQueries = config.keywords.map(keyword => 
-      keyword.includes(' ') ? `"${keyword}"` : keyword
+    const keywordQueries = config.keywords.map((keyword) =>
+      keyword.includes(' ') ? `"${keyword}"` : keyword,
     );
     parts.push(keywordQueries.join(' OR '));
   }
 
   // Add exclusions
   if (config.excludeKeywords && config.excludeKeywords.length > 0) {
-    const exclusions = config.excludeKeywords.map(keyword => `-"${keyword}"`);
+    const exclusions = config.excludeKeywords.map((keyword) => `-"${keyword}"`);
     parts.push(exclusions.join(' '));
   }
 
   // Add file type restrictions
   if (config.fileTypes && config.fileTypes.length > 0) {
-    const fileTypes = config.fileTypes.map(type => `filetype:${type}`);
+    const fileTypes = config.fileTypes.map((type) => `filetype:${type}`);
     parts.push(fileTypes.join(' OR '));
   }
 
   // Add custom parameters
   if (config.customParams) {
     const customParts = Object.entries(config.customParams).map(
-      ([key, value]) => `${key}:${value}`
+      ([key, value]) => `${key}:${value}`,
     );
     parts.push(...customParts);
   }
@@ -282,7 +299,7 @@ export function createCustomDork(options: {
     finalKeywords.push(experienceLevel);
   }
 
-  return sites.map(site => ({
+  return sites.map((site) => ({
     site,
     keywords: finalKeywords,
     excludeKeywords: finalExcludes,
