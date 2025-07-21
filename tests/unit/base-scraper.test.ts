@@ -1,4 +1,3 @@
-/* biome-ignore lint/suspicious/noExplicitAny: test mocking requires any types */
 import { BaseScraper } from '@/scrapers/base-scraper.js';
 import type { ScrapeResult, ScraperConfig } from '@/types/index.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -130,7 +129,7 @@ describe('BaseScraper', () => {
 
     it('should make HTTP requests with proper headers', async () => {
       const mockResponse = new Response('test content', { status: 200 });
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      global.fetch.mockResolvedValue(mockResponse);
 
       const response = await scraper.makeRequest('https://example.com');
 
@@ -149,13 +148,13 @@ describe('BaseScraper', () => {
 
     it('should handle HTTP errors', async () => {
       const mockResponse = new Response('Not Found', { status: 404 });
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      global.fetch.mockResolvedValue(mockResponse);
 
       await expect(scraper.makeRequest('https://example.com')).rejects.toThrow('HTTP 404');
     });
 
     it('should handle network errors', async () => {
-      (global.fetch as any).mockRejectedValue(new Error('Network error'));
+      global.fetch.mockRejectedValue(new Error('Network error'));
 
       await expect(scraper.makeRequest('https://example.com')).rejects.toThrow();
     });
@@ -178,7 +177,7 @@ describe('BaseScraper', () => {
 
     it('should retry failed requests', async () => {
       // First two calls fail, third succeeds
-      (global.fetch as any)
+      global.fetch
         .mockRejectedValueOnce(new Error('Network error'))
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValue(new Response('success', { status: 200 }));
@@ -190,7 +189,7 @@ describe('BaseScraper', () => {
     });
 
     it('should not retry permanent errors', async () => {
-      (global.fetch as any).mockResolvedValue(new Response('Forbidden', { status: 403 }));
+      global.fetch.mockResolvedValue(new Response('Forbidden', { status: 403 }));
 
       await expect(scraper.makeRequestWithRetry('https://example.com')).rejects.toThrow();
 
@@ -199,7 +198,7 @@ describe('BaseScraper', () => {
     });
 
     it('should respect retry limit', async () => {
-      (global.fetch as any).mockRejectedValue(new Error('Network error'));
+      global.fetch.mockRejectedValue(new Error('Network error'));
 
       await expect(scraper.makeRequestWithRetry('https://example.com')).rejects.toThrow();
 

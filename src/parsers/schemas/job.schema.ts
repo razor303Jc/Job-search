@@ -108,233 +108,226 @@ export const dbJobListingSchema = jobListingSchema
 /**
  * Job validation and transformation utilities
  */
-export class JobValidator {
-  /**
-   * Validate a job listing against the schema
-   */
-  static validateJob(
-    data: unknown,
-  ): z.SafeParseReturnType<unknown, z.infer<typeof jobListingSchema>> {
-    return jobListingSchema.safeParse(data);
+
+/**
+ * Validate a job listing against the schema
+ */
+export function validateJob(
+  data: unknown,
+): z.SafeParseReturnType<unknown, z.infer<typeof jobListingSchema>> {
+  return jobListingSchema.safeParse(data);
+}
+
+/**
+ * Validate raw job data
+ */
+export function validateRawJobData(
+  data: unknown,
+): z.SafeParseReturnType<unknown, z.infer<typeof rawJobDataSchema>> {
+  return rawJobDataSchema.safeParse(data);
+}
+
+/**
+ * Transform raw job data to validated job listing
+ */
+export function transformRawToJob(
+  rawData: z.infer<typeof rawJobDataSchema>,
+  source: z.infer<typeof jobSourceSchema>,
+): Partial<z.infer<typeof jobListingSchema>> {
+  const id = generateJobId(rawData.title || '', rawData.company || '', rawData.url || '');
+
+  return {
+    id,
+    title: rawData.title?.trim() || 'Unknown Title',
+    company: rawData.company?.trim() || 'Unknown Company',
+    location: rawData.location?.trim() || 'Unknown Location',
+    description: rawData.description?.trim() || '',
+    url: rawData.url || source.originalUrl,
+    salary: parseSalary(rawData.salaryText),
+    employmentType: parseEmploymentType(rawData.employmentTypeText),
+    remote: isRemoteJob(rawData.location, rawData.description),
+    postedDate: parseDate(rawData.postedDateText),
+    requirements: parseList(rawData.requirementsText),
+    benefits: parseList(rawData.benefitsText),
+    tags: parseList(rawData.tagsText),
+    source,
+    metadata: {
+      confidence: calculateConfidence(rawData),
+      rawData: rawData.rawHtml ? { html: rawData.rawHtml } : undefined,
+    },
+  };
+}
+
+/**
+ * Calculate parsing confidence score based on available data
+ */
+function calculateConfidence(rawData: z.infer<typeof rawJobDataSchema>): number {
+  let score = 0;
+  const weights = {
+    title: 0.25,
+    company: 0.2,
+    location: 0.15,
+    description: 0.15,
+    url: 0.1,
+    salaryText: 0.05,
+    employmentTypeText: 0.05,
+    postedDateText: 0.05,
+  };
+
+  for (const [field, weight] of Object.entries(weights)) {
+    if (rawData[field as keyof typeof rawData]) {
+      score += weight;
+    }
   }
 
-  /**
-   * Validate raw job data
-   */
-  static validateRawJobData(
-    data: unknown,
-  ): z.SafeParseReturnType<unknown, z.infer<typeof rawJobDataSchema>> {
-    return rawJobDataSchema.safeParse(data);
+  return Math.round(score * 100) / 100;
+}
+
+/**
+ * Generate unique job ID
+ */
+function generateJobId(title: string, company: string, url: string): string {
+  const baseString = `${title}-${company}-${url}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < baseString.length; i++) {
+    const char = baseString.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
   }
 
-  /**
-   * Transform raw job data to validated job listing
-   */
-  static transformRawToJob(
-    rawData: z.infer<typeof rawJobDataSchema>,
-    source: z.infer<typeof jobSourceSchema>,
-  ): Partial<z.infer<typeof jobListingSchema>> {
-    const id = JobValidator.generateJobId(
-      rawData.title || '',
-      rawData.company || '',
-      rawData.url || '',
-    );
+  return Math.abs(hash).toString(36);
+}
 
-    return {
-      id,
-      title: rawData.title?.trim() || 'Unknown Title',
-      company: rawData.company?.trim() || 'Unknown Company',
-      location: rawData.location?.trim() || 'Unknown Location',
-      description: rawData.description?.trim() || '',
-      url: rawData.url || source.originalUrl,
-      salary: JobValidator.parseSalary(rawData.salaryText),
-      employmentType: JobValidator.parseEmploymentType(rawData.employmentTypeText),
-      remote: JobValidator.isRemoteJob(rawData.location, rawData.description),
-      postedDate: JobValidator.parseDate(rawData.postedDateText),
-      requirements: JobValidator.parseList(rawData.requirementsText),
-      benefits: JobValidator.parseList(rawData.benefitsText),
-      tags: JobValidator.parseList(rawData.tagsText),
-      source,
-      metadata: {
-        confidence: JobValidator.calculateConfidence(rawData),
-        rawData: rawData.rawHtml ? { html: rawData.rawHtml } : undefined,
-      },
-    };
-  }
+/**
+ * Parse salary information from text
+ */
+function parseSalary(text?: string): z.infer<typeof salarySchema> | undefined {
+  if (!text) return undefined;
 
-  /**
-   * Calculate parsing confidence score based on available data
-   */
-  private static calculateConfidence(rawData: z.infer<typeof rawJobDataSchema>): number {
-    let score = 0;
-    const weights = {
-      title: 0.25,
-      company: 0.2,
-      location: 0.15,
-      description: 0.15,
-      url: 0.1,
-      salaryText: 0.05,
-      employmentTypeText: 0.05,
-      postedDateText: 0.05,
-    };
+  // Clean up the text but keep original for currency/period detection
+  const cleanText = text.toLowerCase().replace(/[,\s]/g, '');
 
-    for (const [field, weight] of Object.entries(weights)) {
-      if (rawData[field as keyof typeof rawData]) {
-        score += weight;
+  const patterns = [
+    // $80,000 - $110,000 per year (with commas)
+    /\$(\d+)(?:,\d{3})*-\$?(\d+)(?:,\d{3})*(?:peryear|annually|yearly)?/,
+    // $50k - $80k
+    /\$(\d+)k-\$?(\d+)k/,
+    // £40,000 - £60,000
+    /£(\d+)(?:,\d{3})*-£?(\d+)(?:,\d{3})*/,
+    // €45,000 - €65,000
+    /€(\d+)(?:,\d{3})*-€?(\d+)(?:,\d{3})*/,
+    // $25 - $35 per hour
+    /\$(\d+)-\$?(\d+)(?:perhour|hourly|hour)?/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = cleanText.match(pattern);
+    if (match?.[1] && match[2]) {
+      let min = Number.parseInt(match[1], 10);
+      let max = Number.parseInt(match[2], 10);
+
+      // Handle 'k' notation
+      if (text.toLowerCase().includes('k')) {
+        min *= 1000;
+        max *= 1000;
       }
-    }
 
-    return Math.round(score * 100) / 100;
+      // Determine currency
+      let currency = 'USD';
+      if (text.includes('£')) currency = 'GBP';
+      else if (text.includes('€')) currency = 'EUR';
+
+      // Determine period
+      let period: z.infer<typeof salarySchema>['period'] = 'yearly';
+      if (text.toLowerCase().includes('hour')) period = 'hourly';
+      else if (text.toLowerCase().includes('month')) period = 'monthly';
+
+      return { min, max, currency, period };
+    }
   }
 
-  /**
-   * Generate unique job ID
-   */
-  private static generateJobId(title: string, company: string, url: string): string {
-    const baseString = `${title}-${company}-${url}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return undefined;
+}
 
-    // Simple hash function
-    let hash = 0;
-    for (let i = 0; i < baseString.length; i++) {
-      const char = baseString.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
-    }
+/**
+ * Parse employment type from text
+ */
+function parseEmploymentType(text?: string): z.infer<typeof jobListingSchema>['employmentType'] {
+  if (!text) return 'full-time';
 
-    return Math.abs(hash).toString(36);
-  }
+  const normalized = text.toLowerCase().trim();
 
-  /**
-   * Parse salary information from text
-   */
-  private static parseSalary(text?: string): z.infer<typeof salarySchema> | undefined {
-    if (!text) return undefined;
+  if (normalized.includes('full') && normalized.includes('time')) return 'full-time';
+  if (normalized.includes('part') && normalized.includes('time')) return 'part-time';
+  if (normalized.includes('contract')) return 'contract';
+  if (normalized.includes('temporary') || normalized.includes('temp')) return 'temporary';
+  if (normalized.includes('intern')) return 'internship';
+  if (normalized.includes('freelance') || normalized.includes('consultant')) return 'freelance';
 
-    // Clean up the text but keep original for currency/period detection
-    const cleanText = text.toLowerCase().replace(/[,\s]/g, '');
+  return 'full-time';
+}
 
-    const patterns = [
-      // $80,000 - $110,000 per year (with commas)
-      /\$(\d+)(?:,\d{3})*-\$?(\d+)(?:,\d{3})*(?:peryear|annually|yearly)?/,
-      // $50k - $80k
-      /\$(\d+)k-\$?(\d+)k/,
-      // £40,000 - £60,000
-      /£(\d+)(?:,\d{3})*-£?(\d+)(?:,\d{3})*/,
-      // €45,000 - €65,000
-      /€(\d+)(?:,\d{3})*-€?(\d+)(?:,\d{3})*/,
-      // $25 - $35 per hour
-      /\$(\d+)-\$?(\d+)(?:perhour|hourly|hour)?/,
-    ];
+/**
+ * Check if job is remote
+ */
+function isRemoteJob(location?: string, description?: string): boolean {
+  const text = `${location || ''} ${description || ''}`.toLowerCase();
+  const remoteKeywords = ['remote', 'work from home', 'wfh', 'distributed', 'anywhere'];
 
-    for (const pattern of patterns) {
-      const match = cleanText.match(pattern);
-      if (match?.[1] && match[2]) {
-        let min = Number.parseInt(match[1], 10);
-        let max = Number.parseInt(match[2], 10);
+  return remoteKeywords.some((keyword) => text.includes(keyword));
+}
 
-        // Handle 'k' notation
-        if (text.toLowerCase().includes('k')) {
-          min *= 1000;
-          max *= 1000;
-        }
+/**
+ * Parse date from various text formats
+ */
+function parseDate(text?: string): Date | undefined {
+  if (!text) return undefined;
 
-        // Determine currency
-        let currency = 'USD';
-        if (text.includes('£')) currency = 'GBP';
-        else if (text.includes('€')) currency = 'EUR';
-
-        // Determine period
-        let period: z.infer<typeof salarySchema>['period'] = 'yearly';
-        if (text.toLowerCase().includes('hour')) period = 'hourly';
-        else if (text.toLowerCase().includes('month')) period = 'monthly';
-
-        return { min, max, currency, period };
-      }
-    }
-
-    return undefined;
-  }
-
-  /**
-   * Parse employment type from text
-   */
-  private static parseEmploymentType(
-    text?: string,
-  ): z.infer<typeof jobListingSchema>['employmentType'] {
-    if (!text) return 'full-time';
-
+  try {
+    // Handle relative dates
+    const now = new Date();
     const normalized = text.toLowerCase().trim();
 
-    if (normalized.includes('full') && normalized.includes('time')) return 'full-time';
-    if (normalized.includes('part') && normalized.includes('time')) return 'part-time';
-    if (normalized.includes('contract')) return 'contract';
-    if (normalized.includes('temporary') || normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern')) return 'internship';
-    if (normalized.includes('freelance') || normalized.includes('consultant')) return 'freelance';
-
-    return 'full-time';
-  }
-
-  /**
-   * Check if job is remote
-   */
-  private static isRemoteJob(location?: string, description?: string): boolean {
-    const text = `${location || ''} ${description || ''}`.toLowerCase();
-    const remoteKeywords = ['remote', 'work from home', 'wfh', 'distributed', 'anywhere'];
-
-    return remoteKeywords.some((keyword) => text.includes(keyword));
-  }
-
-  /**
-   * Parse date from various text formats
-   */
-  private static parseDate(text?: string): Date | undefined {
-    if (!text) return undefined;
-
-    try {
-      // Handle relative dates
-      const now = new Date();
-      const normalized = text.toLowerCase().trim();
-
-      if (normalized.includes('today') || normalized.includes('just now')) {
-        return now;
-      }
-
-      if (normalized.includes('yesterday')) {
-        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      }
-
-      const daysMatch = normalized.match(/(\d+)\s*days?\s*ago/);
-      if (daysMatch?.[1]) {
-        const days = Number.parseInt(daysMatch[1], 10);
-        return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-      }
-
-      const weeksMatch = normalized.match(/(\d+)\s*weeks?\s*ago/);
-      if (weeksMatch?.[1]) {
-        const weeks = Number.parseInt(weeksMatch[1], 10);
-        return new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
-      }
-
-      // Try to parse as regular date
-      const parsedDate = new Date(text);
-      return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
-    } catch {
-      return undefined;
+    if (normalized.includes('today') || normalized.includes('just now')) {
+      return now;
     }
-  }
 
-  /**
-   * Parse comma or newline-separated list
-   */
-  private static parseList(text?: string): string[] {
-    if (!text) return [];
+    if (normalized.includes('yesterday')) {
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    }
 
-    return text
-      .split(/[,\n]/)
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
+    const daysMatch = normalized.match(/(\d+)\s*days?\s*ago/);
+    if (daysMatch?.[1]) {
+      const days = Number.parseInt(daysMatch[1], 10);
+      return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    }
+
+    const weeksMatch = normalized.match(/(\d+)\s*weeks?\s*ago/);
+    if (weeksMatch?.[1]) {
+      const weeks = Number.parseInt(weeksMatch[1], 10);
+      return new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Try to parse as regular date
+    const parsedDate = new Date(text);
+    return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+  } catch {
+    return undefined;
   }
+}
+
+/**
+ * Parse comma or newline-separated list
+ */
+function parseList(text?: string): string[] {
+  if (!text) return [];
+
+  return text
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 }
 
 // Export inferred types

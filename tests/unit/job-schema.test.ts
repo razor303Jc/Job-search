@@ -1,4 +1,8 @@
-import { JobValidator } from '@/parsers/schemas/job.schema.js';
+import {
+  transformRawToJob,
+  validateJob,
+  validateRawJobData,
+} from '@/parsers/schemas/job.schema.js';
 import type { JobListing, RawJobData } from '@/parsers/schemas/job.schema.js';
 import { describe, expect, it } from 'vitest';
 
@@ -35,9 +39,9 @@ describe('Job Schema Validation', () => {
     },
   };
 
-  describe('JobValidator.validateJob', () => {
+  describe('validateJob function', () => {
     it('should validate a complete valid job listing', () => {
-      const result = JobValidator.validateJob(validJobListing);
+      const result = validateJob(validJobListing);
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -53,7 +57,7 @@ describe('Job Schema Validation', () => {
         // Missing title, company, location, description, etc.
       };
 
-      const result = JobValidator.validateJob(invalidJob);
+      const result = validateJob(invalidJob);
       expect(result.success).toBe(false);
     });
 
@@ -68,7 +72,7 @@ describe('Job Schema Validation', () => {
         },
       };
 
-      const result = JobValidator.validateJob(invalidJob);
+      const result = validateJob(invalidJob);
       expect(result.success).toBe(false);
     });
 
@@ -78,7 +82,7 @@ describe('Job Schema Validation', () => {
         employmentType: 'invalid-type' as never,
       };
 
-      const result = JobValidator.validateJob(invalidJob);
+      const result = validateJob(invalidJob);
       expect(result.success).toBe(false);
     });
 
@@ -88,7 +92,7 @@ describe('Job Schema Validation', () => {
         url: 'not-a-valid-url',
       };
 
-      const result = JobValidator.validateJob(invalidJob);
+      const result = validateJob(invalidJob);
       expect(result.success).toBe(false);
     });
 
@@ -111,12 +115,12 @@ describe('Job Schema Validation', () => {
         },
       };
 
-      const result = JobValidator.validateJob(minimalJob);
+      const result = validateJob(minimalJob);
       expect(result.success).toBe(true);
     });
   });
 
-  describe('JobValidator.validateRawJobData', () => {
+  describe('validateRawJobData function', () => {
     it('should validate raw job data', () => {
       const rawData: RawJobData = {
         title: 'Frontend Developer',
@@ -133,17 +137,17 @@ describe('Job Schema Validation', () => {
         rawHtml: '<div class="job">...</div>',
       };
 
-      const result = JobValidator.validateRawJobData(rawData);
+      const result = validateRawJobData(rawData);
       expect(result.success).toBe(true);
     });
 
     it('should accept raw data with all fields optional', () => {
-      const result = JobValidator.validateRawJobData({});
+      const result = validateRawJobData({});
       expect(result.success).toBe(true);
     });
   });
 
-  describe('JobValidator.transformRawToJob', () => {
+  describe('transformRawToJob function', () => {
     it('should transform complete raw data to job listing', () => {
       const rawData: RawJobData = {
         title: 'Backend Developer',
@@ -159,7 +163,7 @@ describe('Job Schema Validation', () => {
         tagsText: 'backend, python, django',
       };
 
-      const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+      const transformed = transformRawToJob(rawData, mockSource);
 
       expect(transformed.title).toBe('Backend Developer');
       expect(transformed.company).toBe('Data Corp');
@@ -175,7 +179,7 @@ describe('Job Schema Validation', () => {
     it('should handle missing raw data gracefully', () => {
       const rawData: RawJobData = {}; // Empty raw data
 
-      const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+      const transformed = transformRawToJob(rawData, mockSource);
 
       expect(transformed.title).toBe('Unknown Title');
       expect(transformed.company).toBe('Unknown Company');
@@ -199,8 +203,8 @@ describe('Job Schema Validation', () => {
         url: 'https://example.com/job/2',
       };
 
-      const transformed1 = JobValidator.transformRawToJob(rawData1, mockSource);
-      const transformed2 = JobValidator.transformRawToJob(rawData2, mockSource);
+      const transformed1 = transformRawToJob(rawData1, mockSource);
+      const transformed2 = transformRawToJob(rawData2, mockSource);
 
       expect(transformed1.id).toBeDefined();
       expect(transformed2.id).toBeDefined();
@@ -223,8 +227,8 @@ describe('Job Schema Validation', () => {
         title: 'Developer',
       };
 
-      const completeTransformed = JobValidator.transformRawToJob(completeRawData, mockSource);
-      const incompleteTransformed = JobValidator.transformRawToJob(incompleteRawData, mockSource);
+      const completeTransformed = transformRawToJob(completeRawData, mockSource);
+      const incompleteTransformed = transformRawToJob(incompleteRawData, mockSource);
 
       expect(completeTransformed.metadata?.confidence).toBeGreaterThan(
         incompleteTransformed.metadata?.confidence || 0,
@@ -258,14 +262,14 @@ describe('Job Schema Validation', () => {
       ];
 
       for (const testCase of testCases) {
-        const transformed = JobValidator.transformRawToJob(testCase.input, mockSource);
+        const transformed = transformRawToJob(testCase.input, mockSource);
         expect(transformed.salary).toEqual(testCase.expected);
       }
     });
 
     it('should handle invalid salary text', () => {
       const rawData = { salaryText: 'Competitive salary' };
-      const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+      const transformed = transformRawToJob(rawData, mockSource);
       expect(transformed.salary).toBeUndefined();
     });
   });
@@ -284,7 +288,7 @@ describe('Job Schema Validation', () => {
 
       for (const testCase of testCases) {
         const rawData = { employmentTypeText: testCase.input };
-        const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+        const transformed = transformRawToJob(rawData, mockSource);
         expect(transformed.employmentType).toBe(testCase.expected);
       }
     });
@@ -301,7 +305,7 @@ describe('Job Schema Validation', () => {
 
       for (const testCase of testCases) {
         const rawData = { location: testCase.location };
-        const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+        const transformed = transformRawToJob(rawData, mockSource);
         expect(transformed.remote).toBe(testCase.expected);
       }
     });
@@ -316,7 +320,7 @@ describe('Job Schema Validation', () => {
 
       for (const testCase of testCases) {
         const rawData = { description: testCase.description };
-        const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+        const transformed = transformRawToJob(rawData, mockSource);
         expect(transformed.remote).toBe(testCase.expected);
       }
     });
@@ -328,20 +332,20 @@ describe('Job Schema Validation', () => {
 
       for (const dateText of testCases) {
         const rawData = { postedDateText: dateText };
-        const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+        const transformed = transformRawToJob(rawData, mockSource);
         expect(transformed.postedDate).toBeInstanceOf(Date);
       }
     });
 
     it('should parse absolute dates', () => {
       const rawData = { postedDateText: '2024-01-15' };
-      const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+      const transformed = transformRawToJob(rawData, mockSource);
       expect(transformed.postedDate).toBeInstanceOf(Date);
     });
 
     it('should handle invalid date text', () => {
       const rawData = { postedDateText: 'invalid date' };
-      const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+      const transformed = transformRawToJob(rawData, mockSource);
       expect(transformed.postedDate).toBeUndefined();
     });
   });
@@ -369,7 +373,7 @@ describe('Job Schema Validation', () => {
           benefitsText: testCase.input,
           tagsText: testCase.input,
         };
-        const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+        const transformed = transformRawToJob(rawData, mockSource);
 
         expect(transformed.requirements).toEqual(testCase.expected);
         expect(transformed.benefits).toEqual(testCase.expected);
@@ -382,14 +386,14 @@ describe('Job Schema Validation', () => {
       const expected = ['JavaScript', 'React', 'Node.js'];
 
       const rawData = { requirementsText: input };
-      const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+      const transformed = transformRawToJob(rawData, mockSource);
 
       expect(transformed.requirements).toEqual(expected);
     });
 
     it('should handle empty or invalid list text', () => {
       const rawData = { requirementsText: '' };
-      const transformed = JobValidator.transformRawToJob(rawData, mockSource);
+      const transformed = transformRawToJob(rawData, mockSource);
       expect(transformed.requirements).toEqual([]);
     });
   });

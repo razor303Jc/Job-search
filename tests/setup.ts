@@ -1,5 +1,9 @@
 // Global test setup for Vitest
-import { afterAll, beforeAll } from 'vitest';
+import { afterAll, beforeAll, vi } from 'vitest';
+
+// Mock fetch globally
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 beforeAll(async () => {
   // Setup test environment
