@@ -1,5 +1,4 @@
-import type { ScraperConfig } from '@/config/schemas.js';
-import { type SiteConfig, buildSearchUrl } from '@/config/sites.js';
+import { buildSearchUrl } from '@/config/sites.js';
 import { logger } from '@/utils/logger.js';
 import * as cheerio from 'cheerio';
 import { BaseScraper, type JobListing, type ScrapingResult } from './base-scraper.js';
