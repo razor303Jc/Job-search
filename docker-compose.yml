@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  job-dorker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job-dorker-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - DATABASE_URL=sqlite:/app/data/jobs.db
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - job-dorker-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: job-dorker-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - job-dorker-network
+    command: redis-server --appendonly yes
+
+  # Optional: Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: job-dorker-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - job-dorker-network
+    profiles:
+      - tools
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  job-dorker-network:
+    driver: bridge

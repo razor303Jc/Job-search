@@ -1,0 +1,30 @@
+# Development Dockerfile with hot reload
+FROM node:20-alpine
+
+# Install development tools
+RUN apk update && apk add --no-cache git
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Create non-root user for development
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S jobdorker -u 1001
+
+# Create directories
+RUN mkdir -p data reports && chown -R jobdorker:nodejs /app
+
+# Switch to non-root user
+USER jobdorker
+
+# Expose port
+EXPOSE 3000
+
+# Start development server with hot reload
+CMD ["npm", "run", "dev"]
