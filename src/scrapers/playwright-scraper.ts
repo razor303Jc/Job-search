@@ -3,9 +3,9 @@
  * Handles JavaScript-heavy sites and dynamic loading
  */
 
-import { type Browser, type Page, chromium, firefox, webkit } from 'playwright';
-import { logger } from '@/utils/logger.js';
 import { setTimeout } from 'node:timers/promises';
+import { logger } from '@/utils/logger.js';
+import { type Browser, type Page, chromium, firefox, webkit } from 'playwright';
 
 export interface PlaywrightResult {
   success: boolean;
@@ -52,7 +52,9 @@ export class PlaywrightScraper {
       blockImages: options.blockImages ?? true,
       blockCSS: options.blockCSS ?? true,
       viewport: options.viewport ?? { width: 1920, height: 1080 },
-      userAgent: options.userAgent ?? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      userAgent:
+        options.userAgent ??
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       screenshot: options.screenshot ?? false,
       screenshotPath: options.screenshotPath ?? '',
       waitForSelector: options.waitForSelector ?? '',
@@ -66,7 +68,7 @@ export class PlaywrightScraper {
     if (this.browser) return;
 
     const startTime = Date.now();
-    
+
     try {
       // Select browser based on type
       const browserLauncher = {
@@ -119,7 +121,10 @@ export class PlaywrightScraper {
         'Playwright browser initialized',
       );
     } catch (error) {
-      logger.error({ error, browserType: this.browserType }, 'Failed to initialize Playwright browser');
+      logger.error(
+        { error, browserType: this.browserType },
+        'Failed to initialize Playwright browser',
+      );
       throw error;
     }
   }
@@ -133,7 +138,7 @@ export class PlaywrightScraper {
 
     try {
       await this.initialize();
-      
+
       if (!this.page) {
         throw new Error('Page not initialized');
       }
@@ -156,7 +161,7 @@ export class PlaywrightScraper {
           await this.page.waitForSelector(mergedOptions.waitForSelector, {
             timeout: mergedOptions.waitForTimeout || 5000,
           });
-        } catch (error) {
+        } catch (_error) {
           logger.warn(
             { selector: mergedOptions.waitForSelector, url },
             'Selector not found within timeout',
@@ -211,7 +216,7 @@ export class PlaywrightScraper {
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       logger.error(
         {
           url,

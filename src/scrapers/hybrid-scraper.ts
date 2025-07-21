@@ -3,21 +3,21 @@
  * Uses heuristics to determine the best scraping strategy
  */
 
-import { CheerioScraper } from './cheerio-scraper.js';
-import { PlaywrightScraper, type PlaywrightOptions } from './playwright-scraper.js';
-import { logger } from '@/utils/logger.js';
 import type { ScraperConfig } from '@/config/schemas.js';
 import type { SiteConfig } from '@/config/sites.js';
+import { logger } from '@/utils/logger.js';
+import { CheerioScraper } from './cheerio-scraper.js';
+import { type PlaywrightOptions, PlaywrightScraper } from './playwright-scraper.js';
 
 export interface HybridScrapingOptions {
   // Static scraping options
   userAgent?: string;
   headers?: Record<string, string>;
   timeout?: number;
-  
+
   // Dynamic scraping options
   playwright?: PlaywrightOptions;
-  
+
   // Hybrid strategy options
   strategy?: 'auto' | 'static' | 'dynamic';
   fallbackToDynamic?: boolean;
@@ -38,7 +38,7 @@ export interface HybridResult {
     hasJavaScript: boolean;
     fallbackUsed: boolean;
   };
-  error?: string;
+  error: string | undefined;
 }
 
 export class HybridScraper {
@@ -49,10 +49,11 @@ export class HybridScraper {
   constructor(
     scraperConfig: ScraperConfig,
     siteConfig: SiteConfig,
-    options: HybridScrapingOptions = {}
+    options: HybridScrapingOptions = {},
   ) {
     this.defaultOptions = {
-      userAgent: options.userAgent ?? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      userAgent:
+        options.userAgent ?? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       headers: options.headers ?? {},
       timeout: options.timeout ?? 10000,
       playwright: options.playwright ?? { headless: true },
@@ -62,7 +63,7 @@ export class HybridScraper {
       minContentLength: options.minContentLength ?? 1000,
     };
 
-    this.cheerioScraper = new CheerioScraper(scraperConfig, siteConfig);
+    this.cheerioScraper = new CheerioScraper(siteConfig, scraperConfig);
     this.playwrightScraper = new PlaywrightScraper(this.defaultOptions.playwright);
   }
 
@@ -78,21 +79,20 @@ export class HybridScraper {
     try {
       // Determine strategy
       let strategy = mergedOptions.strategy;
-      
+
       if (strategy === 'auto') {
         strategy = await this.determineStrategy(url, mergedOptions);
       }
 
       if (strategy === 'static') {
         return await this.scrapeStatic(url, mergedOptions, startTime);
-      } else {
-        return await this.scrapeDynamic(url, mergedOptions, startTime);
       }
+      return await this.scrapeDynamic(url, mergedOptions, startTime);
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       logger.error({ url, error, duration }, 'Hybrid scraping failed');
-      
+
       return {
         success: false,
         strategy: 'static',
@@ -114,10 +114,9 @@ export class HybridScraper {
    * Determine the best scraping strategy for a URL
    */
   private async determineStrategy(
-    url: string, 
-    options: Required<HybridScrapingOptions>
+    url: string,
+    options: Required<HybridScrapingOptions>,
   ): Promise<'static' | 'dynamic'> {
-    
     // Check domain patterns that typically require JavaScript
     const jsRequiredPatterns = [
       /linkedin\.com/,
@@ -129,7 +128,7 @@ export class HybridScraper {
       /weworkremotely\.com/,
     ];
 
-    if (jsRequiredPatterns.some(pattern => pattern.test(url))) {
+    if (jsRequiredPatterns.some((pattern) => pattern.test(url))) {
       logger.debug({ url }, 'URL matches JavaScript-required pattern');
       return 'dynamic';
     }
@@ -138,15 +137,15 @@ export class HybridScraper {
     if (options.detectJavaScript) {
       try {
         const staticResult = await this.quickStaticCheck(url);
-        
+
         if (staticResult.hasJavaScript || staticResult.contentLength < options.minContentLength) {
           logger.debug(
-            { 
-              url, 
+            {
+              url,
               hasJavaScript: staticResult.hasJavaScript,
-              contentLength: staticResult.contentLength 
-            }, 
-            'JavaScript detected or content too small, using dynamic scraping'
+              contentLength: staticResult.contentLength,
+            },
+            'JavaScript detected or content too small, using dynamic scraping',
           );
           return 'dynamic';
         }
@@ -169,16 +168,16 @@ export class HybridScraper {
   }> {
     try {
       const result = await this.cheerioScraper.scrape({
-        url,
-        timeout: 5000,
+        url: url,
+        q: '',
       });
 
       if (!result.success || !result.data || result.data.length === 0) {
         return { hasJavaScript: true, contentLength: 0 };
       }
 
-      const content = result.data[0]?.raw?.html as string || '';
-      
+      const content = (result.data[0]?.raw?.html as string) || '';
+
       // Check for JavaScript indicators
       const jsIndicators = [
         /<script[^>]*>/i,
@@ -190,8 +189,8 @@ export class HybridScraper {
         /please.*enable.*javascript/i,
       ];
 
-      const hasJavaScript = jsIndicators.some(indicator => indicator.test(content));
-      
+      const hasJavaScript = jsIndicators.some((indicator) => indicator.test(content));
+
       return {
         hasJavaScript,
         contentLength: content.length,
@@ -206,17 +205,14 @@ export class HybridScraper {
    * Scrape using static strategy (Cheerio)
    */
   private async scrapeStatic(
-    url: string, 
+    url: string,
     options: Required<HybridScrapingOptions>,
-    startTime: number
+    startTime: number,
   ): Promise<HybridResult> {
-    
     try {
       const result = await this.cheerioScraper.scrape({
-        url,
-        userAgent: options.userAgent,
-        headers: options.headers,
-        timeout: options.timeout,
+        url: url,
+        q: '',
       });
 
       const duration = Date.now() - startTime;
@@ -226,7 +222,7 @@ export class HybridScraper {
         return await this.scrapeDynamic(url, options, startTime, true);
       }
 
-      const content = result.data?.[0]?.raw?.html as string || '';
+      const content = (result.data?.[0]?.raw?.html as string) || '';
 
       return {
         success: result.success,
@@ -241,11 +237,9 @@ export class HybridScraper {
           hasJavaScript: false,
           fallbackUsed: false,
         },
-        error: result.error,
+        error: result.error || undefined,
       };
     } catch (error) {
-      const duration = Date.now() - startTime;
-
       if (options.fallbackToDynamic) {
         logger.info({ url, error }, 'Static scraping error, falling back to dynamic');
         return await this.scrapeDynamic(url, options, startTime, true);
@@ -259,12 +253,11 @@ export class HybridScraper {
    * Scrape using dynamic strategy (Playwright)
    */
   private async scrapeDynamic(
-    url: string, 
+    url: string,
     options: Required<HybridScrapingOptions>,
     startTime: number,
-    fallbackUsed = false
+    fallbackUsed = false,
   ): Promise<HybridResult> {
-    
     try {
       const result = await this.playwrightScraper.scrape(url, options.playwright);
       const duration = Date.now() - startTime;
@@ -282,11 +275,11 @@ export class HybridScraper {
           hasJavaScript: true,
           fallbackUsed,
         },
-        error: result.error,
+        error: result.error || undefined,
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       return {
         success: false,
         data: '',

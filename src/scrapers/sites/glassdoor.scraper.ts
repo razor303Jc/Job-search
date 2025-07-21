@@ -4,85 +4,79 @@
  * Note: Glassdoor requires careful handling due to strict anti-bot measures
  */
 
-import { CheerioScraper } from '../cheerio-scraper.js';
-import type { JobListing } from '../base-scraper.js';
-import type { ScraperConfig } from '@/config/schemas.js';
-import type { SiteConfig } from '@/config/sites.js';
 import { logger } from '@/utils/logger.js';
 import * as cheerio from 'cheerio';
+import type { JobListing } from '../base-scraper.js';
+import { CheerioScraper } from '../cheerio-scraper.js';
 
 export class GlassdoorScraper extends CheerioScraper {
-  constructor(siteConfig: SiteConfig, scraperConfig: ScraperConfig) {
-    super(siteConfig, scraperConfig);
-  }
-
   /**
    * Build Glassdoor search URL with parameters
    */
   protected buildSearchUrl(params: Record<string, string>): string {
     const baseUrl = this.siteConfig.baseUrl || 'https://www.glassdoor.com';
     const searchUrl = new URL('/Job/jobs.htm', baseUrl);
-    
+
     // Map parameters to Glassdoor's query format
     const queryParams: Record<string, string> = {};
-    
+
     if (params.keywords || params.q) {
       const keyword = params.keywords || params.q;
       if (keyword) queryParams.sc = keyword; // 'sc' is Glassdoor's keyword parameter
     }
-    
+
     if (params.location || params.l) {
       const loc = params.location || params.l;
       if (loc) queryParams.locT = 'C'; // City type location
       if (loc) queryParams.locId = loc; // Location parameter
     }
-    
+
     if (params.employment_type) {
       queryParams.jobType = this.mapEmploymentType(params.employment_type);
     }
-    
+
     if (params.experience_level) {
       queryParams.seniorityType = this.mapExperienceLevel(params.experience_level);
     }
-    
+
     if (params.company_size) {
       queryParams.companySize = params.company_size;
     }
-    
+
     if (params.remote) {
       if (params.remote === 'true') {
         queryParams.locT = 'N'; // National/Remote
         queryParams.locId = '11047'; // Remote location ID
       }
     }
-    
+
     if (params.salary_min) {
       queryParams.minSalary = params.salary_min;
     }
-    
+
     if (params.salary_max) {
       queryParams.maxSalary = params.salary_max;
     }
-    
+
     if (params.sort) {
       queryParams.sortType = this.mapSortType(params.sort);
     }
-    
+
     if (params.date_posted) {
       queryParams.fromAge = this.mapDatePosted(params.date_posted);
     }
-    
+
     if (params.include_no_salary !== 'true') {
       queryParams.includeNoSalaryJobs = 'false';
     }
-    
+
     // Add query parameters
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value) {
         searchUrl.searchParams.set(key, value);
       }
     });
-    
+
     logger.debug({ searchUrl: searchUrl.toString(), params }, 'Built Glassdoor search URL');
     return searchUrl.toString();
   }
@@ -94,11 +88,11 @@ export class GlassdoorScraper extends CheerioScraper {
     const typeMap: Record<string, string> = {
       'full-time': 'fulltime',
       'part-time': 'parttime',
-      'contract': 'contract',
-      'temporary': 'temporary',
-      'internship': 'internship',
+      contract: 'contract',
+      temporary: 'temporary',
+      internship: 'internship',
     };
-    
+
     return typeMap[type.toLowerCase()] || type;
   }
 
@@ -109,12 +103,12 @@ export class GlassdoorScraper extends CheerioScraper {
     const levelMap: Record<string, string> = {
       'entry-level': 'ENTRY_LEVEL',
       'mid-level': 'MID_LEVEL',
-      'senior': 'SENIOR_LEVEL',
-      'executive': 'EXECUTIVE',
-      'internship': 'INTERNSHIP',
-      'student': 'STUDENT',
+      senior: 'SENIOR_LEVEL',
+      executive: 'EXECUTIVE',
+      internship: 'INTERNSHIP',
+      student: 'STUDENT',
     };
-    
+
     return levelMap[level.toLowerCase()] || level;
   }
 
@@ -123,12 +117,12 @@ export class GlassdoorScraper extends CheerioScraper {
    */
   private mapSortType(sort: string): string {
     const sortMap: Record<string, string> = {
-      'relevance': 'relevance',
-      'date': 'date',
-      'salary': 'salary',
-      'rating': 'rating',
+      relevance: 'relevance',
+      date: 'date',
+      salary: 'salary',
+      rating: 'rating',
     };
-    
+
     return sortMap[sort.toLowerCase()] || 'relevance';
   }
 
@@ -143,7 +137,7 @@ export class GlassdoorScraper extends CheerioScraper {
       'past-2-weeks': '14',
       'past-month': '30',
     };
-    
+
     return dateMap[date.toLowerCase()] || date;
   }
 
@@ -164,7 +158,7 @@ export class GlassdoorScraper extends CheerioScraper {
     ];
 
     let jobElements: cheerio.Cheerio<any> | null = null;
-    
+
     for (const selector of jobSelectors) {
       jobElements = $(selector);
       if (jobElements.length > 0) {
@@ -187,7 +181,7 @@ export class GlassdoorScraper extends CheerioScraper {
       } catch (error) {
         logger.warn(
           { error: error instanceof Error ? error.message : String(error), index },
-          'Failed to parse Glassdoor job element'
+          'Failed to parse Glassdoor job element',
         );
       }
     });
@@ -199,17 +193,21 @@ export class GlassdoorScraper extends CheerioScraper {
   /**
    * Parse individual job element from Glassdoor
    */
-  private parseJobElement(
-    $element: cheerio.Cheerio<any>,
-    pageUrl: string
-  ): JobListing | null {
+  private parseJobElement($element: cheerio.Cheerio<any>, pageUrl: string): JobListing | null {
     try {
       // Extract job ID from data attributes or URL
-      const jobId = $element.attr('data-id') ||
-                   $element.attr('data-job-id') ||
-                   $element.find('a[data-test="job-title"]').attr('href')?.match(/jobListingId=(\d+)/)?.[1] ||
-                   $element.find('.jobLink').attr('href')?.match(/jobListingId=(\d+)/)?.[1] ||
-                   '';
+      const jobId =
+        $element.attr('data-id') ||
+        $element.attr('data-job-id') ||
+        $element
+          .find('a[data-test="job-title"]')
+          .attr('href')
+          ?.match(/jobListingId=(\d+)/)?.[1] ||
+        $element
+          .find('.jobLink')
+          .attr('href')
+          ?.match(/jobListingId=(\d+)/)?.[1] ||
+        '';
 
       if (!jobId) {
         logger.debug('No job ID found, skipping element');
@@ -224,10 +222,10 @@ export class GlassdoorScraper extends CheerioScraper {
         'h2 a',
         '[data-test="job-link"]',
       ];
-      
+
       let title = '';
       let jobUrl = '';
-      
+
       for (const selector of titleSelectors) {
         const titleElement = $element.find(selector).first();
         if (titleElement.length > 0) {
@@ -255,7 +253,7 @@ export class GlassdoorScraper extends CheerioScraper {
         'h3 a',
         '[data-test="employer-link"]',
       ];
-      
+
       let company = '';
       for (const selector of companySelectors) {
         const companyElement = $element.find(selector).first();
@@ -273,7 +271,7 @@ export class GlassdoorScraper extends CheerioScraper {
         '[data-test="job-location-text"]',
         '.jobsSearch-JobInfoBar-jobLocation',
       ];
-      
+
       let location = '';
       for (const selector of locationSelectors) {
         const locationElement = $element.find(selector).first();
@@ -291,14 +289,19 @@ export class GlassdoorScraper extends CheerioScraper {
         '.css-1h7lukg', // Dynamic class for salary
         '[data-test="salary-text"]',
       ];
-      
+
       let salary = '';
       for (const selector of salarySelectors) {
         const salaryElement = $element.find(selector).first();
         if (salaryElement.length > 0) {
           const salaryText = salaryElement.text().trim();
-          if (salaryText.includes('$') || salaryText.includes('€') || salaryText.includes('£') || 
-              salaryText.toLowerCase().includes('est') || salaryText.toLowerCase().includes('salary')) {
+          if (
+            salaryText.includes('$') ||
+            salaryText.includes('€') ||
+            salaryText.includes('£') ||
+            salaryText.toLowerCase().includes('est') ||
+            salaryText.toLowerCase().includes('salary')
+          ) {
             salary = salaryText;
             break;
           }
@@ -312,7 +315,7 @@ export class GlassdoorScraper extends CheerioScraper {
         '.jobsSearch-JobInfoBar-jobDescription',
         '.css-56kyx5', // Dynamic class for description
       ];
-      
+
       let description = '';
       for (const selector of descriptionSelectors) {
         const descElement = $element.find(selector).first();
@@ -329,7 +332,7 @@ export class GlassdoorScraper extends CheerioScraper {
         '.ratingNumber',
         '[data-test="employer-rating"]',
       ];
-      
+
       let rating = '';
       for (const selector of ratingSelectors) {
         const ratingElement = $element.find(selector).first();
@@ -349,7 +352,7 @@ export class GlassdoorScraper extends CheerioScraper {
         '.postingDate',
         '.css-1h7lukg time',
       ];
-      
+
       let postedDate = '';
       for (const selector of dateSelectors) {
         const dateElement = $element.find(selector).first();
@@ -360,12 +363,8 @@ export class GlassdoorScraper extends CheerioScraper {
       }
 
       // Extract employment type
-      const employmentTypeSelectors = [
-        '[data-test="job-type"]',
-        '.jobType',
-        '.employmentType',
-      ];
-      
+      const employmentTypeSelectors = ['[data-test="job-type"]', '.jobType', '.employmentType'];
+
       let employmentType = '';
       for (const selector of employmentTypeSelectors) {
         const typeElement = $element.find(selector).first();
@@ -418,7 +417,7 @@ export class GlassdoorScraper extends CheerioScraper {
     } catch (error) {
       logger.error(
         { error: error instanceof Error ? error.message : String(error) },
-        'Error parsing Glassdoor job element'
+        'Error parsing Glassdoor job element',
       );
       return null;
     }

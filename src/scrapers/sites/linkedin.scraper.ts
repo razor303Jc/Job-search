@@ -1,76 +1,70 @@
 /**
  * LinkedIn Jobs scraper
  * Handles LinkedIn-specific job search and data extraction
- * Note: LinkedIn requires special handling due to anti-bot measures
+ * Note: LinkedIn has strict rate limiting and anti-bot measures
  */
 
-import { CheerioScraper } from '../cheerio-scraper.js';
-import type { JobListing } from '../base-scraper.js';
-import type { ScraperConfig } from '@/config/schemas.js';
-import type { SiteConfig } from '@/config/sites.js';
 import { logger } from '@/utils/logger.js';
 import * as cheerio from 'cheerio';
+import type { JobListing } from '../base-scraper.js';
+import { CheerioScraper } from '../cheerio-scraper.js';
 
 export class LinkedInScraper extends CheerioScraper {
-  constructor(siteConfig: SiteConfig, scraperConfig: ScraperConfig) {
-    super(siteConfig, scraperConfig);
-  }
-
   /**
    * Build LinkedIn search URL with parameters
    */
   protected buildSearchUrl(params: Record<string, string>): string {
     const baseUrl = this.siteConfig.baseUrl || 'https://www.linkedin.com';
     const searchUrl = new URL('/jobs/search', baseUrl);
-    
+
     // Map parameters to LinkedIn's query format
     const queryParams: Record<string, string> = {};
-    
+
     if (params.keywords || params.q) {
       const keyword = params.keywords || params.q;
       if (keyword) queryParams.keywords = keyword;
     }
-    
+
     if (params.location || params.l) {
       const loc = params.location || params.l;
       if (loc) queryParams.location = loc;
     }
-    
+
     if (params.distance) {
       queryParams.distance = params.distance; // 10, 25, 50, 100 km
     }
-    
+
     if (params.employment_type) {
       queryParams.f_JT = this.mapEmploymentType(params.employment_type);
     }
-    
+
     if (params.experience_level) {
       queryParams.f_E = this.mapExperienceLevel(params.experience_level);
     }
-    
+
     if (params.company_size) {
       queryParams.f_C = params.company_size; // 1, 2, 3, 4, 5, 6
     }
-    
+
     if (params.remote) {
       queryParams.f_WT = params.remote === 'true' ? '2' : '1'; // 1=on-site, 2=remote, 3=hybrid
     }
-    
+
     if (params.sort) {
       queryParams.sortBy = params.sort; // DD (date), R (relevance)
     }
-    
+
     if (params.date_posted) {
       queryParams.f_TPR = this.mapDatePosted(params.date_posted);
     }
-    
+
     // Add query parameters
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value) {
         searchUrl.searchParams.set(key, value);
       }
     });
-    
+
     logger.debug({ searchUrl: searchUrl.toString(), params }, 'Built LinkedIn search URL');
     return searchUrl.toString();
   }
@@ -82,13 +76,13 @@ export class LinkedInScraper extends CheerioScraper {
     const typeMap: Record<string, string> = {
       'full-time': 'F',
       'part-time': 'P',
-      'contract': 'C',
-      'temporary': 'T',
-      'volunteer': 'V',
-      'internship': 'I',
-      'other': 'O',
+      contract: 'C',
+      temporary: 'T',
+      volunteer: 'V',
+      internship: 'I',
+      other: 'O',
     };
-    
+
     return typeMap[type.toLowerCase()] || type;
   }
 
@@ -97,14 +91,14 @@ export class LinkedInScraper extends CheerioScraper {
    */
   private mapExperienceLevel(level: string): string {
     const levelMap: Record<string, string> = {
-      'internship': '1',
+      internship: '1',
       'entry-level': '2',
-      'associate': '3',
+      associate: '3',
       'mid-senior': '4',
-      'director': '5',
-      'executive': '6',
+      director: '5',
+      executive: '6',
     };
-    
+
     return levelMap[level.toLowerCase()] || level;
   }
 
@@ -117,7 +111,7 @@ export class LinkedInScraper extends CheerioScraper {
       'past-week': 'r604800',
       'past-month': 'r2592000',
     };
-    
+
     return dateMap[date.toLowerCase()] || date;
   }
 
@@ -137,7 +131,7 @@ export class LinkedInScraper extends CheerioScraper {
     ];
 
     let jobElements: cheerio.Cheerio<any> | null = null;
-    
+
     for (const selector of jobSelectors) {
       jobElements = $(selector);
       if (jobElements.length > 0) {
@@ -160,7 +154,7 @@ export class LinkedInScraper extends CheerioScraper {
       } catch (error) {
         logger.warn(
           { error: error instanceof Error ? error.message : String(error), index },
-          'Failed to parse LinkedIn job element'
+          'Failed to parse LinkedIn job element',
         );
       }
     });
@@ -172,16 +166,20 @@ export class LinkedInScraper extends CheerioScraper {
   /**
    * Parse individual job element from LinkedIn
    */
-  private parseJobElement(
-    $element: cheerio.Cheerio<any>,
-    pageUrl: string
-  ): JobListing | null {
+  private parseJobElement($element: cheerio.Cheerio<any>, pageUrl: string): JobListing | null {
     try {
       // Extract job ID from data attributes or URL
-      const jobId = $element.attr('data-entity-urn')?.split(':').pop() ||
-                   $element.find('a[data-control-name="job_search_job_result_title"]').attr('href')?.match(/\/view\/(\d+)/)?.[1] ||
-                   $element.find('.job-search-card__title-link').attr('href')?.match(/\/view\/(\d+)/)?.[1] ||
-                   '';
+      const jobId =
+        $element.attr('data-entity-urn')?.split(':').pop() ||
+        $element
+          .find('a[data-control-name="job_search_job_result_title"]')
+          .attr('href')
+          ?.match(/\/view\/(\d+)/)?.[1] ||
+        $element
+          .find('.job-search-card__title-link')
+          .attr('href')
+          ?.match(/\/view\/(\d+)/)?.[1] ||
+        '';
 
       if (!jobId) {
         logger.debug('No job ID found, skipping element');
@@ -196,10 +194,10 @@ export class LinkedInScraper extends CheerioScraper {
         'h3 a',
         '.job-search-card__title',
       ];
-      
+
       let title = '';
       let jobUrl = '';
-      
+
       for (const selector of titleSelectors) {
         const titleElement = $element.find(selector).first();
         if (titleElement.length > 0) {
@@ -227,7 +225,7 @@ export class LinkedInScraper extends CheerioScraper {
         'h4 a',
         '.job-search-card__subtitle',
       ];
-      
+
       let company = '';
       for (const selector of companySelectors) {
         const companyElement = $element.find(selector).first();
@@ -244,7 +242,7 @@ export class LinkedInScraper extends CheerioScraper {
         '.jobs-search-results__list-item-location',
         '.job-result-card__location',
       ];
-      
+
       let location = '';
       for (const selector of locationSelectors) {
         const locationElement = $element.find(selector).first();
@@ -260,7 +258,7 @@ export class LinkedInScraper extends CheerioScraper {
         '.jobs-unified-top-card__salary',
         '.job-result-card__salary-info',
       ];
-      
+
       let salary = '';
       for (const selector of salarySelectors) {
         const salaryElement = $element.find(selector).first();
@@ -279,7 +277,7 @@ export class LinkedInScraper extends CheerioScraper {
         '.jobs-search-results__list-item-description',
         '.job-result-card__snippet',
       ];
-      
+
       let description = '';
       for (const selector of descriptionSelectors) {
         const descElement = $element.find(selector).first();
@@ -296,7 +294,7 @@ export class LinkedInScraper extends CheerioScraper {
         'time[datetime]',
         '.job-result-card__listdate',
       ];
-      
+
       let postedDate = '';
       for (const selector of dateSelectors) {
         const dateElement = $element.find(selector).first();
@@ -312,7 +310,7 @@ export class LinkedInScraper extends CheerioScraper {
         '.jobs-search-results__list-item-job-type',
         '.job-result-card__job-type',
       ];
-      
+
       let employmentType = '';
       for (const selector of employmentTypeSelectors) {
         const typeElement = $element.find(selector).first();
@@ -323,7 +321,8 @@ export class LinkedInScraper extends CheerioScraper {
       }
 
       // Check for promoted/sponsored jobs
-      const isPromoted = $element.find('.job-search-card__easy-apply-label, [data-test-promoted]').length > 0;
+      const isPromoted =
+        $element.find('.job-search-card__easy-apply-label, [data-test-promoted]').length > 0;
 
       const job: JobListing = {
         id: `linkedin_${jobId}`,
@@ -360,7 +359,7 @@ export class LinkedInScraper extends CheerioScraper {
     } catch (error) {
       logger.error(
         { error: error instanceof Error ? error.message : String(error) },
-        'Error parsing LinkedIn job element'
+        'Error parsing LinkedIn job element',
       );
       return null;
     }

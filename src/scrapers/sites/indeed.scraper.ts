@@ -1,62 +1,56 @@
-import { CheerioScraper } from '../cheerio-scraper.js';
-import type { JobListing } from '../base-scraper.js';
-import type { ScraperConfig } from '@/config/schemas.js';
-import type { SiteConfig } from '@/config/sites.js';
 import { logger } from '@/utils/logger.js';
 import * as cheerio from 'cheerio';
+import type { JobListing } from '../base-scraper.js';
+import { CheerioScraper } from '../cheerio-scraper.js';
 
 export class IndeedScraper extends CheerioScraper {
-  constructor(scraperConfig: ScraperConfig, siteConfig: SiteConfig) {
-    super(scraperConfig, siteConfig);
-  }
-
   /**
    * Build Indeed search URL with parameters
    */
   protected buildSearchUrl(params: Record<string, string>): string {
     const baseUrl = this.siteConfig.baseUrl || 'https://www.indeed.com';
     const searchUrl = new URL('/jobs', baseUrl);
-    
+
     // Map parameters to Indeed's query format
     const queryParams: Record<string, string> = {};
-    
+
     if (params.keywords || params.q) {
       const keyword = params.keywords || params.q;
       if (keyword) queryParams.q = keyword;
     }
-    
+
     if (params.location || params.l) {
       const loc = params.location || params.l;
       if (loc) queryParams.l = loc;
     }
-    
+
     if (params.radius) {
       queryParams.radius = params.radius;
     }
-    
+
     if (params.employment_type) {
       queryParams.jt = this.mapEmploymentType(params.employment_type);
     }
-    
+
     if (params.salary) {
       queryParams.salary = params.salary;
     }
-    
+
     if (params.remote) {
       queryParams.remotejob = params.remote === 'true' ? '1' : '0';
     }
-    
+
     if (params.sort) {
       queryParams.sort = params.sort; // date, relevance
     }
-    
+
     // Add query parameters
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value) {
         searchUrl.searchParams.set(key, value);
       }
     });
-    
+
     logger.debug({ searchUrl: searchUrl.toString(), params }, 'Built Indeed search URL');
     return searchUrl.toString();
   }
@@ -68,11 +62,11 @@ export class IndeedScraper extends CheerioScraper {
     const typeMap: Record<string, string> = {
       'full-time': 'fulltime',
       'part-time': 'parttime',
-      'contract': 'contract',
-      'temporary': 'temporary',
-      'internship': 'internship',
+      contract: 'contract',
+      temporary: 'temporary',
+      internship: 'internship',
     };
-    
+
     return typeMap[type.toLowerCase()] || type;
   }
 
@@ -92,7 +86,7 @@ export class IndeedScraper extends CheerioScraper {
     ];
 
     let jobElements: cheerio.Cheerio<any> | null = null;
-    
+
     for (const selector of jobSelectors) {
       jobElements = $(selector);
       if (jobElements.length > 0) {
@@ -115,7 +109,7 @@ export class IndeedScraper extends CheerioScraper {
       } catch (error) {
         logger.warn(
           { error: error instanceof Error ? error.message : String(error), index },
-          'Failed to parse Indeed job element'
+          'Failed to parse Indeed job element',
         );
       }
     });
@@ -127,16 +121,14 @@ export class IndeedScraper extends CheerioScraper {
   /**
    * Parse individual job element from Indeed
    */
-  private parseJobElement(
-    $element: cheerio.Cheerio<any>,
-    pageUrl: string
-  ): JobListing | null {
+  private parseJobElement($element: cheerio.Cheerio<any>, pageUrl: string): JobListing | null {
     try {
       // Extract job ID
-      const jobId = $element.attr('data-jk') || 
-                   $element.find('[data-jk]').attr('data-jk') ||
-                   $element.find('a[id^="job_"]').attr('id')?.replace('job_', '') ||
-                   '';
+      const jobId =
+        $element.attr('data-jk') ||
+        $element.find('[data-jk]').attr('data-jk') ||
+        $element.find('a[id^="job_"]').attr('id')?.replace('job_', '') ||
+        '';
 
       if (!jobId) {
         logger.debug('No job ID found, skipping element');
@@ -146,15 +138,15 @@ export class IndeedScraper extends CheerioScraper {
       // Extract title and link
       const titleSelectors = [
         'h2.jobTitle a[data-jk] span[title]',
-        'h2.jobTitle a span[title]', 
+        'h2.jobTitle a span[title]',
         '.jobTitle a span',
         'h2 a span',
         '.jobTitle span',
       ];
-      
+
       let title = '';
       let jobUrl = '';
-      
+
       for (const selector of titleSelectors) {
         const titleElement = $element.find(selector).first();
         if (titleElement.length > 0) {
@@ -182,7 +174,7 @@ export class IndeedScraper extends CheerioScraper {
         'span.companyName',
         '[data-testid="company-name"] a',
       ];
-      
+
       let company = '';
       for (const selector of companySelectors) {
         const companyElement = $element.find(selector).first();
@@ -199,7 +191,7 @@ export class IndeedScraper extends CheerioScraper {
         '.locationsContainer',
         'div[data-testid="job-location"]',
       ];
-      
+
       let location = '';
       for (const selector of locationSelectors) {
         const locationElement = $element.find(selector).first();
@@ -216,7 +208,7 @@ export class IndeedScraper extends CheerioScraper {
         '.salaryText',
         '.estimated-salary',
       ];
-      
+
       let salary = '';
       for (const selector of salarySelectors) {
         const salaryElement = $element.find(selector).first();
@@ -236,7 +228,7 @@ export class IndeedScraper extends CheerioScraper {
         '.summary',
         'div.job-snippet',
       ];
-      
+
       let description = '';
       for (const selector of descriptionSelectors) {
         const descElement = $element.find(selector).first();
@@ -253,7 +245,7 @@ export class IndeedScraper extends CheerioScraper {
         'span.date',
         '.posted-date',
       ];
-      
+
       let postedDate = '';
       for (const selector of dateSelectors) {
         const dateElement = $element.find(selector).first();
@@ -264,7 +256,8 @@ export class IndeedScraper extends CheerioScraper {
       }
 
       // Check for sponsored/promoted jobs
-      const isSponsored = $element.find('.ppsLabel, .sponsoredJob, [data-testid="sponsored-label"]').length > 0;
+      const isSponsored =
+        $element.find('.ppsLabel, .sponsoredJob, [data-testid="sponsored-label"]').length > 0;
 
       const job: JobListing = {
         id: `indeed_${jobId}`,
@@ -300,7 +293,7 @@ export class IndeedScraper extends CheerioScraper {
     } catch (error) {
       logger.error(
         { error: error instanceof Error ? error.message : String(error) },
-        'Error parsing Indeed job element'
+        'Error parsing Indeed job element',
       );
       return null;
     }
