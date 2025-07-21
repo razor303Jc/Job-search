@@ -123,10 +123,27 @@ export interface ScrapingError {
 /**
  * Database models
  */
-export interface DbJobListing extends Omit<JobListing, 'postedDate' | 'expiryDate' | 'source'> {
+export interface DbJobListing {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  url: string;
+  employmentType: JobListing['employmentType'];
+  remote: boolean;
   postedDate?: string; // ISO string for SQLite
   expiryDate?: string; // ISO string for SQLite
+  salary_min?: number;
+  salary_max?: number;
+  salary_currency?: string;
+  salary_period?: string;
+  requirements: string; // JSON string
+  benefits: string; // JSON string
+  tags: string; // JSON string
   sourceData: string; // JSON string
+  confidence: number;
+  raw_data?: string;
   createdAt: string;
   updatedAt: string;
 }
