@@ -6,7 +6,7 @@ Based on our current setup, here are the **immediate next steps** in order of pr
 
 ### 1. Configuration System (Start Here!)
 
-**Estimated Time: 2-3 hours**
+#### Estimated Time for Config Reporting: 2-3 hours
 
 ```bash
 # Files to create:
@@ -24,7 +24,7 @@ touch src/config/sites.ts
 
 ### 2. Base Scraper Implementation
 
-**Estimated Time: 3-4 hours**
+#### Estimated Time for Base Scraper: 3-4 hours
 
 ```bash
 # Files to create:
@@ -41,7 +41,7 @@ touch tests/unit/scrapers.test.ts
 
 ### 3. Google Search Functionality
 
-**Estimated Time: 4-5 hours**
+#### Estimated Time: 4-5 hours
 
 ```bash
 # Files to create:
@@ -58,7 +58,7 @@ touch tests/unit/google-scraper.test.ts
 
 ### 4. Job Data Parsing
 
-**Estimated Time: 3-4 hours**
+#### Estimated Time: 3-4 hours
 
 ```bash
 # Files to create:
@@ -75,7 +75,7 @@ touch tests/unit/job-parser.test.ts
 
 ### 5. Basic Reporting
 
-**Estimated Time: 2-3 hours**
+#### Estimated Time for Generators: 2-3 hours
 
 ```bash
 # Files to create:
@@ -144,28 +144,28 @@ npm run lint:fix
 
 ## 📝 Implementation Tips
 
-### For Configuration System:
+### For Configuration System
 
 - Use Zod for schema validation
 - Support both .env and JSON config files
 - Include sensible defaults
 - Validate required vs optional fields
 
-### For Scrapers:
+### For Scrapers
 
 - Start with Cheerio for static content
 - Add proper error handling
 - Implement exponential backoff for retries
 - Respect robots.txt and rate limits
 
-### For Parsers:
+### For Parsers
 
 - Use regex for salary extraction
 - Handle multiple date formats
 - Normalize job titles and locations
 - Score parsing confidence
 
-### For Generators:
+### For Generators
 
 - Stream large datasets to CSV
 - Add metadata to reports
@@ -208,4 +208,4 @@ After completing these 5 steps, you should have:
 
 ---
 
-**Ready to start? Let's begin with the configuration system! 🚀**
+## Ready to start? Let's begin with the configuration system! 🚀

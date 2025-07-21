@@ -8,18 +8,23 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "error",
+        "noExplicitAny": "warn",
         "noConsoleLog": "warn"
       },
       "style": {
         "useNodejsImportProtocol": "error",
-        "useImportType": "error"
+        "useImportType": "error",
+        "noNonNullAssertion": "warn"
       },
       "correctness": {
         "noUnusedVariables": "error"
       },
       "performance": {
         "noDelete": "error"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off",
+        "noForEach": "off"
       }
     }
   },

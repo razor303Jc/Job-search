@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM node:20.12.2-alpine AS builder
+FROM node:24.4-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20.12.2-alpine AS production
+FROM node:24.4-alpine AS production
 
 # Install security updates
 RUN apk update && apk upgrade && apk add --no-cache dumb-init

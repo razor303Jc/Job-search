@@ -4,7 +4,7 @@ This document outlines our Git workflow and branch protection strategy.
 
 ## Branch Structure
 
-```
+```text
 main (production)
   ↑
 stage (staging)
@@ -76,9 +76,9 @@ To enable this workflow, configure these repository settings:
 
 ### Branch Protection Rules
 
-#### For `main` branch:
+#### For `main` branch
 
-```
+```text
 ☑ Require a pull request before merging
   ☑ Require approvals (1)
   ☑ Dismiss stale PR approvals when new commits are pushed
@@ -92,9 +92,9 @@ To enable this workflow, configure these repository settings:
 ☑ Include administrators
 ```
 
-#### For `stage` branch:
+#### For `stage` branch
 
-```
+```text
 ☑ Require a pull request before merging
   ☑ Require approvals (1)
   ☑ Dismiss stale PR approvals when new commits are pushed
@@ -106,9 +106,9 @@ To enable this workflow, configure these repository settings:
 ☑ Require conversation resolution before merging
 ```
 
-#### For `dev` branch:
+#### For `dev` branch
 
-```
+```text
 ☑ Require a pull request before merging
 ☑ Require status checks to pass before merging
   ☑ Require branches to be up to date before merging
@@ -118,17 +118,17 @@ To enable this workflow, configure these repository settings:
 
 ### Environment Protection Rules
 
-#### Development Environment:
+#### Development Environment
 
 - No restrictions
 - Auto-deployment from `dev` branch
 
-#### Staging Environment:
+#### Staging Environment
 
 - Required reviewers: Development team
 - Auto-deployment from `stage` branch
 
-#### Production Environment:
+#### Production Environment
 
 - Required reviewers: Lead developers + CODEOWNERS
 - Wait timer: 5 minutes

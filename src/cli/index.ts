@@ -1,15 +1,23 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { logger } from '@/utils/logger.js';
 import chalk from 'chalk';
 import { Command } from 'commander';
+
+// Get package.json for version info
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packagePath = join(__dirname, '../../package.json');
+const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
 
 const program = new Command();
 
 program
   .name('job-dorker')
-  .description('🧠 Node.js Job Scraper using Google Dorks')
-  .version('1.0.0');
+  .description('🧠 Advanced Job Scraping and Data Extraction Tool')
+  .version(packageJson.version);
 
 program
   .command('search')
