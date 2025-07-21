@@ -1,184 +1,106 @@
 import { z } from 'zod';
-import { DatabaseType, JobBoard, LogLevel } from '../types/index.js';
 
-// Configuration schemas for validation
-export const DatabaseConfigSchema = z.object({
-  type: z.nativeEnum(DatabaseType),
-  host: z.string().optional(),
-  port: z.number().int().positive().optional(),
-  database: z.string(),
-  username: z.string().optional(),
-  password: z.string().optional(),
-  filename: z.string().optional(), // For SQLite
-  poolSize: z.number().int().positive().default(10),
-  timeout: z.number().int().positive().default(30000),
-});
+/**
+ * Configuration schemas for validation with Zod
+ */
 
-export const RateLimitConfigSchema = z.object({
-  requestsPerMinute: z.number().int().positive().default(30),
-  burstLimit: z.number().int().positive().default(10),
-  backoffMultiplier: z.number().positive().default(2),
-  maxRetries: z.number().int().nonnegative().default(3),
-  retryDelay: z.number().int().positive().default(1000),
-});
-
-export const ScraperConfigSchema = z.object({
-  userAgent: z.string().default('JobScraper/1.0 (+https://github.com/user/job-scraper)'),
-  timeout: z.number().int().positive().default(30000),
-  retries: z.number().int().nonnegative().default(3),
-  retryDelay: z.number().int().positive().default(2000),
-  enableImages: z.boolean().default(false),
-  enableJavaScript: z.boolean().default(true),
-  headless: z.boolean().default(true),
-  viewport: z
-    .object({
-      width: z.number().int().positive().default(1920),
-      height: z.number().int().positive().default(1080),
-    })
-    .default({}),
-  proxies: z.array(z.string().url()).default([]),
-  enableProxyRotation: z.boolean().default(false),
-});
-
-export const JobBoardConfigSchema = z.object({
-  name: z.nativeEnum(JobBoard),
-  enabled: z.boolean().default(true),
-  baseUrl: z.string().url(),
-  searchPaths: z.array(z.string()),
-  selectors: z.object({
-    jobCard: z.string(),
-    title: z.string(),
-    company: z.string(),
-    location: z.string().optional(),
-    salary: z.string().optional(),
-    description: z.string().optional(),
-    applyUrl: z.string().optional(),
-    postedDate: z.string().optional(),
-    jobType: z.string().optional(),
-    experienceLevel: z.string().optional(),
-    nextPage: z.string().optional(),
+export const scraperConfigSchema = z.object({
+  userAgent: z.string().default('Mozilla/5.0 (compatible; JobDorker/1.0)'),
+  delay: z.number().min(1000).max(10000).default(2000), // 1-10 seconds
+  retries: z.number().min(0).max(5).default(3),
+  timeout: z.number().min(5000).max(60000).default(30000), // 5-60 seconds
+  respectRobotsTxt: z.boolean().default(true),
+  rateLimit: z.object({
+    requestsPerSecond: z.number().min(0.1).max(10).default(0.5), // Max 0.5 requests/second (respectful)
+    burst: z.number().min(1).max(10).default(2),
   }),
-  waitSelectors: z.array(z.string()).default([]),
-  rateLimit: RateLimitConfigSchema.optional(),
-  maxPages: z.number().int().positive().default(5),
-  maxJobsPerRun: z.number().int().positive().default(100),
 });
 
-export const NotificationConfigSchema = z.object({
-  email: z
-    .object({
-      enabled: z.boolean().default(false),
-      smtpHost: z.string().optional(),
-      smtpPort: z.number().int().positive().optional(),
-      smtpUser: z.string().optional(),
-      smtpPassword: z.string().optional(),
-      from: z.string().email().optional(),
-      to: z.array(z.string().email()).default([]),
-      subject: z.string().default('Job Scraper Report'),
-    })
-    .default({}),
-  webhook: z
-    .object({
-      enabled: z.boolean().default(false),
-      url: z.string().url().optional(),
-      method: z.enum(['POST', 'PUT']).default('POST'),
-      headers: z.record(z.string()).default({}),
-      template: z.string().optional(),
-    })
-    .default({}),
-  slack: z
-    .object({
-      enabled: z.boolean().default(false),
-      webhookUrl: z.string().url().optional(),
-      channel: z.string().optional(),
-      username: z.string().default('Job Scraper'),
-      icon: z.string().default(':briefcase:'),
-    })
-    .default({}),
+export const googleDorkConfigSchema = z.object({
+  site: z.string().min(1),
+  keywords: z.array(z.string()).min(1),
+  excludeKeywords: z.array(z.string()).optional(),
+  fileTypes: z.array(z.string()).optional(),
+  customParams: z.record(z.string()).optional(),
 });
 
-export const AppConfigSchema = z.object({
-  // Application settings
-  app: z
+export const jobSearchCriteriaSchema = z.object({
+  keywords: z.array(z.string()).min(1),
+  location: z.string().optional(),
+  remote: z.boolean().optional(),
+  salaryMin: z.number().min(0).optional(),
+  salaryMax: z.number().min(0).optional(),
+  employmentTypes: z
+    .array(z.enum(['full-time', 'part-time', 'contract', 'temporary', 'internship', 'freelance']))
+    .optional(),
+  excludeKeywords: z.array(z.string()).optional(),
+  datePosted: z.enum(['today', 'week', 'month', 'any']).optional(),
+  experienceLevel: z.enum(['entry', 'mid', 'senior', 'executive']).optional(),
+  maxResults: z.number().min(1).max(1000).default(100),
+});
+
+export const reportOptionsSchema = z.object({
+  format: z.enum(['csv', 'json', 'pdf']).default('json'),
+  outputPath: z.string().optional(),
+  template: z.string().optional(),
+  filters: z
     .object({
-      name: z.string().default('Job Scraper'),
-      version: z.string().default('1.0.0'),
-      environment: z.enum(['development', 'staging', 'production']).default('development'),
-      logLevel: z.nativeEnum(LogLevel).default(LogLevel.INFO),
-      dataDir: z.string().default('./data'),
-      configDir: z.string().default('./config'),
-      maxConcurrentJobs: z.number().int().positive().default(3),
-      cleanupRetentionDays: z.number().int().positive().default(30),
+      minSalary: z.number().min(0).optional(),
+      maxSalary: z.number().min(0).optional(),
+      location: z.string().optional(),
+      remote: z.boolean().optional(),
+      keywords: z.array(z.string()).optional(),
     })
-    .default({}),
+    .optional(),
+  analytics: z.boolean().default(false),
+  groupBy: z.enum(['company', 'location', 'salary', 'employmentType']).optional(),
+});
 
-  // Database configuration
-  database: DatabaseConfigSchema,
-
-  // Scraper configuration
-  scraper: ScraperConfigSchema.default({}),
-
-  // Rate limiting
-  rateLimit: RateLimitConfigSchema.default({}),
-
-  // Job boards
-  jobBoards: z.array(JobBoardConfigSchema).min(1),
-
-  // Search configuration
-  search: z.object({
-    keywords: z.array(z.string()).min(1),
-    locations: z.array(z.string()).default([]),
-    excludeKeywords: z.array(z.string()).default([]),
-    salaryMin: z.number().int().nonnegative().optional(),
-    salaryMax: z.number().int().positive().optional(),
-    jobTypes: z.array(z.string()).default([]),
-    experienceLevels: z.array(z.string()).default([]),
-    dateRange: z.number().int().positive().default(7), // days
+export const appConfigSchema = z.object({
+  environment: z.enum(['development', 'production', 'test']).default('development'),
+  logging: z.object({
+    level: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+    pretty: z.boolean().default(true),
   }),
-
-  // Output configuration
-  output: z
-    .object({
-      formats: z.array(z.enum(['json', 'csv', 'xlsx', 'html'])).default(['json']),
-      filename: z.string().default('job_results_{timestamp}'),
-      directory: z.string().default('./output'),
-      includeCompanyLogos: z.boolean().default(false),
-      includeFullDescription: z.boolean().default(true),
-      deduplicate: z.boolean().default(true),
-      sortBy: z.enum(['date', 'relevance', 'salary', 'company']).default('date'),
-      sortOrder: z.enum(['asc', 'desc']).default('desc'),
-    })
-    .default({}),
-
-  // Notification configuration
-  notifications: NotificationConfigSchema.default({}),
-
-  // Performance settings
-  performance: z
-    .object({
-      enableCaching: z.boolean().default(true),
-      cacheTimeout: z.number().int().positive().default(3600), // seconds
-      enableCompression: z.boolean().default(true),
-      enableMetrics: z.boolean().default(true),
-      enableProfiling: z.boolean().default(false),
-    })
-    .default({}),
-
-  // Security settings
-  security: z
-    .object({
-      enableRateLimiting: z.boolean().default(true),
-      enableRequestLogging: z.boolean().default(true),
-      enableErrorReporting: z.boolean().default(false),
-      obfuscatePersonalData: z.boolean().default(true),
-      enableDataEncryption: z.boolean().default(false),
-    })
-    .default({}),
+  scraper: scraperConfigSchema,
+  database: z.object({
+    url: z.string().default('sqlite:./data/jobs.db'),
+    enableWal: z.boolean().default(true),
+  }),
+  queue: z.object({
+    redis: z.object({
+      url: z.string().default('redis://localhost:6379'),
+      db: z.number().min(0).max(15).default(0),
+    }),
+    defaultJobOptions: z.object({
+      removeOnComplete: z.number().default(100),
+      removeOnFail: z.number().default(50),
+      attempts: z.number().default(3),
+      backoff: z.object({
+        type: z.enum(['exponential', 'fixed']).default('exponential'),
+        delay: z.number().default(2000),
+      }),
+    }),
+  }),
+  web: z.object({
+    enabled: z.boolean().default(false),
+    port: z.number().min(1).max(65535).default(3000),
+    host: z.string().default('localhost'),
+    cors: z.object({
+      origin: z.union([z.string(), z.array(z.string()), z.boolean()]).default(false),
+      credentials: z.boolean().default(false),
+    }),
+  }),
+  reports: z.object({
+    outputDirectory: z.string().default('./reports'),
+    maxFileSize: z.number().default(50 * 1024 * 1024), // 50MB
+    cleanupAfterDays: z.number().default(30),
+  }),
 });
 
-export type AppConfig = z.infer<typeof AppConfigSchema>;
-export type DatabaseConfig = z.infer<typeof DatabaseConfigSchema>;
-export type RateLimitConfig = z.infer<typeof RateLimitConfigSchema>;
-export type ScraperConfig = z.infer<typeof ScraperConfigSchema>;
-export type JobBoardConfig = z.infer<typeof JobBoardConfigSchema>;
-export type NotificationConfig = z.infer<typeof NotificationConfigSchema>;
+// Export inferred types
+export type ScraperConfig = z.infer<typeof scraperConfigSchema>;
+export type GoogleDorkConfig = z.infer<typeof googleDorkConfigSchema>;
+export type JobSearchCriteria = z.infer<typeof jobSearchCriteriaSchema>;
+export type ReportOptions = z.infer<typeof reportOptionsSchema>;
+export type AppConfig = z.infer<typeof appConfigSchema>;

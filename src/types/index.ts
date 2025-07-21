@@ -170,3 +170,38 @@ export interface ScrapingMetrics {
 
 // Re-export Zod for schema validation
 export type { z };
+
+/**
+ * Additional utility enums and types
+ */
+export const DatabaseType = {
+  SQLITE: 'sqlite',
+  POSTGRES: 'postgres',
+  MYSQL: 'mysql',
+} as const;
+
+export const LogLevel = {
+  ERROR: 'error',
+  WARN: 'warn',
+  INFO: 'info',
+  DEBUG: 'debug',
+} as const;
+
+export const JobBoard = {
+  LINKEDIN: 'linkedin',
+  INDEED: 'indeed',
+  GLASSDOOR: 'glassdoor',
+  STACKOVERFLOW: 'stackoverflow',
+  GITHUB: 'github',
+  REMOTE_OK: 'remote-ok',
+  WEWORKREMOTELY: 'weworkremotely',
+} as const;
+
+export type DatabaseType = (typeof DatabaseType)[keyof typeof DatabaseType];
+export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
+export type JobBoard = (typeof JobBoard)[keyof typeof JobBoard];
+
+/**
+ * Environment configuration
+ */
+export type Environment = 'development' | 'production' | 'test';
