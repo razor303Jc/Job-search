@@ -292,17 +292,19 @@ export class JobRepository {
   /**
    * Find many jobs with filtering (simpler than search)
    */
-  async findMany(filters: {
-    company?: string;
-    location?: string;
-    salaryMin?: number;
-    salaryMax?: number;
-    employmentType?: string;
-    remoteType?: string;
-    postedAfter?: Date;
-    limit?: number;
-    offset?: number;
-  } = {}): Promise<JobRecord[]> {
+  async findMany(
+    filters: {
+      company?: string;
+      location?: string;
+      salaryMin?: number;
+      salaryMax?: number;
+      employmentType?: string;
+      remoteType?: string;
+      postedAfter?: Date;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ): Promise<JobRecord[]> {
     const { limit = 50, offset = 0 } = filters;
     let whereClause = 'WHERE 1=1';
     const params: any = {};
@@ -360,15 +362,17 @@ export class JobRepository {
   /**
    * Count jobs with filtering
    */
-  async count(filters: {
-    company?: string;
-    location?: string;
-    salaryMin?: number;
-    salaryMax?: number;
-    employmentType?: string;
-    remoteType?: string;
-    postedAfter?: Date;
-  } = {}): Promise<number> {
+  async count(
+    filters: {
+      company?: string;
+      location?: string;
+      salaryMin?: number;
+      salaryMax?: number;
+      employmentType?: string;
+      remoteType?: string;
+      postedAfter?: Date;
+    } = {},
+  ): Promise<number> {
     let whereClause = 'WHERE 1=1';
     const params: any = {};
 
@@ -598,7 +602,7 @@ export class JobRepository {
   async delete(id: number): Promise<boolean> {
     try {
       const result = this.deleteStmt?.run(id);
-      
+
       if (!result) {
         throw new Error('Failed to delete job record');
       }
@@ -650,7 +654,7 @@ export class JobRepository {
 
           const record = this.jobListingToRecord(job, context);
           const result = this.insertStmt?.run(record);
-          
+
           if (!result) {
             throw new Error('Failed to insert job record in bulk operation');
           }

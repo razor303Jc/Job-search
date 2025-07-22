@@ -34,7 +34,6 @@ export class JobDorkerServer {
       },
     });
 
-    this.setupPlugins();
     this.setupRoutes();
     this.setupErrorHandlers();
   }
@@ -43,11 +42,15 @@ export class JobDorkerServer {
    * Setup Fastify plugins
    */
   private async setupPlugins(): Promise<void> {
-    // Static file serving
-    await this.server.register(import('@fastify/static'), {
-      root: join(process.cwd(), 'src', 'web', 'public'),
-      prefix: '/public/',
-    });
+    // Static file serving (make it optional if directory doesn't exist)
+    try {
+      await this.server.register(import('@fastify/static'), {
+        root: join(process.cwd(), 'src', 'web', 'public'),
+        prefix: '/public/',
+      });
+    } catch (error) {
+      logger.warn('Static file serving disabled - public directory not found', { error });
+    }
 
     // CORS support
     await this.server.register(import('@fastify/cors'), {
@@ -86,7 +89,7 @@ export class JobDorkerServer {
   /**
    * API routes for job management
    */
-  private async apiRoutes(server: FastifyInstance): Promise<void> {
+  private apiRoutes = async (server: FastifyInstance): Promise<void> => {
     // Jobs API
     server.register(async (jobsServer) => {
       // GET /api/v1/jobs - List jobs with filtering
@@ -97,7 +100,7 @@ export class JobDorkerServer {
 
         const query = request.query as any;
         const filters: Parameters<typeof this.db.jobs.findMany>[0] = {};
-        
+
         if (query.company) filters.company = query.company;
         if (query.location) filters.location = query.location;
         if (query.salaryMin) filters.salaryMin = Number(query.salaryMin);
@@ -164,10 +167,10 @@ export class JobDorkerServer {
         }
 
         try {
-          const results = await this.db.jobs.search({ 
+          const results = await this.db.jobs.search({
             query: searchQuery,
-            limit, 
-            offset 
+            limit,
+            offset,
           });
           return {
             results: results.jobs,
@@ -241,12 +244,12 @@ export class JobDorkerServer {
         }
       });
     });
-  }
+  };
 
   /**
    * Web interface routes
    */
-  private async webRoutes(server: FastifyInstance): Promise<void> {
+  private webRoutes = async (server: FastifyInstance): Promise<void> => {
     // Home page
     server.get('/', async (_request, reply) => {
       const html = `
@@ -256,23 +259,7 @@ export class JobDorkerServer {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Job Dorker - Job Search Interface</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; margin-bottom: 30px; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 6px; text-align: center; }
-        .stat-number { font-size: 2em; font-weight: bold; color: #007bff; }
-        .stat-label { color: #666; margin-top: 5px; }
-        .search-box { margin-bottom: 30px; }
-        .search-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
-        .jobs-list { background: #f8f9fa; padding: 20px; border-radius: 6px; }
-        .api-docs { margin-top: 30px; }
-        .endpoint { background: #e9ecef; padding: 10px; margin: 10px 0; border-radius: 4px; }
-        .method { display: inline-block; padding: 2px 8px; border-radius: 3px; color: white; font-size: 12px; margin-right: 10px; }
-        .get { background: #28a745; }
-        .post { background: #007bff; }
-    </style>
+    <link rel="stylesheet" href="/public/styles.css">
 </head>
 <body>
     <div class="container">
@@ -424,7 +411,7 @@ export class JobDorkerServer {
       reply.type('text/html');
       return html;
     });
-  }
+  };
 
   /**
    * Setup error handlers
@@ -473,6 +460,9 @@ export class JobDorkerServer {
       // Initialize database first
       await this.initializeDatabase();
 
+      // Setup plugins before starting
+      await this.setupPlugins();
+
       // Start server
       await this.server.listen({
         host: this.config.host,
@@ -485,7 +475,10 @@ export class JobDorkerServer {
         url: `http://${this.config.host}:${this.config.port}`,
       });
     } catch (error) {
-      logger.error('Failed to start server', { error });
+      logger.error('Failed to start server', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw error;
     }
   }
