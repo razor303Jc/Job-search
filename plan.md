@@ -1,8 +1,10 @@
 # 🧠 Job Dorker - Node.js Job Scraper using Google Dorks
 
 ## 📘 Project Overview
+
 **Goal:**  
 Build a Node.js app that:
+
 - Uses **Google Dorks** to search for job listings across multiple job boards
 - Scrapes job data from search result links with intelligent parsing
 - Generates comprehensive reports (CSV, PDF, JSON) with analytics
@@ -15,10 +17,12 @@ Build a Node.js app that:
 ## 🧱 Recommended Tech Stack
 
 ### 🏗️ Core Runtime
+
 - **Node.js** (v20 LTS) – Latest stable with performance improvements
 - **TypeScript** – Type safety, better IDE support, fewer runtime errors
 
 ### 🌐 HTTP & Web Scraping
+
 - **Got** (over Axios) – Better performance, HTTP/2 support, built-in retry logic
 - **Playwright** (primary) – Modern, reliable, handles SPA sites, mobile testing
 - **Cheerio** (secondary) – Fast server-side DOM manipulation for static content
@@ -26,6 +30,7 @@ Build a Node.js app that:
 - **user-agents** – Realistic user agent rotation
 
 ### 📊 Data Processing & Storage
+
 - **better-sqlite3** – Faster than sqlite3, synchronous API, WAL mode
 - **csv-stringify** (over csv-writer) – Better streaming support
 - **pdfkit** – PDF generation (keep)
@@ -33,6 +38,7 @@ Build a Node.js app that:
 - **lodash** – Utility functions for data manipulation
 
 ### 🎯 CLI & Interface
+
 - **Commander.js** (over Inquirer) – More flexible CLI argument parsing
 - **ora** – Beautiful terminal spinners
 - **chalk** – Terminal styling
@@ -40,6 +46,7 @@ Build a Node.js app that:
 - **table** – ASCII table formatting
 
 ### 🔧 Development & Quality
+
 - **Vitest** (over Jest) – Faster, better TypeScript support, ESM native
 - **Biome** (over ESLint + Prettier) – All-in-one linter/formatter, 100x faster
 - **Husky** – Git hooks (keep)
@@ -47,29 +54,34 @@ Build a Node.js app that:
 - **concurrently** – Run multiple commands
 
 ### 📋 Queue & Background Processing
+
 - **Bullmq** (over Bull) – Modern Redis-based queue, better TypeScript support
 - **p-queue** – Simple in-memory queue for rate limiting
 - **bottleneck** – Advanced rate limiting with clustering
 
 ### 🏃‍♂️ Performance & Monitoring
+
 - **pino** (over Winston) – 5x faster JSON logging
 - **clinic.js** – Performance profiling
 - **autocannon** – Load testing
 - **0x** – Flame graph profiling
 
 ### 🛡️ Security & Validation
+
 - **zod** – Runtime type validation and parsing
 - **helmet** – Security headers (if web UI)
 - **rate-limiter-flexible** – Advanced rate limiting
 - **validator** – String validation utilities
 
 ### 🔄 Optional Web Features
+
 - **Fastify** (over Express) – 2x faster, better TypeScript support
 - **@fastify/static** – Static file serving
 - **@fastify/view** – Template rendering
 - **socket.io** – Real-time updates for web UI
 
 ### 📦 Build & Distribution
+
 - **tsup** – Fast TypeScript bundler
 - **pkg** – Create executable binaries
 - **Docker** – Containerization
@@ -82,6 +94,7 @@ Build a Node.js app that:
 ### Why These Choices?
 
 #### **Playwright over Puppeteer**
+
 - ✅ **Cross-browser support** (Chrome, Firefox, Safari)
 - ✅ **Better handling of modern SPAs** (React, Vue job sites)
 - ✅ **Mobile device emulation** for responsive scraping
@@ -89,6 +102,7 @@ Build a Node.js app that:
 - ✅ **Network interception** for advanced debugging
 
 #### **TypeScript over JavaScript**
+
 - ✅ **Catch errors at compile time** vs runtime
 - ✅ **Better IDE support** with autocomplete
 - ✅ **Self-documenting code** with interfaces
@@ -96,6 +110,7 @@ Build a Node.js app that:
 - ✅ **Better team collaboration**
 
 #### **Got over Axios**
+
 - ✅ **HTTP/2 support** for better performance
 - ✅ **Built-in retry logic** with exponential backoff
 - ✅ **Advanced caching** capabilities
@@ -103,6 +118,7 @@ Build a Node.js app that:
 - ✅ **Smaller bundle size**
 
 #### **Vitest over Jest**
+
 - ✅ **Native ESM support** without configuration
 - ✅ **Better TypeScript integration**
 - ✅ **Faster test execution** (uses Vite's transform pipeline)
@@ -110,6 +126,7 @@ Build a Node.js app that:
 - ✅ **Better watch mode**
 
 #### **BullMQ over Bull**
+
 - ✅ **Modern TypeScript support**
 - ✅ **Better Redis Cluster support**
 - ✅ **Advanced job patterns** (batches, flows)
@@ -117,6 +134,7 @@ Build a Node.js app that:
 - ✅ **Better observability**
 
 #### **Pino over Winston**
+
 - ✅ **5x faster performance**
 - ✅ **JSON-first logging** for structured logs
 - ✅ **Better memory usage**
@@ -124,6 +142,7 @@ Build a Node.js app that:
 - ✅ **Excellent ecosystem**
 
 #### **Better-SQLite3 over SQLite3**
+
 - ✅ **Synchronous API** simplifies code
 - ✅ **WAL mode** for better concurrent access
 - ✅ **Better performance** with prepared statements
@@ -132,12 +151,14 @@ Build a Node.js app that:
 ### 📋 Alternative Considerations
 
 #### **For Enterprise Scale:**
+
 - **PostgreSQL** instead of SQLite for multi-user scenarios
 - **Redis** for distributed caching and sessions
 - **RabbitMQ** for enterprise messaging patterns
 - **Prometheus + Grafana** for metrics and monitoring
 
 #### **For Cloud Deployment:**
+
 - **Serverless options:** AWS Lambda, Vercel Functions
 - **Container orchestration:** Kubernetes, Docker Swarm
 - **Cloud databases:** PlanetScale, Supabase, MongoDB Atlas
@@ -147,7 +168,7 @@ Build a Node.js app that:
 
 ## 🏗️ Updated Project Structure
 
-```
+```text
 job-dorker/
 ├── src/
 │   ├── types/                    # TypeScript type definitions
@@ -221,7 +242,7 @@ job-dorker/
 
 ## 🏗️ Project Structure
 
-```
+```text
 job-dorker/
 ├── src/
 │   ├── scrapers/
@@ -275,6 +296,7 @@ job-dorker/
 ## 🔍 Google Dorks Strategy
 
 ### Target Job Sites
+
 - LinkedIn Jobs
 - Indeed
 - Glassdoor
@@ -284,7 +306,9 @@ job-dorker/
 - Company career pages
 
 ### Example Dorks
-```
+
+```text
+
 site:linkedin.com/jobs "software engineer" location:remote
 site:indeed.com "node.js developer" -intern
 site:glassdoor.com "full stack" salary:>80000
@@ -296,6 +320,7 @@ filetype:pdf "job description" "react developer"
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 - Scraper functions
 - Data parsers
 - Report generators
@@ -303,17 +328,21 @@ filetype:pdf "job description" "react developer"
 - Configuration validation
 
 ### Integration Tests
+
 - End-to-end scraping workflows
 - Report generation pipeline
 - CLI interface testing
 - Web API endpoints
 
 ### Test Coverage Goals
+
 - **Minimum:** 80% code coverage
 - **Target:** 90% code coverage
 
 ### Testing Tools
+
 ```bash
+
 npm test              # Run all tests
 npm run test:unit     # Unit tests only
 npm run test:integration # Integration tests
@@ -328,6 +357,7 @@ npm run test:watch    # Watch mode
 ### GitHub Actions Workflow
 
 #### On Push/PR:
+
 1. **Lint & Format Check**
    - ESLint validation
    - Prettier format check
@@ -343,7 +373,8 @@ npm run test:watch    # Watch mode
    - CodeQL analysis
    - Dependency vulnerability scan
 
-#### On Release:
+#### On Release
+
 1. **Build & Package**
    - Create distribution bundle
    - Generate documentation
@@ -355,6 +386,7 @@ npm run test:watch    # Watch mode
    - Create GitHub release
 
 ### Environments
+
 - **Development:** Local development
 - **Staging:** Pre-production testing
 - **Production:** Live deployment (if web version)
@@ -364,6 +396,7 @@ npm run test:watch    # Watch mode
 ## 📋 TODO List
 
 ### Phase 1: Core Foundation (Week 1-2)
+
 - [ ] Initialize Node.js project with proper package.json
 - [ ] Set up development environment (ESLint, Prettier, Husky)
 - [ ] Implement basic project structure
@@ -374,6 +407,7 @@ npm run test:watch    # Watch mode
 - [ ] Write initial unit tests
 
 ### Phase 2: Scraping Engine (Week 3-4)
+
 - [ ] Implement Cheerio-based scraper for static content
 - [ ] Add Puppeteer support for dynamic content
 - [ ] Create site-specific parsers (LinkedIn, Indeed, etc.)
@@ -384,6 +418,7 @@ npm run test:watch    # Watch mode
 - [ ] Implement concurrent scraping with queue
 
 ### Phase 3: Report Generation (Week 5)
+
 - [ ] CSV export with customizable columns
 - [ ] PDF report with charts and analytics
 - [ ] JSON export with structured data
@@ -393,6 +428,8 @@ npm run test:watch    # Watch mode
 - [ ] Add export scheduling
 
 ### Phase 4: CLI Interface (Week 6)
+
+
 - [ ] Interactive CLI with Inquirer
 - [ ] Command-line arguments parsing
 - [ ] Configuration file support
@@ -401,6 +438,7 @@ npm run test:watch    # Watch mode
 - [ ] Input validation and error messages
 
 ### Phase 5: Testing & Quality (Week 7)
+
 - [ ] Comprehensive unit test suite
 - [ ] Integration tests for scraping workflows
 - [ ] Mock data for testing
@@ -409,6 +447,7 @@ npm run test:watch    # Watch mode
 - [ ] Documentation completion
 
 ### Phase 6: Advanced Features (Week 8+)
+
 - [ ] Web UI with Express
 - [ ] Job alerts and notifications
 - [ ] Database integration for job storage
@@ -418,6 +457,7 @@ npm run test:watch    # Watch mode
 - [ ] Company research integration
 
 ### Phase 7: Deployment & Monitoring (Ongoing)
+
 - [ ] Docker containerization
 - [ ] CI/CD pipeline setup
 - [ ] Monitoring and alerting
@@ -430,6 +470,7 @@ npm run test:watch    # Watch mode
 ## 🔒 Security & Ethics
 
 ### Respectful Scraping
+
 - Implement proper rate limiting (1-2 requests/second)
 - Respect robots.txt files
 - Add random delays between requests
@@ -437,12 +478,14 @@ npm run test:watch    # Watch mode
 - Implement circuit breakers for failed requests
 
 ### Data Privacy
+
 - No personal data collection beyond public job listings
 - Secure handling of any cached data
 - Option to anonymize company information
 - Clear data retention policies
 
 ### Legal Considerations
+
 - Terms of service compliance
 - Fair use guidelines
 - Attribution where required
@@ -453,6 +496,7 @@ npm run test:watch    # Watch mode
 ## 📊 Monitoring & Analytics
 
 ### Metrics to Track
+
 - Scraping success rates by site
 - Job discovery statistics
 - Processing time performance
@@ -460,6 +504,7 @@ npm run test:watch    # Watch mode
 - User engagement (CLI/Web)
 
 ### Logging Strategy
+
 - Structured logging with Winston
 - Log levels: ERROR, WARN, INFO, DEBUG
 - Rotation and retention policies
@@ -470,6 +515,7 @@ npm run test:watch    # Watch mode
 ## 🔧 Configuration Management
 
 ### Environment Variables
+
 ```bash
 # .env
 NODE_ENV=development
@@ -482,6 +528,7 @@ WEB_PORT=3000
 ```
 
 ### Configuration Files
+
 - `config/dorks.json` - Google Dork patterns
 - `config/sites.json` - Supported job sites
 - `config/parsers.json` - Parser configurations
@@ -491,11 +538,13 @@ WEB_PORT=3000
 ## 📈 Performance Optimization
 
 ### Caching Strategy
+
 - Cache job listings to avoid duplicate processing
 - Cache parsed site structures
 - Implement intelligent cache invalidation
 
 ### Scalability Considerations
+
 - Queue-based processing for large scraping jobs
 - Database indexing for fast job searches
 - Pagination for large result sets
@@ -517,12 +566,14 @@ WEB_PORT=3000
 ## 🎯 Success Metrics
 
 ### Technical KPIs
+
 - 95%+ uptime for scraping operations
 - <5 second average response time
 - 80%+ successful job extraction rate
 - Zero security vulnerabilities
 
 ### User Experience KPIs
+
 - Intuitive CLI interface
 - Clear error messages
 - Comprehensive reporting
