@@ -116,26 +116,13 @@
     "vitest": "^3.2.4"
   },
   "lint-staged": {
-    "*.{ts,js}": [
-      "biome format --write",
-      "biome check --apply"
-    ],
-    "*.json": [
-      "prettier --write"
-    ],
-    "*.md": [
-      "prettier --write"
-    ]
+    "*.{ts,js}": ["biome format --write", "biome check --apply"],
+    "*.json": ["prettier --write"],
+    "*.md": ["prettier --write"]
   },
   "tsup": {
-    "entry": [
-      "src/index.ts",
-      "src/cli/index.ts",
-      "src/web/cli.ts"
-    ],
-    "format": [
-      "esm"
-    ],
+    "entry": ["src/index.ts", "src/cli/index.ts", "src/web/cli.ts"],
+    "format": ["esm"],
     "dts": true,
     "clean": true,
     "minify": true,

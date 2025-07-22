@@ -861,34 +861,34 @@
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .field-checkboxes {
     grid-template-columns: 1fr;
   }
-  
+
   .quick-export-buttons {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .share-options {
     grid-template-columns: 1fr;
   }
-  
+
   .templates-grid,
   .collections-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-dialog {
     margin: 10px;
     max-width: none;
   }
-  
+
   .date-range {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .collection-meta {
     flex-direction: column;
     gap: 2px;
@@ -899,30 +899,30 @@
   .section-header {
     text-align: center;
   }
-  
+
   .quick-export-buttons {
     grid-template-columns: 1fr;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .queue-item {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  
+
   .progress-bar {
     order: -1;
   }
-  
+
   .share-option {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .share-icon {
     align-self: center;
   }
@@ -937,19 +937,19 @@
     background: var(--background-dark, #1e1e1e);
     border-color: var(--border-dark, #404040);
   }
-  
+
   .section-header h3,
   .template-header h4,
   .collection-header h4 {
     color: var(--text-dark, #ffffff);
   }
-  
+
   .section-header p,
   .template-description,
   .collection-description {
     color: var(--text-secondary-dark, #cccccc);
   }
-  
+
   .form-group input,
   .form-group select,
   .form-group textarea {
@@ -957,22 +957,22 @@
     border-color: var(--border-dark, #404040);
     color: var(--text-dark, #ffffff);
   }
-  
+
   .template-card,
   .collection-card,
   .queue-item {
     background: var(--surface-dark, #2d2d2d);
     border-color: var(--border-dark, #404040);
   }
-  
+
   .modal-dialog {
     background: var(--background-dark, #1e1e1e);
   }
-  
+
   .modal-header {
     border-color: var(--border-dark, #404040);
   }
-  
+
   .modal-header h3 {
     color: var(--text-dark, #ffffff);
   }
@@ -1013,8 +1013,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -1031,7 +1035,7 @@
 /* Loading States */
 .export-section.loading::after,
 .sharing-section.loading::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1045,5 +1049,7 @@
 }
 
 @keyframes spin {
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }

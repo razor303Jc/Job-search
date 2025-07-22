@@ -58,7 +58,11 @@ class ExportSharingComponent {
   private ws: WebSocket | null = null;
   private reportTemplates: ReportTemplate[] = [];
   private jobCollections: JobCollection[] = [];
-  private exportQueue: Array<{ id: string; status: 'pending' | 'processing' | 'completed' | 'failed'; progress: number }> = [];
+  private exportQueue: Array<{
+    id: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    progress: number;
+  }> = [];
 
   constructor() {
     this.loadSavedTemplates();
@@ -75,7 +79,7 @@ class ExportSharingComponent {
    */
   setWebSocket(ws: WebSocket): void {
     this.ws = ws;
-    
+
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -117,7 +121,7 @@ class ExportSharingComponent {
     });
 
     // Quick export buttons
-    document.querySelectorAll('[data-export-format]').forEach(button => {
+    document.querySelectorAll('[data-export-format]').forEach((button) => {
       button.addEventListener('click', (e) => {
         const format = (e.target as HTMLElement).dataset.exportFormat as ExportOptions['format'];
         this.quickExport(format);
@@ -361,7 +365,9 @@ class ExportSharingComponent {
         </div>
         
         <div class="templates-grid">
-          ${this.reportTemplates.map(template => `
+          ${this.reportTemplates
+            .map(
+              (template) => `
             <div class="template-card" data-template-id="${template.id}">
               <div class="template-header">
                 <h4>${template.name}</h4>
@@ -388,7 +394,9 @@ class ExportSharingComponent {
                 ${template.lastUsed ? `<small>Last used: ${this.formatDate(template.lastUsed)}</small>` : ''}
               </div>
             </div>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </div>
         
         <div class="template-actions">
@@ -403,7 +411,7 @@ class ExportSharingComponent {
     while (container.firstChild) {
       container.removeChild(container.firstChild);
     }
-    
+
     // Use safe DOM manipulation
     container.insertAdjacentHTML('afterbegin', html);
     this.attachTemplateListeners();
@@ -445,7 +453,9 @@ class ExportSharingComponent {
         </div>
         
         <div class="collections-grid">
-          ${this.jobCollections.map(collection => `
+          ${this.jobCollections
+            .map(
+              (collection) => `
             <div class="collection-card" data-collection-id="${collection.id}">
               <div class="collection-header">
                 <h4>${collection.name}</h4>
@@ -472,14 +482,16 @@ class ExportSharingComponent {
                 </span>
               </div>
               <div class="collection-tags">
-                ${collection.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                ${collection.tags.map((tag) => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
               </div>
               <div class="collection-meta">
                 <small>Created: ${this.formatDate(collection.createdAt)}</small>
                 <small>Updated: ${this.formatDate(collection.updatedAt)}</small>
               </div>
             </div>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </div>
       </div>
     `;
@@ -488,7 +500,7 @@ class ExportSharingComponent {
     while (container.firstChild) {
       container.removeChild(container.firstChild);
     }
-    
+
     // Use safe DOM manipulation
     container.insertAdjacentHTML('afterbegin', html);
     this.attachCollectionListeners();
@@ -500,23 +512,23 @@ class ExportSharingComponent {
   private async handleExportSubmission(): Promise<void> {
     const form = document.getElementById('export-form') as HTMLFormElement;
     const formData = new FormData(form);
-    
+
     const options: ExportOptions = {
       format: formData.get('format') as ExportOptions['format'],
-      filename: formData.get('filename') as string || 'job-search-results',
+      filename: (formData.get('filename') as string) || 'job-search-results',
       includeFields: Array.from(formData.getAll('fields')) as string[],
       includeAnalytics: formData.has('analytics'),
       includeFilters: formData.has('filters'),
-      compression: true
+      compression: true,
     };
 
     const dateStart = formData.get('dateStart') as string;
     const dateEnd = formData.get('dateEnd') as string;
-    
+
     if (dateStart && dateEnd) {
       options.dateRange = {
         start: dateStart,
-        end: dateEnd
+        end: dateEnd,
       };
     }
 
@@ -539,7 +551,7 @@ class ExportSharingComponent {
       filename: `job-search-${format}-${Date.now()}`,
       includeFields: ['title', 'company', 'location', 'salary'],
       includeAnalytics: false,
-      includeFilters: true
+      includeFilters: true,
     };
 
     try {
@@ -557,24 +569,26 @@ class ExportSharingComponent {
    */
   private async initiateExport(options: ExportOptions): Promise<string> {
     const exportId = `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Send export request via WebSocket
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
-        type: 'start-export',
-        exportId,
-        options
-      }));
+      this.ws.send(
+        JSON.stringify({
+          type: 'start-export',
+          exportId,
+          options,
+        }),
+      );
     } else {
       // Fallback to HTTP API
       const response = await fetch('/api/v2/export/start', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ exportId, options })
+        body: JSON.stringify({ exportId, options }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Export failed: ${response.statusText}`);
       }
@@ -590,9 +604,9 @@ class ExportSharingComponent {
     this.exportQueue.push({
       id: exportId,
       status: 'pending',
-      progress: 0
+      progress: 0,
     });
-    
+
     this.renderExportQueue();
   }
 
@@ -608,7 +622,9 @@ class ExportSharingComponent {
       return;
     }
 
-    const html = this.exportQueue.map(item => `
+    const html = this.exportQueue
+      .map(
+        (item) => `
       <div class="queue-item" data-export-id="${item.id}">
         <div class="queue-info">
           <span class="export-id">${item.id.split('_')[2]}</span>
@@ -618,13 +634,16 @@ class ExportSharingComponent {
           <div class="progress-fill" style="width: ${item.progress}%"></div>
         </div>
         <div class="queue-actions">
-          ${item.status === 'completed' ? 
-            '<button class="btn-download">📥 Download</button>' : 
-            '<button class="btn-cancel">❌ Cancel</button>'
+          ${
+            item.status === 'completed'
+              ? '<button class="btn-download">📥 Download</button>'
+              : '<button class="btn-cancel">❌ Cancel</button>'
           }
         </div>
       </div>
-    `).join('');
+    `,
+      )
+      .join('');
 
     container.innerHTML = html;
   }
@@ -633,7 +652,7 @@ class ExportSharingComponent {
    * Update export progress
    */
   private updateExportProgress(exportId: string, progress: number): void {
-    const queueItem = this.exportQueue.find(item => item.id === exportId);
+    const queueItem = this.exportQueue.find((item) => item.id === exportId);
     if (queueItem) {
       queueItem.progress = progress;
       queueItem.status = progress < 100 ? 'processing' : 'completed';
@@ -645,17 +664,17 @@ class ExportSharingComponent {
    * Handle export completion
    */
   private handleExportCompleted(exportId: string, downloadUrl: string): void {
-    const queueItem = this.exportQueue.find(item => item.id === exportId);
+    const queueItem = this.exportQueue.find((item) => item.id === exportId);
     if (queueItem) {
       queueItem.status = 'completed';
       queueItem.progress = 100;
       this.renderExportQueue();
-      
+
       // Auto-download if enabled
       if (this.shouldAutoDownload()) {
         window.open(downloadUrl, '_blank');
       }
-      
+
       this.showNotification('Export completed successfully!', 'success');
     }
   }
@@ -669,18 +688,18 @@ class ExportSharingComponent {
       const shareOptions: ShareOptions = {
         type: 'link',
         permissions: 'view',
-        expiryDays: 7
+        expiryDays: 7,
       };
 
       const response = await fetch('/api/v2/share/create-link', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           filters: currentFilters,
-          options: shareOptions
-        })
+          options: shareOptions,
+        }),
       });
 
       if (response.ok) {
@@ -735,7 +754,7 @@ class ExportSharingComponent {
   private saveCurrentAsTemplate(): void {
     const form = document.getElementById('export-form') as HTMLFormElement;
     const formData = new FormData(form);
-    
+
     const templateName = prompt('Enter a name for this template:');
     if (!templateName) return;
 
@@ -746,7 +765,7 @@ class ExportSharingComponent {
       format: formData.get('format') as ExportOptions['format'],
       fields: Array.from(formData.getAll('fields')) as string[],
       analytics: formData.has('analytics'),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     this.reportTemplates.push(template);
@@ -838,7 +857,7 @@ class ExportSharingComponent {
       tags: [],
       isPublic: false,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     this.jobCollections.push(collection);
@@ -871,7 +890,7 @@ class ExportSharingComponent {
         e.preventDefault();
         const jobId = e.dataTransfer?.getData('text/plain');
         const collectionId = (e.target as Element).getAttribute('data-collection-id');
-        
+
         if (jobId && collectionId) {
           this.addJobToCollection(collectionId, jobId);
         }
@@ -883,7 +902,7 @@ class ExportSharingComponent {
    * Add job to collection
    */
   private addJobToCollection(collectionId: string, jobId: string): void {
-    const collection = this.jobCollections.find(c => c.id === collectionId);
+    const collection = this.jobCollections.find((c) => c.id === collectionId);
     if (collection && !collection.jobs.includes(jobId)) {
       collection.jobs.push(jobId);
       collection.updatedAt = new Date().toISOString();
@@ -897,18 +916,22 @@ class ExportSharingComponent {
    * Attach template event listeners
    */
   private attachTemplateListeners(): void {
-    document.querySelectorAll('.use-template').forEach(button => {
+    document.querySelectorAll('.use-template').forEach((button) => {
       button.addEventListener('click', (e) => {
-        const templateId = (e.target as Element).closest('.template-card')?.getAttribute('data-template-id');
+        const templateId = (e.target as Element)
+          .closest('.template-card')
+          ?.getAttribute('data-template-id');
         if (templateId) {
           this.useTemplate(templateId);
         }
       });
     });
 
-    document.querySelectorAll('.delete-template').forEach(button => {
+    document.querySelectorAll('.delete-template').forEach((button) => {
       button.addEventListener('click', (e) => {
-        const templateId = (e.target as Element).closest('.template-card')?.getAttribute('data-template-id');
+        const templateId = (e.target as Element)
+          .closest('.template-card')
+          ?.getAttribute('data-template-id');
         if (templateId && confirm('Delete this template?')) {
           this.deleteTemplate(templateId);
         }
@@ -920,18 +943,22 @@ class ExportSharingComponent {
    * Attach collection event listeners
    */
   private attachCollectionListeners(): void {
-    document.querySelectorAll('.share-collection').forEach(button => {
+    document.querySelectorAll('.share-collection').forEach((button) => {
       button.addEventListener('click', (e) => {
-        const collectionId = (e.target as Element).closest('.collection-card')?.getAttribute('data-collection-id');
+        const collectionId = (e.target as Element)
+          .closest('.collection-card')
+          ?.getAttribute('data-collection-id');
         if (collectionId) {
           this.shareCollection(collectionId);
         }
       });
     });
 
-    document.querySelectorAll('.delete-collection').forEach(button => {
+    document.querySelectorAll('.delete-collection').forEach((button) => {
       button.addEventListener('click', (e) => {
-        const collectionId = (e.target as Element).closest('.collection-card')?.getAttribute('data-collection-id');
+        const collectionId = (e.target as Element)
+          .closest('.collection-card')
+          ?.getAttribute('data-collection-id');
         if (collectionId && confirm('Delete this collection?')) {
           this.deleteCollection(collectionId);
         }
@@ -943,18 +970,18 @@ class ExportSharingComponent {
    * Use template to populate form
    */
   private useTemplate(templateId: string): void {
-    const template = this.reportTemplates.find(t => t.id === templateId);
+    const template = this.reportTemplates.find((t) => t.id === templateId);
     if (!template) return;
 
     // Populate form with template values
     const form = document.getElementById('export-form') as HTMLFormElement;
     (form.querySelector('[name="format"]') as HTMLSelectElement).value = template.format;
-    
+
     // Update last used timestamp
     template.lastUsed = new Date().toISOString();
     this.saveCachedTemplates();
     this.renderReportTemplates();
-    
+
     this.showNotification('Template applied successfully!', 'success');
   }
 
@@ -962,7 +989,7 @@ class ExportSharingComponent {
    * Delete template
    */
   private deleteTemplate(templateId: string): void {
-    this.reportTemplates = this.reportTemplates.filter(t => t.id !== templateId);
+    this.reportTemplates = this.reportTemplates.filter((t) => t.id !== templateId);
     this.saveCachedTemplates();
     this.renderReportTemplates();
     this.showNotification('Template deleted', 'success');
@@ -972,16 +999,16 @@ class ExportSharingComponent {
    * Share collection
    */
   private async shareCollection(collectionId: string): Promise<void> {
-    const collection = this.jobCollections.find(c => c.id === collectionId);
+    const collection = this.jobCollections.find((c) => c.id === collectionId);
     if (!collection) return;
 
     try {
       const response = await fetch('/api/v2/collections/share', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ collectionId })
+        body: JSON.stringify({ collectionId }),
       });
 
       if (response.ok) {
@@ -1002,7 +1029,7 @@ class ExportSharingComponent {
    * Delete collection
    */
   private deleteCollection(collectionId: string): void {
-    this.jobCollections = this.jobCollections.filter(c => c.id !== collectionId);
+    this.jobCollections = this.jobCollections.filter((c) => c.id !== collectionId);
     this.saveCachedCollections();
     this.renderJobCollections();
     this.showNotification('Collection deleted', 'success');
@@ -1016,7 +1043,7 @@ class ExportSharingComponent {
     return {
       query: (document.getElementById('quick-search') as HTMLInputElement)?.value || '',
       location: '',
-      salary: null
+      salary: null,
     };
   }
 
@@ -1092,60 +1119,63 @@ class ExportSharingComponent {
 
   private showShareLinkDialog(shareUrl: string): void {
     const modal = this.createModal('share-link-modal', 'Share Link Created');
-    
+
     const content = document.createElement('div');
     content.className = 'modal-content';
-    
+
     const description = document.createElement('p');
     description.textContent = 'Your shareable link has been created:';
-    
+
     const shareDiv = document.createElement('div');
     shareDiv.className = 'share-url';
-    
+
     const input = document.createElement('input');
     input.type = 'text';
     input.value = this.sanitizeUrl(shareUrl);
     input.readOnly = true;
-    
+
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn-copy';
     copyBtn.textContent = '📋 Copy';
     copyBtn.onclick = () => {
       // Use safe clipboard API directly
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          this.showNotification('Copied to clipboard!', 'success');
-        }).catch(() => {
-          this.showNotification('Failed to copy to clipboard', 'error');
-        });
+        navigator.clipboard
+          .writeText(shareUrl)
+          .then(() => {
+            this.showNotification('Copied to clipboard!', 'success');
+          })
+          .catch(() => {
+            this.showNotification('Failed to copy to clipboard', 'error');
+          });
       } else {
         this.showNotification('Clipboard not available', 'error');
       }
     };
-    
+
     const expires = document.createElement('p');
     expires.className = 'share-expires';
     expires.textContent = 'This link will expire in 7 days.';
-    
+
     const actions = document.createElement('div');
     actions.className = 'modal-actions';
-    
+
     const doneBtn = document.createElement('button');
     doneBtn.className = 'btn-primary';
     doneBtn.textContent = 'Done';
     doneBtn.onclick = () => this.closeModal('share-link-modal');
-    
+
     shareDiv.appendChild(input);
     shareDiv.appendChild(copyBtn);
     actions.appendChild(doneBtn);
-    
+
     content.appendChild(description);
     content.appendChild(shareDiv);
     content.appendChild(expires);
     content.appendChild(actions);
-    
+
     modal.appendChild(content);
-    
+
     if (modal) {
       modal.style.display = 'flex';
       modal.classList.add('active');
@@ -1168,9 +1198,9 @@ class ExportSharingComponent {
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
       notification.remove();
     }, 5000);
@@ -1182,7 +1212,7 @@ class ExportSharingComponent {
 
   private handleCollectionUpdate(data: any): void {
     // Handle collection updates from other users
-    const collection = this.jobCollections.find(c => c.id === data.collectionId);
+    const collection = this.jobCollections.find((c) => c.id === data.collectionId);
     if (collection) {
       Object.assign(collection, data.updates);
       this.renderJobCollections();
@@ -1194,11 +1224,11 @@ class ExportSharingComponent {
    */
   private escapeHtml(unsafe: string): string {
     return unsafe
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   /**
@@ -1225,12 +1255,15 @@ class ExportSharingComponent {
     if (navigator.clipboard && window.isSecureContext) {
       // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally removing control characters for security
       const sanitizedText = text.replace(/[\x00-\x1F\x7F-\x9F]/g, ''); // Remove control characters
-      
-      navigator.clipboard.writeText(sanitizedText).then(() => {
-        this.showNotification('Copied to clipboard!', 'success');
-      }).catch(() => {
-        this.showNotification('Failed to copy to clipboard', 'error');
-      });
+
+      navigator.clipboard
+        .writeText(sanitizedText)
+        .then(() => {
+          this.showNotification('Copied to clipboard!', 'success');
+        })
+        .catch(() => {
+          this.showNotification('Failed to copy to clipboard', 'error');
+        });
     } else {
       this.showNotification('Clipboard not available in this context', 'error');
     }
