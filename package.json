@@ -15,7 +15,7 @@
     "test:selenium": "node tests/selenium/selenium-test-runner.js",
     "test:selenium:export": "node tests/selenium/export-sharing-selenium.test.js",
     "test:selenium:webapp": "node tests/selenium/web-app-selenium.test.js",
-    "start:web": "tsx src/web/cli.ts start --host 0.0.0.0 --port 3000",
+    "start:web": "tsx src/web/server-cli.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:cli": "tsx scripts/test-cli-automation.ts",
@@ -116,26 +116,13 @@
     "vitest": "^3.2.4"
   },
   "lint-staged": {
-    "*.{ts,js}": [
-      "biome format --write",
-      "biome check --apply"
-    ],
-    "*.json": [
-      "prettier --write"
-    ],
-    "*.md": [
-      "prettier --write"
-    ]
+    "*.{ts,js}": ["biome format --write", "biome check --apply"],
+    "*.json": ["prettier --write"],
+    "*.md": ["prettier --write"]
   },
   "tsup": {
-    "entry": [
-      "src/index.ts",
-      "src/cli/index.ts",
-      "src/web/cli.ts"
-    ],
-    "format": [
-      "esm"
-    ],
+    "entry": ["src/index.ts", "src/cli/index.ts", "src/web/cli.ts"],
+    "format": ["esm"],
     "dts": true,
     "clean": true,
     "minify": true,

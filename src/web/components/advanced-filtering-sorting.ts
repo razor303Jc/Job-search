@@ -97,7 +97,8 @@ class AdvancedFilteringSortingComponent {
   private config: AdvancedFilteringConfig;
 
   constructor(container?: HTMLElement, config: AdvancedFilteringConfig = {}) {
-    this.container = container || document.getElementById('advanced-filtering-container') as HTMLElement;
+    this.container =
+      container || (document.getElementById('advanced-filtering-container') as HTMLElement);
     this.config = config;
     this.initializeState();
     this.initializeOperators();
@@ -112,7 +113,7 @@ class AdvancedFilteringSortingComponent {
    */
   setWebSocket(ws: WebSocket): void {
     this.ws = ws;
-    
+
     if (this.ws) {
       this.ws.addEventListener('message', (event) => {
         try {
@@ -152,15 +153,13 @@ class AdvancedFilteringSortingComponent {
     this.state = {
       groups: [this.createDefaultFilterGroup()],
       presets: [],
-      sortOptions: [
-        { field: 'scraped_at', direction: 'desc', priority: 1, dataType: 'date' }
-      ],
+      sortOptions: [{ field: 'scraped_at', direction: 'desc', priority: 1, dataType: 'date' }],
       quickFilters: {},
       searchQuery: '',
       globalSearch: '',
       totalResults: 0,
       filteredResults: 0,
-      isProcessing: false
+      isProcessing: false,
     };
   }
 
@@ -174,16 +173,44 @@ class AdvancedFilteringSortingComponent {
         name: 'Text',
         type: 'text',
         operators: [
-          { value: 'contains', label: 'Contains', description: 'Field contains the specified text' },
-          { value: 'not_contains', label: 'Does not contain', description: 'Field does not contain the specified text' },
-          { value: 'equals', label: 'Equals', description: 'Field equals exactly the specified text' },
-          { value: 'not_equals', label: 'Does not equal', description: 'Field does not equal the specified text' },
-          { value: 'starts_with', label: 'Starts with', description: 'Field starts with the specified text' },
-          { value: 'ends_with', label: 'Ends with', description: 'Field ends with the specified text' },
-          { value: 'regex', label: 'Matches regex', description: 'Field matches the regular expression' },
+          {
+            value: 'contains',
+            label: 'Contains',
+            description: 'Field contains the specified text',
+          },
+          {
+            value: 'not_contains',
+            label: 'Does not contain',
+            description: 'Field does not contain the specified text',
+          },
+          {
+            value: 'equals',
+            label: 'Equals',
+            description: 'Field equals exactly the specified text',
+          },
+          {
+            value: 'not_equals',
+            label: 'Does not equal',
+            description: 'Field does not equal the specified text',
+          },
+          {
+            value: 'starts_with',
+            label: 'Starts with',
+            description: 'Field starts with the specified text',
+          },
+          {
+            value: 'ends_with',
+            label: 'Ends with',
+            description: 'Field ends with the specified text',
+          },
+          {
+            value: 'regex',
+            label: 'Matches regex',
+            description: 'Field matches the regular expression',
+          },
           { value: 'is_empty', label: 'Is empty', description: 'Field is empty or null' },
-          { value: 'is_not_empty', label: 'Is not empty', description: 'Field has a value' }
-        ]
+          { value: 'is_not_empty', label: 'Is not empty', description: 'Field has a value' },
+        ],
       },
       number: {
         id: 'number',
@@ -191,16 +218,44 @@ class AdvancedFilteringSortingComponent {
         type: 'number',
         operators: [
           { value: 'equals', label: 'Equals', description: 'Field equals the specified number' },
-          { value: 'not_equals', label: 'Does not equal', description: 'Field does not equal the specified number' },
-          { value: 'greater_than', label: 'Greater than', description: 'Field is greater than the specified number' },
-          { value: 'greater_than_or_equal', label: 'Greater than or equal', description: 'Field is greater than or equal to the specified number' },
-          { value: 'less_than', label: 'Less than', description: 'Field is less than the specified number' },
-          { value: 'less_than_or_equal', label: 'Less than or equal', description: 'Field is less than or equal to the specified number' },
-          { value: 'between', label: 'Between', description: 'Field is between two specified numbers' },
-          { value: 'not_between', label: 'Not between', description: 'Field is not between two specified numbers' },
+          {
+            value: 'not_equals',
+            label: 'Does not equal',
+            description: 'Field does not equal the specified number',
+          },
+          {
+            value: 'greater_than',
+            label: 'Greater than',
+            description: 'Field is greater than the specified number',
+          },
+          {
+            value: 'greater_than_or_equal',
+            label: 'Greater than or equal',
+            description: 'Field is greater than or equal to the specified number',
+          },
+          {
+            value: 'less_than',
+            label: 'Less than',
+            description: 'Field is less than the specified number',
+          },
+          {
+            value: 'less_than_or_equal',
+            label: 'Less than or equal',
+            description: 'Field is less than or equal to the specified number',
+          },
+          {
+            value: 'between',
+            label: 'Between',
+            description: 'Field is between two specified numbers',
+          },
+          {
+            value: 'not_between',
+            label: 'Not between',
+            description: 'Field is not between two specified numbers',
+          },
           { value: 'is_null', label: 'Is null', description: 'Field is null or undefined' },
-          { value: 'is_not_null', label: 'Is not null', description: 'Field has a numeric value' }
-        ]
+          { value: 'is_not_null', label: 'Is not null', description: 'Field has a numeric value' },
+        ],
       },
       date: {
         id: 'date',
@@ -208,21 +263,53 @@ class AdvancedFilteringSortingComponent {
         type: 'date',
         operators: [
           { value: 'equals', label: 'On date', description: 'Field is on the specified date' },
-          { value: 'not_equals', label: 'Not on date', description: 'Field is not on the specified date' },
+          {
+            value: 'not_equals',
+            label: 'Not on date',
+            description: 'Field is not on the specified date',
+          },
           { value: 'after', label: 'After', description: 'Field is after the specified date' },
-          { value: 'on_or_after', label: 'On or after', description: 'Field is on or after the specified date' },
+          {
+            value: 'on_or_after',
+            label: 'On or after',
+            description: 'Field is on or after the specified date',
+          },
           { value: 'before', label: 'Before', description: 'Field is before the specified date' },
-          { value: 'on_or_before', label: 'On or before', description: 'Field is on or before the specified date' },
-          { value: 'between', label: 'Between dates', description: 'Field is between two specified dates' },
-          { value: 'in_last_days', label: 'In last X days', description: 'Field is within the last X days' },
-          { value: 'in_next_days', label: 'In next X days', description: 'Field is within the next X days' },
+          {
+            value: 'on_or_before',
+            label: 'On or before',
+            description: 'Field is on or before the specified date',
+          },
+          {
+            value: 'between',
+            label: 'Between dates',
+            description: 'Field is between two specified dates',
+          },
+          {
+            value: 'in_last_days',
+            label: 'In last X days',
+            description: 'Field is within the last X days',
+          },
+          {
+            value: 'in_next_days',
+            label: 'In next X days',
+            description: 'Field is within the next X days',
+          },
           { value: 'today', label: 'Today', description: 'Field is today' },
           { value: 'yesterday', label: 'Yesterday', description: 'Field is yesterday' },
           { value: 'this_week', label: 'This week', description: 'Field is in the current week' },
           { value: 'last_week', label: 'Last week', description: 'Field is in the previous week' },
-          { value: 'this_month', label: 'This month', description: 'Field is in the current month' },
-          { value: 'last_month', label: 'Last month', description: 'Field is in the previous month' }
-        ]
+          {
+            value: 'this_month',
+            label: 'This month',
+            description: 'Field is in the current month',
+          },
+          {
+            value: 'last_month',
+            label: 'Last month',
+            description: 'Field is in the previous month',
+          },
+        ],
       },
       boolean: {
         id: 'boolean',
@@ -231,25 +318,53 @@ class AdvancedFilteringSortingComponent {
         operators: [
           { value: 'is_true', label: 'Is true', description: 'Field is true' },
           { value: 'is_false', label: 'Is false', description: 'Field is false' },
-          { value: 'is_null', label: 'Is null', description: 'Field is null or undefined' }
-        ]
+          { value: 'is_null', label: 'Is null', description: 'Field is null or undefined' },
+        ],
       },
       array: {
         id: 'array',
         name: 'Array/List',
         type: 'array',
         operators: [
-          { value: 'contains', label: 'Contains', description: 'Array contains the specified value' },
-          { value: 'not_contains', label: 'Does not contain', description: 'Array does not contain the specified value' },
-          { value: 'contains_all', label: 'Contains all', description: 'Array contains all specified values' },
-          { value: 'contains_any', label: 'Contains any', description: 'Array contains any of the specified values' },
+          {
+            value: 'contains',
+            label: 'Contains',
+            description: 'Array contains the specified value',
+          },
+          {
+            value: 'not_contains',
+            label: 'Does not contain',
+            description: 'Array does not contain the specified value',
+          },
+          {
+            value: 'contains_all',
+            label: 'Contains all',
+            description: 'Array contains all specified values',
+          },
+          {
+            value: 'contains_any',
+            label: 'Contains any',
+            description: 'Array contains any of the specified values',
+          },
           { value: 'is_empty', label: 'Is empty', description: 'Array is empty' },
           { value: 'is_not_empty', label: 'Is not empty', description: 'Array has values' },
-          { value: 'length_equals', label: 'Length equals', description: 'Array length equals the specified number' },
-          { value: 'length_greater_than', label: 'Length greater than', description: 'Array length is greater than the specified number' },
-          { value: 'length_less_than', label: 'Length less than', description: 'Array length is less than the specified number' }
-        ]
-      }
+          {
+            value: 'length_equals',
+            label: 'Length equals',
+            description: 'Array length equals the specified number',
+          },
+          {
+            value: 'length_greater_than',
+            label: 'Length greater than',
+            description: 'Array length is greater than the specified number',
+          },
+          {
+            value: 'length_less_than',
+            label: 'Length less than',
+            description: 'Array length is less than the specified number',
+          },
+        ],
+      },
     };
   }
 
@@ -267,7 +382,7 @@ class AdvancedFilteringSortingComponent {
         description: 'The job title or position name',
         searchable: true,
         sortable: true,
-        aggregatable: false
+        aggregatable: false,
       },
       {
         id: 'company',
@@ -278,7 +393,7 @@ class AdvancedFilteringSortingComponent {
         description: 'The hiring company name',
         searchable: true,
         sortable: true,
-        aggregatable: true
+        aggregatable: true,
       },
       {
         id: 'location',
@@ -289,7 +404,7 @@ class AdvancedFilteringSortingComponent {
         description: 'Job location or "Remote"',
         searchable: true,
         sortable: true,
-        aggregatable: true
+        aggregatable: true,
       },
       {
         id: 'salary_min',
@@ -300,7 +415,7 @@ class AdvancedFilteringSortingComponent {
         description: 'Minimum salary amount',
         searchable: false,
         sortable: true,
-        aggregatable: true
+        aggregatable: true,
       },
       {
         id: 'salary_max',
@@ -311,7 +426,7 @@ class AdvancedFilteringSortingComponent {
         description: 'Maximum salary amount',
         searchable: false,
         sortable: true,
-        aggregatable: true
+        aggregatable: true,
       },
       {
         id: 'employment_type',
@@ -324,12 +439,12 @@ class AdvancedFilteringSortingComponent {
           { value: 'part-time', label: 'Part-time' },
           { value: 'contract', label: 'Contract' },
           { value: 'temporary', label: 'Temporary' },
-          { value: 'internship', label: 'Internship' }
+          { value: 'internship', label: 'Internship' },
         ],
         description: 'Type of employment',
         searchable: false,
         sortable: true,
-        aggregatable: true
+        aggregatable: true,
       },
       {
         id: 'is_remote',
@@ -340,7 +455,7 @@ class AdvancedFilteringSortingComponent {
         description: 'Whether the job allows remote work',
         searchable: false,
         sortable: true,
-        aggregatable: true
+        aggregatable: true,
       },
       {
         id: 'scraped_at',
@@ -351,7 +466,7 @@ class AdvancedFilteringSortingComponent {
         description: 'When the job was first discovered',
         searchable: false,
         sortable: true,
-        aggregatable: false
+        aggregatable: false,
       },
       {
         id: 'posted_date',
@@ -362,7 +477,7 @@ class AdvancedFilteringSortingComponent {
         description: 'When the job was posted by the company',
         searchable: false,
         sortable: true,
-        aggregatable: false
+        aggregatable: false,
       },
       {
         id: 'requirements',
@@ -373,7 +488,7 @@ class AdvancedFilteringSortingComponent {
         description: 'Job requirements and qualifications',
         searchable: true,
         sortable: false,
-        aggregatable: false
+        aggregatable: false,
       },
       {
         id: 'skills',
@@ -384,7 +499,7 @@ class AdvancedFilteringSortingComponent {
         description: 'Required or preferred skills',
         searchable: true,
         sortable: false,
-        aggregatable: true
+        aggregatable: true,
       },
       {
         id: 'experience_level',
@@ -397,13 +512,13 @@ class AdvancedFilteringSortingComponent {
           { value: 'mid', label: 'Mid Level' },
           { value: 'senior', label: 'Senior Level' },
           { value: 'lead', label: 'Lead/Principal' },
-          { value: 'executive', label: 'Executive' }
+          { value: 'executive', label: 'Executive' },
         ],
         description: 'Required experience level',
         searchable: false,
         sortable: true,
-        aggregatable: true
-      }
+        aggregatable: true,
+      },
     ];
   }
 
@@ -424,7 +539,7 @@ class AdvancedFilteringSortingComponent {
     // Quick filter toggles
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      
+
       if (target.classList.contains('quick-filter-toggle')) {
         this.handleQuickFilterToggle(target);
       } else if (target.classList.contains('filter-preset-item')) {
@@ -453,7 +568,7 @@ class AdvancedFilteringSortingComponent {
     // Filter condition changes
     document.addEventListener('change', (e) => {
       const target = e.target as HTMLElement;
-      
+
       if (target.classList.contains('filter-field-select')) {
         this.handleFieldChange(target);
       } else if (target.classList.contains('filter-operator-select')) {
@@ -519,7 +634,7 @@ class AdvancedFilteringSortingComponent {
       name: 'Filter Group 1',
       conditions: [this.createDefaultCondition()],
       logic: 'AND',
-      enabled: true
+      enabled: true,
     };
   }
 
@@ -533,7 +648,7 @@ class AdvancedFilteringSortingComponent {
       operator: 'contains',
       value: '',
       dataType: 'string',
-      enabled: true
+      enabled: true,
     };
   }
 
@@ -566,10 +681,10 @@ class AdvancedFilteringSortingComponent {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
-    
+
     const wrapper = document.createElement('div');
     wrapper.innerHTML = html;
-    
+
     while (wrapper.firstChild) {
       this.container.appendChild(wrapper.firstChild);
     }
@@ -619,14 +734,16 @@ class AdvancedFilteringSortingComponent {
       { key: 'high_salary', label: 'High Salary (>$100k)', icon: '💰' },
       { key: 'full_time', label: 'Full-time', icon: '⏰' },
       { key: 'no_experience', label: 'Entry Level', icon: '🌱' },
-      { key: 'tech_jobs', label: 'Tech Roles', icon: '💻' }
+      { key: 'tech_jobs', label: 'Tech Roles', icon: '💻' },
     ];
 
     return `
       <div class="quick-filters-section">
         <h4>Quick Filters</h4>
         <div class="quick-filters-grid">
-          ${quickFilters.map(filter => `
+          ${quickFilters
+            .map(
+              (filter) => `
             <button 
               type="button" 
               class="quick-filter-toggle ${this.state.quickFilters[filter.key] ? 'active' : ''}"
@@ -635,7 +752,9 @@ class AdvancedFilteringSortingComponent {
               <span class="filter-icon">${filter.icon}</span>
               <span class="filter-label">${filter.label}</span>
             </button>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </div>
       </div>
     `;
@@ -688,18 +807,24 @@ class AdvancedFilteringSortingComponent {
               <option value="OR" ${group.logic === 'OR' ? 'selected' : ''}>OR (any condition)</option>
             </select>
             
-            ${groupIndex > 0 ? `
+            ${
+              groupIndex > 0
+                ? `
               <button type="button" class="remove-filter-group" data-group-id="${group.id}">
                 Remove Group
               </button>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
         </div>
         
         <div class="filter-conditions">
-          ${group.conditions.map((condition, conditionIndex) => 
-            this.renderFilterCondition(condition, conditionIndex, group.id)
-          ).join('')}
+          ${group.conditions
+            .map((condition, conditionIndex) =>
+              this.renderFilterCondition(condition, conditionIndex, group.id),
+            )
+            .join('')}
         </div>
         
         <button type="button" class="add-filter-condition" data-group-id="${group.id}">
@@ -712,8 +837,12 @@ class AdvancedFilteringSortingComponent {
   /**
    * Render individual filter condition
    */
-  private renderFilterCondition(condition: FilterCondition, conditionIndex: number, groupId: string): string {
-    const field = this.fields.find(f => f.key === condition.field);
+  private renderFilterCondition(
+    condition: FilterCondition,
+    conditionIndex: number,
+    groupId: string,
+  ): string {
+    const field = this.fields.find((f) => f.key === condition.field);
     const operatorType = field ? this.getOperatorTypeForField(field) : 'text';
     const operators = this.operators[operatorType]?.operators || [];
 
@@ -727,19 +856,27 @@ class AdvancedFilteringSortingComponent {
           />
           
           <select class="filter-field-select">
-            ${this.fields.map(field => `
+            ${this.fields
+              .map(
+                (field) => `
               <option value="${field.key}" ${condition.field === field.key ? 'selected' : ''}>
                 ${field.label}
               </option>
-            `).join('')}
+            `,
+              )
+              .join('')}
           </select>
           
           <select class="filter-operator-select">
-            ${operators.map(op => `
+            ${operators
+              .map(
+                (op) => `
               <option value="${op.value}" ${condition.operator === op.value ? 'selected' : ''}>
                 ${op.label}
               </option>
-            `).join('')}
+            `,
+              )
+              .join('')}
           </select>
           
           ${this.renderValueInput(condition, field)}
@@ -749,7 +886,7 @@ class AdvancedFilteringSortingComponent {
             class="remove-filter-condition" 
             data-condition-id="${condition.id}"
             data-group-id="${groupId}"
-            ${conditionIndex === 0 && this.state.groups.find(g => g.id === groupId)?.conditions.length === 1 ? 'disabled' : ''}
+            ${conditionIndex === 0 && this.state.groups.find((g) => g.id === groupId)?.conditions.length === 1 ? 'disabled' : ''}
           >
             ×
           </button>
@@ -765,7 +902,18 @@ class AdvancedFilteringSortingComponent {
     if (!field) return '<input type="text" class="filter-value-input" placeholder="Value" />';
 
     const operator = condition.operator;
-    const needsValue = !['is_empty', 'is_not_empty', 'is_null', 'is_not_null', 'today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month'].includes(operator);
+    const needsValue = ![
+      'is_empty',
+      'is_not_empty',
+      'is_null',
+      'is_not_null',
+      'today',
+      'yesterday',
+      'this_week',
+      'last_week',
+      'this_month',
+      'last_month',
+    ].includes(operator);
 
     if (!needsValue) {
       return '<span class="no-value-needed">No value needed</span>';
@@ -776,14 +924,20 @@ class AdvancedFilteringSortingComponent {
         return `
           <select class="filter-value-input">
             <option value="">Select value...</option>
-            ${field.options?.map(option => `
+            ${
+              field.options
+                ?.map(
+                  (option) => `
               <option value="${option.value}" ${condition.value === option.value ? 'selected' : ''}>
                 ${option.label}${option.count ? ` (${option.count})` : ''}
               </option>
-            `).join('') || ''}
+            `,
+                )
+                .join('') || ''
+            }
           </select>
         `;
-      
+
       case 'multiselect':
         return `
           <div class="multiselect-container">
@@ -794,7 +948,10 @@ class AdvancedFilteringSortingComponent {
               value="${Array.isArray(condition.value) ? condition.value.join(', ') : condition.value || ''}"
             />
             <div class="multiselect-dropdown" style="display: none;">
-              ${field.options?.map(option => `
+              ${
+                field.options
+                  ?.map(
+                    (option) => `
                 <label class="multiselect-option">
                   <input 
                     type="checkbox" 
@@ -803,11 +960,14 @@ class AdvancedFilteringSortingComponent {
                   />
                   ${option.label}${option.count ? ` (${option.count})` : ''}
                 </label>
-              `).join('') || ''}
+              `,
+                  )
+                  .join('') || ''
+              }
             </div>
           </div>
         `;
-      
+
       case 'number':
         if (operator === 'between' || operator === 'not_between') {
           const values = Array.isArray(condition.value) ? condition.value : [condition.value, ''];
@@ -837,7 +997,7 @@ class AdvancedFilteringSortingComponent {
             value="${condition.value || ''}"
           />
         `;
-      
+
       case 'date':
         if (operator === 'between') {
           const values = Array.isArray(condition.value) ? condition.value : [condition.value, ''];
@@ -875,10 +1035,10 @@ class AdvancedFilteringSortingComponent {
             value="${condition.value || ''}"
           />
         `;
-      
+
       case 'boolean':
         return '<span class="boolean-operator">No value needed</span>';
-      
+
       default:
         return `
           <input 
@@ -915,18 +1075,22 @@ class AdvancedFilteringSortingComponent {
    * Render individual sort option
    */
   private renderSortOption(option: SortOption, index: number): string {
-    const sortableFields = this.fields.filter(field => field.sortable);
+    const sortableFields = this.fields.filter((field) => field.sortable);
 
     return `
       <div class="sort-option" data-sort-index="${index}">
         <span class="sort-priority">${option.priority}</span>
         
         <select class="sort-field-select">
-          ${sortableFields.map(field => `
+          ${sortableFields
+            .map(
+              (field) => `
             <option value="${field.key}" ${option.field === field.key ? 'selected' : ''}>
               ${field.label}
             </option>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </select>
         
         <select class="sort-direction-select">
@@ -957,7 +1121,9 @@ class AdvancedFilteringSortingComponent {
         </div>
         
         <div class="presets-grid">
-          ${this.state.presets.map(preset => `
+          ${this.state.presets
+            .map(
+              (preset) => `
             <div class="filter-preset-item ${this.state.currentPreset === preset.id ? 'active' : ''}" data-preset-id="${preset.id}">
               <div class="preset-header">
                 <h5>${this.escapeHtml(preset.name)}</h5>
@@ -973,7 +1139,9 @@ class AdvancedFilteringSortingComponent {
                 ${preset.quickAccess ? '<span class="preset-quick">Quick Access</span>' : ''}
               </div>
             </div>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </div>
       </div>
     `;
@@ -1083,7 +1251,10 @@ class AdvancedFilteringSortingComponent {
   private getActiveFilterCount(): number {
     return this.state.groups.reduce((count, group) => {
       if (!group.enabled) return count;
-      return count + group.conditions.filter(condition => condition.enabled && condition.value !== '').length;
+      return (
+        count +
+        group.conditions.filter((condition) => condition.enabled && condition.value !== '').length
+      );
     }, 0);
   }
 
@@ -1103,15 +1274,19 @@ class AdvancedFilteringSortingComponent {
     // Multiselect dropdowns
     const multiselectInputs = document.querySelectorAll('.multiselect-input');
     if (multiselectInputs) {
-      multiselectInputs.forEach(input => {
+      multiselectInputs.forEach((input) => {
         input.addEventListener('focus', (e) => {
-          const dropdown = (e.target as HTMLElement).parentElement?.querySelector('.multiselect-dropdown') as HTMLElement;
+          const dropdown = (e.target as HTMLElement).parentElement?.querySelector(
+            '.multiselect-dropdown',
+          ) as HTMLElement;
           if (dropdown) dropdown.style.display = 'block';
         });
 
         input.addEventListener('blur', (e) => {
           setTimeout(() => {
-            const dropdown = (e.target as HTMLElement).parentElement?.querySelector('.multiselect-dropdown') as HTMLElement;
+            const dropdown = (e.target as HTMLElement).parentElement?.querySelector(
+              '.multiselect-dropdown',
+            ) as HTMLElement;
             if (dropdown) dropdown.style.display = 'none';
           }, 200);
         });
@@ -1121,7 +1296,7 @@ class AdvancedFilteringSortingComponent {
     // Auto-apply filters with debouncing
     const filterInputs = document.querySelectorAll('.filter-value-input');
     if (filterInputs) {
-      filterInputs.forEach(input => {
+      filterInputs.forEach((input) => {
         input.addEventListener('input', () => {
           this.debounceAutoApply();
         });
@@ -1161,16 +1336,18 @@ class AdvancedFilteringSortingComponent {
       groups: this.state.groups,
       sortOptions: this.state.sortOptions,
       searchQuery: this.state.searchQuery,
-      quickFilters: this.state.quickFilters
+      quickFilters: this.state.quickFilters,
     };
 
     try {
       // Send to WebSocket for real-time processing
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({
-          type: 'apply_advanced_filters',
-          config: filterConfig
-        }));
+        this.ws.send(
+          JSON.stringify({
+            type: 'apply_advanced_filters',
+            config: filterConfig,
+          }),
+        );
       }
 
       // Also send HTTP request as fallback
@@ -1178,7 +1355,7 @@ class AdvancedFilteringSortingComponent {
       const response = await fetch(`${apiEndpoint}/jobs/filter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filterConfig)
+        body: JSON.stringify(filterConfig),
       });
 
       if (response.ok) {
@@ -1198,11 +1375,13 @@ class AdvancedFilteringSortingComponent {
    */
   private updateFilterResults(results: any[], totalCount: number): void {
     this.state.filteredResults = totalCount;
-    
+
     // Emit event for other components
-    document.dispatchEvent(new CustomEvent('filterResultsUpdated', {
-      detail: { results, totalCount }
-    }));
+    document.dispatchEvent(
+      new CustomEvent('filterResultsUpdated', {
+        detail: { results, totalCount },
+      }),
+    );
 
     this.updateResultsInfo();
   }
@@ -1250,7 +1429,7 @@ class AdvancedFilteringSortingComponent {
 
     this.state.quickFilters[filterKey] = !this.state.quickFilters[filterKey];
     target.classList.toggle('active', this.state.quickFilters[filterKey]);
-    
+
     this.applyFilters();
   }
 
@@ -1259,8 +1438,8 @@ class AdvancedFilteringSortingComponent {
    */
   private handleAddFilterCondition(target: HTMLElement): void {
     const groupId = target.dataset.groupId;
-    const group = this.state.groups.find(g => g.id === groupId);
-    
+    const group = this.state.groups.find((g) => g.id === groupId);
+
     if (group) {
       group.conditions.push(this.createDefaultCondition());
       this.render();
@@ -1273,10 +1452,10 @@ class AdvancedFilteringSortingComponent {
   private handleRemoveFilterCondition(target: HTMLElement): void {
     const conditionId = target.dataset.conditionId;
     const groupId = target.dataset.groupId;
-    const group = this.state.groups.find(g => g.id === groupId);
-    
+    const group = this.state.groups.find((g) => g.id === groupId);
+
     if (group && group.conditions.length > 1) {
-      group.conditions = group.conditions.filter(c => c.id !== conditionId);
+      group.conditions = group.conditions.filter((c) => c.id !== conditionId);
       this.render();
     }
   }
@@ -1297,7 +1476,7 @@ class AdvancedFilteringSortingComponent {
   private handleRemoveFilterGroup(target: HTMLElement): void {
     const groupId = target.dataset.groupId;
     if (this.state.groups.length > 1) {
-      this.state.groups = this.state.groups.filter(g => g.id !== groupId);
+      this.state.groups = this.state.groups.filter((g) => g.id !== groupId);
       this.render();
     }
   }
@@ -1305,8 +1484,11 @@ class AdvancedFilteringSortingComponent {
   /**
    * Update field options dynamically
    */
-  private updateFieldOptions(fieldKey: string, options: Array<{ value: any; label: string; count?: number }>): void {
-    const field = this.fields.find(f => f.key === fieldKey);
+  private updateFieldOptions(
+    fieldKey: string,
+    options: Array<{ value: any; label: string; count?: number }>,
+  ): void {
+    const field = this.fields.find((f) => f.key === fieldKey);
     if (field) {
       field.options = options;
       // Re-render affected dropdowns
@@ -1318,21 +1500,25 @@ class AdvancedFilteringSortingComponent {
    * Re-render field options for specific field
    */
   private renderFieldOptions(fieldKey: string): void {
-    const field = this.fields.find(f => f.key === fieldKey);
+    const field = this.fields.find((f) => f.key === fieldKey);
     if (!field || !field.options) return;
 
-    document.querySelectorAll(`select.filter-value-input`).forEach(select => {
+    document.querySelectorAll('select.filter-value-input').forEach((select) => {
       const condition = this.findConditionByElement(select);
       if (condition && condition.field === fieldKey) {
         const currentValue = (select as HTMLSelectElement).value;
-        
+
         let optionsHtml = '<option value="">Select value...</option>';
-        optionsHtml += field.options!.map(option => `
+        optionsHtml += field
+          .options!.map(
+            (option) => `
           <option value="${option.value}" ${currentValue === option.value ? 'selected' : ''}>
             ${option.label}${option.count ? ` (${option.count})` : ''}
           </option>
-        `).join('');
-        
+        `,
+          )
+          .join('');
+
         select.innerHTML = optionsHtml;
       }
     });
@@ -1349,7 +1535,7 @@ class AdvancedFilteringSortingComponent {
     if (!conditionId) return undefined;
 
     for (const group of this.state.groups) {
-      const condition = group.conditions.find(c => c.id === conditionId);
+      const condition = group.conditions.find((c) => c.id === conditionId);
       if (condition) return condition;
     }
 
@@ -1368,7 +1554,7 @@ class AdvancedFilteringSortingComponent {
     condition.value = ''; // Reset value when field changes
 
     // Update operator dropdown
-    const field = this.fields.find(f => f.key === newField);
+    const field = this.fields.find((f) => f.key === newField);
     if (field) {
       const operatorType = this.getOperatorTypeForField(field);
       const operators = this.operators[operatorType]?.operators;
@@ -1409,7 +1595,7 @@ class AdvancedFilteringSortingComponent {
       const container = target.closest('.range-inputs');
       const minInput = container?.querySelector('.range-min') as HTMLInputElement;
       const maxInput = container?.querySelector('.range-max') as HTMLInputElement;
-      
+
       if (minInput && maxInput) {
         condition.value = [minInput.value, maxInput.value];
       }
@@ -1429,8 +1615,9 @@ class AdvancedFilteringSortingComponent {
 
     const groupElement = conditionElement.closest('.filter-group');
     const groupId = groupElement?.getAttribute('data-group-id') || '';
-    const conditionIndex = Array.from(groupElement?.querySelectorAll('.filter-condition') || [])
-      .indexOf(conditionElement);
+    const conditionIndex = Array.from(
+      groupElement?.querySelectorAll('.filter-condition') || [],
+    ).indexOf(conditionElement);
 
     const newHtml = this.renderFilterCondition(condition, conditionIndex, groupId);
     conditionElement.outerHTML = newHtml;
@@ -1453,8 +1640,8 @@ class AdvancedFilteringSortingComponent {
   private handleGroupLogicChange(target: HTMLElement): void {
     const groupElement = target.closest('.filter-group');
     const groupId = groupElement?.getAttribute('data-group-id');
-    const group = this.state.groups.find(g => g.id === groupId);
-    
+    const group = this.state.groups.find((g) => g.id === groupId);
+
     if (group) {
       group.logic = (target as HTMLSelectElement).value as 'AND' | 'OR';
       this.debounceAutoApply();
@@ -1466,9 +1653,9 @@ class AdvancedFilteringSortingComponent {
    */
   private handleSortFieldChange(target: HTMLElement): void {
     const sortElement = target.closest('.sort-option');
-    const sortIndex = parseInt(sortElement?.getAttribute('data-sort-index') || '0');
+    const sortIndex = Number.parseInt(sortElement?.getAttribute('data-sort-index') || '0');
     const sortOption = this.state.sortOptions[sortIndex];
-    
+
     if (sortOption) {
       sortOption.field = (target as HTMLSelectElement).value;
       this.applyFilters();
@@ -1480,9 +1667,9 @@ class AdvancedFilteringSortingComponent {
    */
   private handleSortDirectionChange(target: HTMLElement): void {
     const sortElement = target.closest('.sort-option');
-    const sortIndex = parseInt(sortElement?.getAttribute('data-sort-index') || '0');
+    const sortIndex = Number.parseInt(sortElement?.getAttribute('data-sort-index') || '0');
     const sortOption = this.state.sortOptions[sortIndex];
-    
+
     if (sortOption) {
       sortOption.direction = (target as HTMLSelectElement).value as 'asc' | 'desc';
       this.applyFilters();
@@ -1493,19 +1680,20 @@ class AdvancedFilteringSortingComponent {
    * Handle add sort option
    */
   private handleAddSortOption(): void {
-    const availableFields = this.fields.filter(f => f.sortable);
-    const usedFields = this.state.sortOptions.map(s => s.field);
-    const unusedFields = availableFields.filter(f => !usedFields.includes(f.key));
-    
+    const availableFields = this.fields.filter((f) => f.sortable);
+    const usedFields = this.state.sortOptions.map((s) => s.field);
+    const unusedFields = availableFields.filter((f) => !usedFields.includes(f.key));
+
     if (unusedFields.length > 0) {
       const firstField = unusedFields[0]!;
       this.state.sortOptions.push({
         field: firstField.key,
         direction: 'asc',
         priority: this.state.sortOptions.length + 1,
-        dataType: firstField.type === 'number' ? 'number' : firstField.type === 'date' ? 'date' : 'string'
+        dataType:
+          firstField.type === 'number' ? 'number' : firstField.type === 'date' ? 'date' : 'string',
       });
-      
+
       this.renderSortingOptionsSection();
     }
   }
@@ -1515,16 +1703,16 @@ class AdvancedFilteringSortingComponent {
    */
   private handleRemoveSortOption(target: HTMLElement): void {
     const sortElement = target.closest('.sort-option');
-    const sortIndex = parseInt(sortElement?.getAttribute('data-sort-index') || '0');
-    
+    const sortIndex = Number.parseInt(sortElement?.getAttribute('data-sort-index') || '0');
+
     if (this.state.sortOptions.length > 1) {
       this.state.sortOptions.splice(sortIndex, 1);
-      
+
       // Update priorities
       this.state.sortOptions.forEach((option, index) => {
         option.priority = index + 1;
       });
-      
+
       this.renderSortingOptionsSection();
       this.applyFilters();
     }
@@ -1545,8 +1733,8 @@ class AdvancedFilteringSortingComponent {
    */
   private handlePresetSelection(target: HTMLElement): void {
     const presetId = target.dataset.presetId;
-    const preset = this.state.presets.find(p => p.id === presetId);
-    
+    const preset = this.state.presets.find((p) => p.id === presetId);
+
     if (preset) {
       this.loadPreset(preset);
     }
@@ -1558,11 +1746,11 @@ class AdvancedFilteringSortingComponent {
   private loadPreset(preset: FilterPreset): void {
     this.state.groups = JSON.parse(JSON.stringify(preset.groups)); // Deep copy
     this.state.currentPreset = preset.id;
-    
+
     // Update preset usage
     preset.lastUsed = new Date().toISOString();
     preset.useCount++;
-    
+
     this.render();
     this.applyFilters();
   }
@@ -1575,7 +1763,7 @@ class AdvancedFilteringSortingComponent {
     if (!name) return;
 
     const description = prompt('Enter preset description (optional):') || '';
-    
+
     const preset: FilterPreset = {
       id: this.generateId(),
       name,
@@ -1583,7 +1771,7 @@ class AdvancedFilteringSortingComponent {
       groups: JSON.parse(JSON.stringify(this.state.groups)), // Deep copy
       quickAccess: false,
       createdAt: new Date().toISOString(),
-      useCount: 0
+      useCount: 0,
     };
 
     try {
@@ -1591,7 +1779,7 @@ class AdvancedFilteringSortingComponent {
       const response = await fetch(`${apiEndpoint}/filters/presets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preset)
+        body: JSON.stringify(preset),
       });
 
       if (response.ok) {
@@ -1618,7 +1806,7 @@ class AdvancedFilteringSortingComponent {
    */
   private addSharedPreset(preset: FilterPreset): void {
     // Avoid duplicates
-    const exists = this.state.presets.some(p => p.id === preset.id);
+    const exists = this.state.presets.some((p) => p.id === preset.id);
     if (!exists) {
       this.state.presets.push(preset);
       this.renderPresets();
@@ -1631,18 +1819,18 @@ class AdvancedFilteringSortingComponent {
   private updatePerformanceMetrics(metrics: any): void {
     const filterTimeElement = document.getElementById('filter-time');
     const cacheHitRateElement = document.getElementById('cache-hit-rate');
-    
+
     if (filterTimeElement && metrics.filterTime) {
       filterTimeElement.textContent = `${metrics.filterTime}ms`;
     }
-    
+
     if (cacheHitRateElement && metrics.cacheHitRate !== undefined) {
       cacheHitRateElement.textContent = `${Math.round(metrics.cacheHitRate * 100)}%`;
     }
   }
 
   // Public API methods for testing and external use
-  
+
   /**
    * Get current filter state
    */
@@ -1661,7 +1849,7 @@ class AdvancedFilteringSortingComponent {
    * Remove a filter group
    */
   removeFilterGroup(groupId: string): void {
-    const groupIndex = this.state.groups.findIndex(g => g.id === groupId);
+    const groupIndex = this.state.groups.findIndex((g) => g.id === groupId);
     if (groupIndex !== -1) {
       this.state.groups.splice(groupIndex, 1);
       this.saveState();
@@ -1674,7 +1862,7 @@ class AdvancedFilteringSortingComponent {
    * Add a condition to a filter group
    */
   addFilterCondition(groupId: string): void {
-    const group = this.state.groups.find(g => g.id === groupId);
+    const group = this.state.groups.find((g) => g.id === groupId);
     if (group) {
       const condition: FilterCondition = {
         id: `condition-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1682,7 +1870,7 @@ class AdvancedFilteringSortingComponent {
         operator: '',
         value: '',
         dataType: 'string',
-        enabled: true
+        enabled: true,
       };
       group.conditions.push(condition);
       this.saveState();
@@ -1694,9 +1882,9 @@ class AdvancedFilteringSortingComponent {
    * Remove a condition from a filter group
    */
   removeFilterCondition(groupId: string, conditionId: string): void {
-    const group = this.state.groups.find(g => g.id === groupId);
+    const group = this.state.groups.find((g) => g.id === groupId);
     if (group) {
-      const conditionIndex = group.conditions.findIndex(c => c.id === conditionId);
+      const conditionIndex = group.conditions.findIndex((c) => c.id === conditionId);
       if (conditionIndex !== -1) {
         group.conditions.splice(conditionIndex, 1);
         this.saveState();
@@ -1709,10 +1897,14 @@ class AdvancedFilteringSortingComponent {
   /**
    * Update a filter condition
    */
-  updateFilterCondition(groupId: string, conditionId: string, updates: Partial<FilterCondition>): void {
-    const group = this.state.groups.find(g => g.id === groupId);
+  updateFilterCondition(
+    groupId: string,
+    conditionId: string,
+    updates: Partial<FilterCondition>,
+  ): void {
+    const group = this.state.groups.find((g) => g.id === groupId);
     if (group) {
-      const condition = group.conditions.find(c => c.id === conditionId);
+      const condition = group.conditions.find((c) => c.id === conditionId);
       if (condition) {
         Object.assign(condition, updates);
         this.saveState();
@@ -1740,7 +1932,7 @@ class AdvancedFilteringSortingComponent {
       field,
       direction,
       priority: this.state.sortOptions.length,
-      dataType: this.getFieldDataType(field)
+      dataType: this.getFieldDataType(field),
     };
     this.state.sortOptions.push(sortOption);
     this.saveState();
@@ -1822,7 +2014,7 @@ class AdvancedFilteringSortingComponent {
   /**
    * Save a filter preset
    */
-  saveFilterPreset(name: string, description: string = ''): void {
+  saveFilterPreset(name: string, description = ''): void {
     const preset: FilterPreset = {
       id: `preset-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name,
@@ -1830,7 +2022,7 @@ class AdvancedFilteringSortingComponent {
       groups: JSON.parse(JSON.stringify(this.state.groups)),
       quickAccess: false,
       createdAt: new Date().toISOString(),
-      useCount: 0
+      useCount: 0,
     };
     this.state.presets.push(preset);
     this.saveState();
@@ -1841,7 +2033,7 @@ class AdvancedFilteringSortingComponent {
    * Load a filter preset
    */
   loadFilterPreset(presetId: string): void {
-    const preset = this.state.presets.find(p => p.id === presetId);
+    const preset = this.state.presets.find((p) => p.id === presetId);
     if (preset) {
       this.state.groups = JSON.parse(JSON.stringify(preset.groups));
       preset.lastUsed = new Date().toISOString();
@@ -1856,7 +2048,7 @@ class AdvancedFilteringSortingComponent {
    * Delete a filter preset
    */
   deleteFilterPreset(presetId: string): void {
-    const presetIndex = this.state.presets.findIndex(p => p.id === presetId);
+    const presetIndex = this.state.presets.findIndex((p) => p.id === presetId);
     if (presetIndex !== -1) {
       this.state.presets.splice(presetIndex, 1);
       this.saveState();
@@ -1895,10 +2087,10 @@ class AdvancedFilteringSortingComponent {
         },
         body: JSON.stringify({
           filters: this.state,
-          format
-        })
+          format,
+        }),
       });
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -1920,7 +2112,7 @@ class AdvancedFilteringSortingComponent {
     const config = {
       groups: this.state.groups,
       sortOptions: this.state.sortOptions,
-      globalSearch: this.state.globalSearch
+      globalSearch: this.state.globalSearch,
     };
     return btoa(JSON.stringify(config));
   }
@@ -1929,7 +2121,7 @@ class AdvancedFilteringSortingComponent {
    * Get field data type
    */
   private getFieldDataType(field: string): 'string' | 'number' | 'date' {
-    const fieldDef = this.fields.find(f => f.id === field);
+    const fieldDef = this.fields.find((f) => f.id === field);
     return fieldDef?.dataType || 'string';
   }
 
@@ -1952,12 +2144,12 @@ class AdvancedFilteringSortingComponent {
     if (this.debounceTimeout) {
       clearTimeout(this.debounceTimeout);
     }
-    
+
     // Close WebSocket connection
     if (this.ws) {
       this.ws.close();
     }
-    
+
     // Clear the container
     if (this.container) {
       this.container.innerHTML = '';

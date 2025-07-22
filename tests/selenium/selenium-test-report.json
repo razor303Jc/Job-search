@@ -1,0 +1,118 @@
+{
+  "timestamp": "2025-07-22T19:52:53.622Z",
+  "summary": {
+    "total": 9,
+    "passed": 0,
+    "failed": 9,
+    "byBrowser": {
+      "chrome": {
+        "total": 9,
+        "passed": 0,
+        "failed": 9
+      }
+    },
+    "byTest": {
+      "dashboard-loading": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "advanced-job-search": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "live-scraping-dashboard": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "job-alert-system": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "job-comparison-tool": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "export-sharing-features": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "websocket-functionality": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "mobile-responsiveness": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "performance-metrics": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1
+      }
+    }
+  },
+  "results": [
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "dashboard-loading",
+      "error": "Waiting for title to contain \"Job Search Dashboard\"\nWait timed out after 10105ms"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "advanced-job-search",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "live-scraping-dashboard",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "job-alert-system",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "job-comparison-tool",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "export-sharing-features",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "websocket-functionality",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "mobile-responsiveness",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    },
+    {
+      "success": false,
+      "browser": "chrome",
+      "test": "performance-metrics",
+      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+    }
+  ]
+}

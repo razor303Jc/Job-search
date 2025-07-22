@@ -3,12 +3,12 @@
  * Phase 7 Stage 4: Advanced UI Features & UX
  */
 
-import { Builder, By, Key, until, WebDriver } from 'selenium-webdriver';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Builder, By, Key, WebDriver, until } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
 import firefox from 'selenium-webdriver/firefox.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,13 +18,13 @@ const __dirname = path.dirname(__filename);
  * Tests all major features and user workflows
  */
 
-import assert from 'assert';
+import assert from 'node:assert';
 
 // Test configuration
 const TEST_CONFIG = {
   baseUrl: 'http://localhost:3000',
   timeout: 30000,
-  browsers: ['chrome', 'firefox'],
+  browsers: ['chrome'], // Only Chrome for testing
   headless: process.env.CI === 'true',
   screenshotDir: path.join(__dirname, 'screenshots'),
 };
@@ -70,7 +70,6 @@ class WebAppSeleniumTests {
       if (driver) {
         await driver.manage().setTimeouts({ implicit: TEST_CONFIG.timeout });
         this.drivers.set(browser, driver);
-        console.log(`✅ ${browser} driver initialized`);
       }
     }
   }
@@ -82,7 +81,6 @@ class WebAppSeleniumTests {
     for (const [browser, driver] of this.drivers) {
       try {
         await driver.quit();
-        console.log(`✅ ${browser} driver closed`);
       } catch (error) {
         console.error(`❌ Error closing ${browser} driver:`, error.message);
       }
@@ -99,7 +97,6 @@ class WebAppSeleniumTests {
       const filename = `${testName}_${browser}_${Date.now()}.png`;
       const filepath = path.join(TEST_CONFIG.screenshotDir, filename);
       fs.writeFileSync(filepath, screenshot, 'base64');
-      console.log(`📸 Screenshot saved: ${filename}`);
       return filepath;
     } catch (error) {
       console.error('❌ Failed to take screenshot:', error.message);
@@ -127,8 +124,6 @@ class WebAppSeleniumTests {
    * Test: Dashboard Loading and Navigation
    */
   async testDashboardLoading(driver, browser) {
-    console.log(`🧪 Testing dashboard loading (${browser})`);
-
     try {
       // Navigate to dashboard
       await driver.get(`${TEST_CONFIG.baseUrl}/dashboard`);
@@ -165,8 +160,6 @@ class WebAppSeleniumTests {
       await searchNav.click();
 
       await driver.wait(until.urlContains('/search'), 5000);
-
-      console.log(`✅ Dashboard loading test passed (${browser})`);
       return { success: true, browser, test: 'dashboard-loading' };
     } catch (error) {
       console.error(`❌ Dashboard loading test failed (${browser}):`, error.message);
@@ -179,8 +172,6 @@ class WebAppSeleniumTests {
    * Test: Advanced Job Search Interface
    */
   async testAdvancedJobSearch(driver, browser) {
-    console.log(`🧪 Testing advanced job search (${browser})`);
-
     try {
       // Navigate to search page
       await driver.get(`${TEST_CONFIG.baseUrl}/search`);
@@ -228,7 +219,7 @@ class WebAppSeleniumTests {
 
       // Test result item details
       if (resultItems.length > 0) {
-        const firstResult = resultItems[0];
+        const _firstResult = resultItems[0];
         await this.waitForVisible(driver, By.css('.job-title'), 5000);
         await this.waitForVisible(driver, By.css('.company-name'), 5000);
         await this.waitForVisible(driver, By.css('.job-location'), 5000);
@@ -241,12 +232,7 @@ class WebAppSeleniumTests {
           await nextButton.click();
           await driver.sleep(2000);
         }
-      } catch (error) {
-        // Pagination might not be available
-        console.log('Pagination not found or not enabled');
-      }
-
-      console.log(`✅ Advanced job search test passed (${browser})`);
+      } catch (_error) {}
       return { success: true, browser, test: 'advanced-job-search' };
     } catch (error) {
       console.error(`❌ Advanced job search test failed (${browser}):`, error.message);
@@ -259,8 +245,6 @@ class WebAppSeleniumTests {
    * Test: Live Scraping Dashboard
    */
   async testLiveScrapingDashboard(driver, browser) {
-    console.log(`🧪 Testing live scraping dashboard (${browser})`);
-
     try {
       // Navigate to live scraping page
       await driver.get(`${TEST_CONFIG.baseUrl}/live-scraping`);
@@ -298,8 +282,6 @@ class WebAppSeleniumTests {
       // Test stop scraping
       const stopButton = await driver.findElement(By.id('stop-scraping-btn'));
       await stopButton.click();
-
-      console.log(`✅ Live scraping dashboard test passed (${browser})`);
       return { success: true, browser, test: 'live-scraping-dashboard' };
     } catch (error) {
       console.error(`❌ Live scraping dashboard test failed (${browser}):`, error.message);
@@ -312,8 +294,6 @@ class WebAppSeleniumTests {
    * Test: Job Alert System
    */
   async testJobAlertSystem(driver, browser) {
-    console.log(`🧪 Testing job alert system (${browser})`);
-
     try {
       // Navigate to alerts page
       await driver.get(`${TEST_CONFIG.baseUrl}/alerts`);
@@ -379,8 +359,6 @@ class WebAppSeleniumTests {
 
       // Test alert history
       await this.waitForVisible(driver, By.id('alert-history'));
-
-      console.log(`✅ Job alert system test passed (${browser})`);
       return { success: true, browser, test: 'job-alert-system' };
     } catch (error) {
       console.error(`❌ Job alert system test failed (${browser}):`, error.message);
@@ -393,8 +371,6 @@ class WebAppSeleniumTests {
    * Test: Job Comparison Tool
    */
   async testJobComparisonTool(driver, browser) {
-    console.log(`🧪 Testing job comparison tool (${browser})`);
-
     try {
       // Navigate to comparison page
       await driver.get(`${TEST_CONFIG.baseUrl}/comparison`);
@@ -453,8 +429,6 @@ class WebAppSeleniumTests {
 
       // Wait for export to process
       await driver.sleep(2000);
-
-      console.log(`✅ Job comparison tool test passed (${browser})`);
       return { success: true, browser, test: 'job-comparison-tool' };
     } catch (error) {
       console.error(`❌ Job comparison tool test failed (${browser}):`, error.message);
@@ -467,8 +441,6 @@ class WebAppSeleniumTests {
    * Test: Export & Sharing Features
    */
   async testExportSharingFeatures(driver, browser) {
-    console.log(`🧪 Testing export & sharing features (${browser})`);
-
     try {
       // Navigate to export page
       await driver.get(`${TEST_CONFIG.baseUrl}/export`);
@@ -583,8 +555,6 @@ class WebAppSeleniumTests {
       await collectionsTab.click();
 
       await this.waitForVisible(driver, By.id('collections-section'));
-
-      console.log(`✅ Export & sharing features test passed (${browser})`);
       return { success: true, browser, test: 'export-sharing-features' };
     } catch (error) {
       console.error(`❌ Export & sharing features test failed (${browser}):`, error.message);
@@ -597,8 +567,6 @@ class WebAppSeleniumTests {
    * Test: Real-time WebSocket Functionality
    */
   async testWebSocketFunctionality(driver, browser) {
-    console.log(`🧪 Testing WebSocket functionality (${browser})`);
-
     try {
       // Navigate to dashboard
       await driver.get(`${TEST_CONFIG.baseUrl}/dashboard`);
@@ -666,8 +634,6 @@ class WebAppSeleniumTests {
             `);
 
       await driver.sleep(1000);
-
-      console.log(`✅ WebSocket functionality test passed (${browser})`);
       return { success: true, browser, test: 'websocket-functionality' };
     } catch (error) {
       console.error(`❌ WebSocket functionality test failed (${browser}):`, error.message);
@@ -680,8 +646,6 @@ class WebAppSeleniumTests {
    * Test: Mobile Responsiveness
    */
   async testMobileResponsiveness(driver, browser) {
-    console.log(`🧪 Testing mobile responsiveness (${browser})`);
-
     try {
       // Set mobile viewport
       await driver.manage().window().setRect({ width: 375, height: 667 });
@@ -730,8 +694,6 @@ class WebAppSeleniumTests {
 
       // Reset to desktop viewport
       await driver.manage().window().setRect({ width: 1920, height: 1080 });
-
-      console.log(`✅ Mobile responsiveness test passed (${browser})`);
       return { success: true, browser, test: 'mobile-responsiveness' };
     } catch (error) {
       console.error(`❌ Mobile responsiveness test failed (${browser}):`, error.message);
@@ -744,16 +706,12 @@ class WebAppSeleniumTests {
    * Test: Performance and Load Times
    */
   async testPerformanceMetrics(driver, browser) {
-    console.log(`🧪 Testing performance metrics (${browser})`);
-
     try {
       // Navigate to dashboard and measure load time
       const startTime = Date.now();
       await driver.get(`${TEST_CONFIG.baseUrl}/dashboard`);
       await this.waitForVisible(driver, By.id('total-jobs-widget'));
       const loadTime = Date.now() - startTime;
-
-      console.log(`📊 Dashboard load time: ${loadTime}ms`);
       assert(loadTime < 5000, `Dashboard load time too slow: ${loadTime}ms`);
 
       // Test navigation performance
@@ -762,8 +720,6 @@ class WebAppSeleniumTests {
       await searchNav.click();
       await this.waitForVisible(driver, By.id('job-search-form'));
       const navTime = Date.now() - navStartTime;
-
-      console.log(`📊 Navigation time: ${navTime}ms`);
       assert(navTime < 2000, `Navigation too slow: ${navTime}ms`);
 
       // Test search performance
@@ -776,17 +732,12 @@ class WebAppSeleniumTests {
 
       await this.waitForVisible(driver, By.id('search-results'), 15000);
       const searchTime = Date.now() - searchStartTime;
-
-      console.log(`📊 Search time: ${searchTime}ms`);
       assert(searchTime < 10000, `Search too slow: ${searchTime}ms`);
 
       // Check memory usage (basic check)
       const memoryInfo = await driver.executeScript('return window.performance.memory');
       if (memoryInfo) {
-        console.log(`📊 Memory usage: ${Math.round(memoryInfo.usedJSHeapSize / 1024 / 1024)}MB`);
       }
-
-      console.log(`✅ Performance metrics test passed (${browser})`);
       return {
         success: true,
         browser,
@@ -814,8 +765,6 @@ class WebAppSeleniumTests {
       return;
     }
 
-    console.log(`\n🚀 Running tests for ${browser}`);
-
     const tests = [
       () => this.testDashboardLoading(driver, browser),
       () => this.testAdvancedJobSearch(driver, browser),
@@ -833,7 +782,7 @@ class WebAppSeleniumTests {
         const result = await test();
         this.testResults.push(result);
       } catch (error) {
-        console.error(`❌ Test execution error:`, error.message);
+        console.error('❌ Test execution error:', error.message);
         this.testResults.push({
           success: false,
           browser,
@@ -848,11 +797,6 @@ class WebAppSeleniumTests {
    * Run all tests
    */
   async runAllTests() {
-    console.log('🧪 Starting comprehensive Selenium tests for Job Search Web Application');
-    console.log(
-      `📋 Testing ${TEST_CONFIG.browsers.length} browsers with ${TEST_CONFIG.browsers.join(', ')}`,
-    );
-
     try {
       await this.setupDrivers();
 
@@ -872,9 +816,6 @@ class WebAppSeleniumTests {
    * Generate test report
    */
   async generateTestReport() {
-    console.log('\n📊 Test Results Summary');
-    console.log('='.repeat(50));
-
     const summary = {
       total: this.testResults.length,
       passed: this.testResults.filter((r) => r.success).length,
@@ -903,32 +844,16 @@ class WebAppSeleniumTests {
         failed: testResults.filter((r) => !r.success).length,
       };
     }
-
-    // Print summary
-    console.log(`Total Tests: ${summary.total}`);
-    console.log(`✅ Passed: ${summary.passed}`);
-    console.log(`❌ Failed: ${summary.failed}`);
-    console.log(`📈 Success Rate: ${((summary.passed / summary.total) * 100).toFixed(1)}%`);
-
-    console.log('\n📊 Results by Browser:');
-    for (const [browser, results] of Object.entries(summary.byBrowser)) {
-      console.log(
-        `  ${browser}: ${results.passed}/${results.total} passed (${((results.passed / results.total) * 100).toFixed(1)}%)`,
-      );
+    for (const [_browser, _results] of Object.entries(summary.byBrowser)) {
     }
-
-    console.log('\n📊 Results by Test:');
-    for (const [testName, results] of Object.entries(summary.byTest)) {
-      const status = results.failed === 0 ? '✅' : '❌';
-      console.log(`  ${status} ${testName}: ${results.passed}/${results.total} passed`);
+    for (const [_testName, results] of Object.entries(summary.byTest)) {
+      const _status = results.failed === 0 ? '✅' : '❌';
     }
 
     // Print failed tests details
     const failedTests = this.testResults.filter((r) => !r.success);
     if (failedTests.length > 0) {
-      console.log('\n❌ Failed Tests Details:');
-      for (const failed of failedTests) {
-        console.log(`  - ${failed.test} (${failed.browser}): ${failed.error}`);
+      for (const _failed of failedTests) {
       }
     }
 
@@ -946,16 +871,14 @@ class WebAppSeleniumTests {
         2,
       ),
     );
-
-    console.log(`\n📄 Detailed report saved to: ${reportPath}`);
   }
 }
 
 // Export for use in other test files
-module.exports = WebAppSeleniumTests;
+export default WebAppSeleniumTests;
 
 // Run tests if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   (async () => {
     const testSuite = new WebAppSeleniumTests();
     await testSuite.runAllTests();

@@ -26,13 +26,12 @@ interface MobileNavigationConfig {
 
 class MobilePWAComponents {
   private config: MobileNavigationConfig;
-  private touchStartTime: number = 0;
-  private touchStartX: number = 0;
-  private touchStartY: number = 0;
-  private isLongPress: boolean = false;
-  private longPressTimer: number = 0;
-  private pullToRefreshEnabled: boolean = false;
-  private refreshThreshold: number = 80;
+  private touchStartTime = 0;
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private isLongPress = false;
+  private longPressTimer = 0;
+  private refreshThreshold = 80;
 
   constructor(config: Partial<MobileNavigationConfig> = {}) {
     this.config = {
@@ -41,7 +40,7 @@ class MobilePWAComponents {
       enableTouchFeedback: true,
       swipeThreshold: 100,
       longPressDelay: 500,
-      ...config
+      ...config,
     };
 
     this.init();
@@ -51,8 +50,6 @@ class MobilePWAComponents {
    * Initialize mobile PWA components
    */
   private init(): void {
-    console.log('[Mobile PWA] Initializing mobile components...');
-
     // Add mobile-specific styles
     this.addMobileStyles();
 
@@ -82,8 +79,6 @@ class MobilePWAComponents {
 
     // Set up orientation change handling
     this.setupOrientationHandling();
-
-    console.log('[Mobile PWA] Mobile components initialized');
   }
 
   /**
@@ -381,6 +376,8 @@ class MobilePWAComponents {
     if (event.touches.length !== 1) return;
 
     const touch = event.touches[0];
+    if (!touch) return;
+
     this.touchStartTime = Date.now();
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
@@ -404,6 +401,8 @@ class MobilePWAComponents {
     if (event.changedTouches.length !== 1) return;
 
     const touch = event.changedTouches[0];
+    if (!touch) return;
+
     const endTime = Date.now();
     const deltaX = touch.clientX - this.touchStartX;
     const deltaY = touch.clientY - this.touchStartY;
@@ -419,7 +418,7 @@ class MobilePWAComponents {
       deltaX,
       deltaY,
       duration,
-      type: 'tap'
+      type: 'tap',
     };
 
     // Detect gesture type
@@ -427,7 +426,7 @@ class MobilePWAComponents {
       gestureEvent.type = 'long-press';
     } else if (distance > this.config.swipeThreshold) {
       gestureEvent.type = 'swipe';
-      
+
       // Determine swipe direction
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
         gestureEvent.direction = deltaX > 0 ? 'right' : 'left';
@@ -443,8 +442,6 @@ class MobilePWAComponents {
    * Handle recognized gestures
    */
   private handleGesture(gesture: TouchGestureEvent): void {
-    console.log('[Mobile PWA] Gesture detected:', gesture.type, gesture.direction);
-
     switch (gesture.type) {
       case 'swipe':
         this.handleSwipe(gesture);
@@ -501,8 +498,6 @@ class MobilePWAComponents {
    * Handle long press gestures
    */
   private handleLongPress(x: number, y: number): void {
-    console.log('[Mobile PWA] Long press detected');
-    
     // Add haptic feedback if supported
     if ('vibrate' in navigator) {
       navigator.vibrate(50);
@@ -521,14 +516,14 @@ class MobilePWAComponents {
   private showSwipeIndicator(direction: string): void {
     const indicator = document.createElement('div');
     indicator.className = `swipe-indicator ${direction}`;
-    
+
     const messages = {
       left: '→ Next',
       right: '← Previous',
       up: '↑ Scroll up',
-      down: '↓ Refresh'
+      down: '↓ Refresh',
     };
-    
+
     indicator.textContent = messages[direction as keyof typeof messages] || '';
     document.body.appendChild(indicator);
 
@@ -550,12 +545,15 @@ class MobilePWAComponents {
       '/advanced-job-search.html',
       '/live-scraping.html',
       '/job-alerts.html',
-      '/job-comparison.html'
+      '/job-comparison.html',
     ];
 
     const currentIndex = pages.indexOf(currentPage);
     if (currentIndex !== -1 && currentIndex < pages.length - 1) {
-      window.location.href = pages[currentIndex + 1];
+      const nextPage = pages[currentIndex + 1];
+      if (nextPage) {
+        window.location.href = nextPage;
+      }
     }
   }
 
@@ -569,12 +567,15 @@ class MobilePWAComponents {
       '/advanced-job-search.html',
       '/live-scraping.html',
       '/job-alerts.html',
-      '/job-comparison.html'
+      '/job-comparison.html',
     ];
 
     const currentIndex = pages.indexOf(currentPage);
     if (currentIndex > 0) {
-      window.location.href = pages[currentIndex - 1];
+      const prevPage = pages[currentIndex - 1];
+      if (prevPage) {
+        window.location.href = prevPage;
+      }
     }
   }
 
@@ -586,36 +587,48 @@ class MobilePWAComponents {
     let currentY = 0;
     let pulling = false;
 
-    document.addEventListener('touchstart', (event) => {
-      if (window.scrollY === 0) {
-        startY = event.touches[0].clientY;
-        pulling = false;
-      }
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (event) => {
-      if (window.scrollY === 0 && startY > 0) {
-        currentY = event.touches[0].clientY;
-        const pullDistance = currentY - startY;
-
-        if (pullDistance > 0) {
-          pulling = true;
-          this.showPullToRefreshIndicator(pullDistance);
+    document.addEventListener(
+      'touchstart',
+      (event) => {
+        if (window.scrollY === 0 && event.touches[0]) {
+          startY = event.touches[0].clientY;
+          pulling = false;
         }
-      }
-    }, { passive: true });
+      },
+      { passive: true },
+    );
 
-    document.addEventListener('touchend', () => {
-      if (pulling) {
-        const pullDistance = currentY - startY;
-        if (pullDistance > this.refreshThreshold) {
-          this.triggerPullToRefresh();
+    document.addEventListener(
+      'touchmove',
+      (event) => {
+        if (window.scrollY === 0 && startY > 0 && event.touches[0]) {
+          currentY = event.touches[0].clientY;
+          const pullDistance = currentY - startY;
+
+          if (pullDistance > 0) {
+            pulling = true;
+            this.showPullToRefreshIndicator(pullDistance);
+          }
         }
-        this.hidePullToRefreshIndicator();
-        pulling = false;
-      }
-      startY = 0;
-    }, { passive: true });
+      },
+      { passive: true },
+    );
+
+    document.addEventListener(
+      'touchend',
+      () => {
+        if (pulling) {
+          const pullDistance = currentY - startY;
+          if (pullDistance > this.refreshThreshold) {
+            this.triggerPullToRefresh();
+          }
+          this.hidePullToRefreshIndicator();
+          pulling = false;
+        }
+        startY = 0;
+      },
+      { passive: true },
+    );
   }
 
   /**
@@ -623,7 +636,7 @@ class MobilePWAComponents {
    */
   private showPullToRefreshIndicator(distance: number): void {
     let indicator = document.querySelector('.pull-to-refresh') as HTMLElement;
-    
+
     if (!indicator) {
       indicator = document.createElement('div');
       indicator.className = 'pull-to-refresh';
@@ -633,7 +646,7 @@ class MobilePWAComponents {
 
     const progress = Math.min(distance / this.refreshThreshold, 1);
     indicator.style.transform = `translateX(-50%) translateY(${-100 + progress * 100}%)`;
-    
+
     if (progress >= 1) {
       indicator.innerHTML = '↑ Release to refresh';
       indicator.classList.add('ready');
@@ -657,8 +670,6 @@ class MobilePWAComponents {
    * Trigger pull-to-refresh action
    */
   private triggerPullToRefresh(): void {
-    console.log('[Mobile PWA] Pull to refresh triggered');
-    
     const indicator = document.querySelector('.pull-to-refresh') as HTMLElement;
     if (indicator) {
       indicator.innerHTML = '🔄 Refreshing...';
@@ -682,12 +693,16 @@ class MobilePWAComponents {
    * Set up touch feedback
    */
   private setupTouchFeedback(): void {
-    document.addEventListener('touchstart', (event) => {
-      const target = event.target as HTMLElement;
-      if (this.shouldAddTouchFeedback(target)) {
-        this.addTouchFeedback(target);
-      }
-    }, { passive: true });
+    document.addEventListener(
+      'touchstart',
+      (event) => {
+        const target = event.target as HTMLElement;
+        if (this.shouldAddTouchFeedback(target)) {
+          this.addTouchFeedback(target);
+        }
+      },
+      { passive: true },
+    );
   }
 
   /**
@@ -695,13 +710,12 @@ class MobilePWAComponents {
    */
   private shouldAddTouchFeedback(element: HTMLElement): boolean {
     const touchElements = ['button', 'a', '.btn', '.card', '.touch-target'];
-    
-    return touchElements.some(selector => {
+
+    return touchElements.some((selector) => {
       if (selector.startsWith('.')) {
         return element.classList.contains(selector.substring(1));
-      } else {
-        return element.tagName.toLowerCase() === selector;
       }
+      return element.tagName.toLowerCase() === selector;
     });
   }
 
@@ -714,7 +728,7 @@ class MobilePWAComponents {
     }
 
     element.classList.add('active');
-    
+
     setTimeout(() => {
       element.classList.remove('active');
     }, 300);
@@ -736,7 +750,7 @@ class MobilePWAComponents {
     const updateNavVisibility = () => {
       const currentScrollY = window.scrollY;
       const nav = document.querySelector('.mobile-nav') as HTMLElement;
-      
+
       if (nav) {
         if (currentScrollY > lastScrollY && currentScrollY > 100) {
           nav.classList.add('hidden');
@@ -744,17 +758,21 @@ class MobilePWAComponents {
           nav.classList.remove('hidden');
         }
       }
-      
+
       lastScrollY = currentScrollY;
       ticking = false;
     };
 
-    window.addEventListener('scroll', () => {
-      if (!ticking) {
-        requestAnimationFrame(updateNavVisibility);
-        ticking = true;
-      }
-    }, { passive: true });
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          requestAnimationFrame(updateNavVisibility);
+          ticking = true;
+        }
+      },
+      { passive: true },
+    );
   }
 
   /**
@@ -763,21 +781,25 @@ class MobilePWAComponents {
   private createMobileNavigation(): void {
     const nav = document.createElement('nav');
     nav.className = 'mobile-nav';
-    
+
     const navItems = [
       { href: '/enhanced-dashboard.html', icon: '📊', label: 'Dashboard' },
       { href: '/advanced-job-search.html', icon: '🔍', label: 'Search' },
       { href: '/live-scraping.html', icon: '⚡', label: 'Live' },
       { href: '/job-alerts.html', icon: '🔔', label: 'Alerts' },
-      { href: '/job-comparison.html', icon: '⚖️', label: 'Compare' }
+      { href: '/job-comparison.html', icon: '⚖️', label: 'Compare' },
     ];
 
-    const navItemsHtml = navItems.map(item => `
+    const navItemsHtml = navItems
+      .map(
+        (item) => `
       <a href="${item.href}" class="mobile-nav-item ${window.location.pathname === item.href ? 'active' : ''}">
         <span class="mobile-nav-icon">${item.icon}</span>
         <span class="mobile-nav-label">${item.label}</span>
       </a>
-    `).join('');
+    `,
+      )
+      .join('');
 
     nav.innerHTML = `<div class="mobile-nav-items">${navItemsHtml}</div>`;
     document.body.appendChild(nav);
@@ -814,11 +836,11 @@ class MobilePWAComponents {
   private updateResponsiveElements(): void {
     const isMobile = window.innerWidth <= 768;
     document.body.classList.toggle('mobile', isMobile);
-    
+
     // Update charts for mobile
     if ((window as any).Chart) {
       (window as any).Chart.instances.forEach((chart: any) => {
-        if (chart && chart.resize) {
+        if (chart?.resize) {
           chart.resize();
         }
       });
@@ -830,14 +852,14 @@ class MobilePWAComponents {
    */
   private setupVirtualKeyboardHandling(): void {
     const inputs = document.querySelectorAll('input, textarea, select');
-    
-    inputs.forEach(input => {
+
+    inputs.forEach((input) => {
       input.addEventListener('focus', () => {
         // Scroll element into view when focused
         setTimeout(() => {
           (input as HTMLElement).scrollIntoView({
             behavior: 'smooth',
-            block: 'center'
+            block: 'center',
           });
         }, 300);
       });
@@ -852,7 +874,7 @@ class MobilePWAComponents {
       // Wait for orientation change to complete
       setTimeout(() => {
         this.updateResponsiveElements();
-        
+
         // Trigger resize event for charts and other components
         window.dispatchEvent(new Event('resize'));
       }, 100);
@@ -863,14 +885,13 @@ class MobilePWAComponents {
    * Show context menu
    */
   private showContextMenu(element: HTMLElement, x: number, y: number): void {
-    // Implementation depends on specific needs
-    console.log('[Mobile PWA] Context menu for element:', element, 'at position:', x, y);
-    
     // Could show action sheet, context menu, etc.
     // For now, just emit an event
-    window.dispatchEvent(new CustomEvent('mobile-context-menu', {
-      detail: { element, x, y }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('mobile-context-menu', {
+        detail: { element, x, y },
+      }),
+    );
   }
 
   /**
@@ -884,9 +905,13 @@ class MobilePWAComponents {
       hasVibration: 'vibrate' in navigator,
       viewportHeight: window.visualViewport ? window.visualViewport.height : window.innerHeight,
       safeArea: {
-        top: getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)'),
-        bottom: getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')
-      }
+        top: getComputedStyle(document.documentElement).getPropertyValue(
+          'env(safe-area-inset-top)',
+        ),
+        bottom: getComputedStyle(document.documentElement).getPropertyValue(
+          'env(safe-area-inset-bottom)',
+        ),
+      },
     };
   }
 }

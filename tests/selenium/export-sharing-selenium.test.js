@@ -3,13 +3,13 @@
  * Comprehensive testing of export functionality, sharing capabilities, and UI interactions
  */
 
-import { Builder, By, Key, until, WebDriver } from 'selenium-webdriver';
+import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Builder, By, Key, WebDriver, until } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
 import firefox from 'selenium-webdriver/firefox.js';
-import assert from 'assert';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,7 +73,6 @@ class ExportSharingSeleniumTests {
       if (driver) {
         await driver.manage().setTimeouts({ implicit: this.config.timeout });
         this.drivers.set(browser, driver);
-        console.log(`✅ ${browser} driver initialized for export/sharing tests`);
       }
     }
   }
@@ -85,7 +84,6 @@ class ExportSharingSeleniumTests {
     for (const [browser, driver] of this.drivers) {
       try {
         await driver.quit();
-        console.log(`✅ ${browser} driver closed`);
       } catch (error) {
         console.error(`❌ Error closing ${browser} driver:`, error.message);
       }
@@ -102,7 +100,6 @@ class ExportSharingSeleniumTests {
       const filename = `${testName}_${browser}_${Date.now()}.png`;
       const filepath = path.join(this.config.screenshotDir, filename);
       fs.writeFileSync(filepath, screenshot, 'base64');
-      console.log(`📸 Screenshot saved: ${filename}`);
       return filepath;
     } catch (error) {
       console.error('❌ Failed to take screenshot:', error.message);
@@ -123,8 +120,6 @@ class ExportSharingSeleniumTests {
    * Test: Export Interface Loading
    */
   async testExportInterfaceLoading(driver, browser) {
-    console.log(`🧪 Testing export interface loading (${browser})`);
-
     try {
       // Navigate to export page
       await driver.get(`${this.config.baseUrl}/export`);
@@ -164,8 +159,6 @@ class ExportSharingSeleniumTests {
 
       // Check custom export form
       await this.waitForElement(driver, By.id('export-form'));
-
-      console.log(`✅ Export interface loading test passed (${browser})`);
       return { success: true, browser, test: 'export-interface-loading' };
     } catch (error) {
       console.error(`❌ Export interface loading test failed (${browser}):`, error.message);
@@ -178,8 +171,6 @@ class ExportSharingSeleniumTests {
    * Test: Quick Export Functionality
    */
   async testQuickExportFunctionality(driver, browser) {
-    console.log(`🧪 Testing quick export functionality (${browser})`);
-
     try {
       // Navigate to export page
       await driver.get(`${this.config.baseUrl}/export`);
@@ -229,8 +220,6 @@ class ExportSharingSeleniumTests {
           `Invalid status: ${status}`,
         );
       }
-
-      console.log(`✅ Quick export functionality test passed (${browser})`);
       return { success: true, browser, test: 'quick-export-functionality' };
     } catch (error) {
       console.error(`❌ Quick export functionality test failed (${browser}):`, error.message);
@@ -243,8 +232,6 @@ class ExportSharingSeleniumTests {
    * Test: Custom Export Form
    */
   async testCustomExportForm(driver, browser) {
-    console.log(`🧪 Testing custom export form (${browser})`);
-
     try {
       // Navigate to export page
       await driver.get(`${this.config.baseUrl}/export`);
@@ -318,8 +305,6 @@ class ExportSharingSeleniumTests {
       const resetFilename = await driver.findElement(By.id('export-filename'));
       const resetValue = await resetFilename.getAttribute('value');
       assert(resetValue === '' || resetValue === 'job-search-results', 'Form not properly reset');
-
-      console.log(`✅ Custom export form test passed (${browser})`);
       return { success: true, browser, test: 'custom-export-form' };
     } catch (error) {
       console.error(`❌ Custom export form test failed (${browser}):`, error.message);
@@ -332,8 +317,6 @@ class ExportSharingSeleniumTests {
    * Test: Sharing Interface
    */
   async testSharingInterface(driver, browser) {
-    console.log(`🧪 Testing sharing interface (${browser})`);
-
     try {
       // Navigate to export page and switch to sharing tab
       await driver.get(`${this.config.baseUrl}/export`);
@@ -394,8 +377,6 @@ class ExportSharingSeleniumTests {
 
       // Test shared links section
       await this.waitForElement(driver, By.id('links-list'));
-
-      console.log(`✅ Sharing interface test passed (${browser})`);
       return { success: true, browser, test: 'sharing-interface' };
     } catch (error) {
       console.error(`❌ Sharing interface test failed (${browser}):`, error.message);
@@ -408,8 +389,6 @@ class ExportSharingSeleniumTests {
    * Test: Report Templates
    */
   async testReportTemplates(driver, browser) {
-    console.log(`🧪 Testing report templates (${browser})`);
-
     try {
       // Navigate to templates tab
       await driver.get(`${this.config.baseUrl}/export`);
@@ -483,8 +462,6 @@ class ExportSharingSeleniumTests {
         By.css('button[onclick*="importTemplate"]'),
       );
       await importTemplateButton.click();
-
-      console.log(`✅ Report templates test passed (${browser})`);
       return { success: true, browser, test: 'report-templates' };
     } catch (error) {
       console.error(`❌ Report templates test failed (${browser}):`, error.message);
@@ -497,8 +474,6 @@ class ExportSharingSeleniumTests {
    * Test: Job Collections
    */
   async testJobCollections(driver, browser) {
-    console.log(`🧪 Testing job collections (${browser})`);
-
     try {
       // Navigate to collections tab
       await driver.get(`${this.config.baseUrl}/export`);
@@ -552,8 +527,6 @@ class ExportSharingSeleniumTests {
       // Test import jobs button
       const importJobsButton = await driver.findElement(By.css('button[onclick*="importJobs"]'));
       await importJobsButton.click();
-
-      console.log(`✅ Job collections test passed (${browser})`);
       return { success: true, browser, test: 'job-collections' };
     } catch (error) {
       console.error(`❌ Job collections test failed (${browser}):`, error.message);
@@ -566,8 +539,6 @@ class ExportSharingSeleniumTests {
    * Test: Tab Navigation
    */
   async testTabNavigation(driver, browser) {
-    console.log(`🧪 Testing tab navigation (${browser})`);
-
     try {
       await driver.get(`${this.config.baseUrl}/export`);
 
@@ -595,8 +566,6 @@ class ExportSharingSeleniumTests {
         const isVisible = await contentElement.isDisplayed();
         assert(isVisible, `Content for ${tab} tab not visible`);
       }
-
-      console.log(`✅ Tab navigation test passed (${browser})`);
       return { success: true, browser, test: 'tab-navigation' };
     } catch (error) {
       console.error(`❌ Tab navigation test failed (${browser}):`, error.message);
@@ -615,8 +584,6 @@ class ExportSharingSeleniumTests {
       return;
     }
 
-    console.log(`\n🚀 Running Export & Sharing tests for ${browser}`);
-
     const tests = [
       () => this.testExportInterfaceLoading(driver, browser),
       () => this.testQuickExportFunctionality(driver, browser),
@@ -632,7 +599,7 @@ class ExportSharingSeleniumTests {
         const result = await test();
         this.testResults.push(result);
       } catch (error) {
-        console.error(`❌ Test execution error:`, error.message);
+        console.error('❌ Test execution error:', error.message);
         this.testResults.push({
           success: false,
           browser,
@@ -647,8 +614,6 @@ class ExportSharingSeleniumTests {
    * Run all tests
    */
   async runAllTests() {
-    console.log('🧪 Starting Export & Sharing Selenium Tests');
-
     try {
       await this.setupDrivers();
 
@@ -668,25 +633,15 @@ class ExportSharingSeleniumTests {
    * Generate test report
    */
   generateTestReport() {
-    console.log('\n📊 Export & Sharing Test Results');
-    console.log('='.repeat(50));
-
     const summary = {
       total: this.testResults.length,
       passed: this.testResults.filter((r) => r.success).length,
       failed: this.testResults.filter((r) => !r.success).length,
     };
 
-    console.log(`Total Tests: ${summary.total}`);
-    console.log(`✅ Passed: ${summary.passed}`);
-    console.log(`❌ Failed: ${summary.failed}`);
-    console.log(`📈 Success Rate: ${((summary.passed / summary.total) * 100).toFixed(1)}%`);
-
     const failedTests = this.testResults.filter((r) => !r.success);
     if (failedTests.length > 0) {
-      console.log('\n❌ Failed Tests:');
-      for (const failed of failedTests) {
-        console.log(`  - ${failed.test} (${failed.browser}): ${failed.error}`);
+      for (const _failed of failedTests) {
       }
     }
 
@@ -704,8 +659,6 @@ class ExportSharingSeleniumTests {
         2,
       ),
     );
-
-    console.log(`\n📄 Report saved to: ${reportPath}`);
 
     return summary;
   }

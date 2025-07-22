@@ -3,8 +3,8 @@
  * Tests the TypeScript component directly without requiring web server
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const testResults = {
   total: 0,
@@ -15,22 +15,18 @@ const testResults = {
 
 function runTest(name, testFn) {
   testResults.total++;
-  console.log(`\n🧪 Testing: ${name}`);
 
   try {
     const result = testFn();
     if (result !== false) {
       testResults.passed++;
-      console.log(`✅ PASS: ${name}`);
       testResults.tests.push({ name, status: 'PASS', error: null });
     } else {
       testResults.failed++;
-      console.log(`❌ FAIL: ${name}`);
       testResults.tests.push({ name, status: 'FAIL', error: 'Test returned false' });
     }
   } catch (error) {
     testResults.failed++;
-    console.log(`❌ FAIL: ${name} - ${error.message}`);
     testResults.tests.push({ name, status: 'FAIL', error: error.message });
   }
 }
@@ -57,10 +53,7 @@ runTest('Export Component File Exists', () => {
     if (!content.includes(func)) {
       throw new Error(`Missing required function: ${func}`);
     }
-    console.log(`  ✓ Found function: ${func}`);
   }
-
-  console.log(`  📝 Component file: ${(content.length / 1000).toFixed(1)}KB`);
   return true;
 });
 
@@ -86,8 +79,6 @@ runTest('Export CSS File Exists', () => {
       throw new Error(`Missing required CSS class: ${className}`);
     }
   }
-
-  console.log(`  🎨 CSS file: ${(content.length / 1000).toFixed(1)}KB`);
   return true;
 });
 
@@ -105,8 +96,7 @@ runTest('Selenium Test Files Exist', () => {
       throw new Error(`Selenium test file not found: ${testFile}`);
     }
 
-    const content = fs.readFileSync(testPath, 'utf8');
-    console.log(`  🧪 ${testFile}: ${(content.length / 1000).toFixed(1)}KB`);
+    const _content = fs.readFileSync(testPath, 'utf8');
   }
 
   return true;
@@ -128,7 +118,6 @@ runTest('TypeScript Component Syntax', () => {
   for (const check of syntaxChecks) {
     const matches = content.match(check.pattern);
     if (matches && matches.length > 0) {
-      console.log(`  ✓ Found ${matches.length} ${check.name} declarations`);
     }
   }
 
@@ -151,7 +140,6 @@ runTest('Security Features Present', () => {
   for (const feature of securityFeatures) {
     if (content.includes(feature)) {
       foundFeatures++;
-      console.log(`  🔒 Security feature found: ${feature}`);
     }
   }
 
@@ -173,30 +161,13 @@ runTest('Export Formats Support', () => {
     if (!content.includes(format)) {
       throw new Error(`Export format not found: ${format}`);
     }
-    console.log(`  📄 Export format supported: ${format}`);
   }
 
   return true;
 });
 
-// Run all tests
-console.log('🚀 Running Direct Export & Sharing Feature Tests\n');
-console.log('='.repeat(60));
-
-console.log('\n' + '='.repeat(60));
-console.log('📊 Test Results Summary:');
-console.log(`Total Tests: ${testResults.total}`);
-console.log(`Passed: ${testResults.passed} ✅`);
-console.log(`Failed: ${testResults.failed} ❌`);
-console.log(`Success Rate: ${((testResults.passed / testResults.total) * 100).toFixed(1)}%`);
-
 if (testResults.failed > 0) {
-  console.log('\n❌ Failed Tests:');
-  testResults.tests
-    .filter((test) => test.status === 'FAIL')
-    .forEach((test) => {
-      console.log(`  - ${test.name}: ${test.error}`);
-    });
+  testResults.tests.filter((test) => test.status === 'FAIL').forEach((_test) => {});
 }
 
 // Generate test report
@@ -206,7 +177,7 @@ const reportData = {
     total: testResults.total,
     passed: testResults.passed,
     failed: testResults.failed,
-    successRate: ((testResults.passed / testResults.total) * 100).toFixed(1) + '%',
+    successRate: `${((testResults.passed / testResults.total) * 100).toFixed(1)}%`,
   },
   tests: testResults.tests,
   environment: {
@@ -219,7 +190,6 @@ const reportData = {
 // Save report
 const reportPath = path.join(process.cwd(), 'test-report-direct.json');
 fs.writeFileSync(reportPath, JSON.stringify(reportData, null, 2));
-console.log(`\n📄 Test report saved to: ${reportPath}`);
 
 // Exit with appropriate code
 process.exit(testResults.failed === 0 ? 0 : 1);

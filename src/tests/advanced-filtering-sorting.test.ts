@@ -1,7 +1,7 @@
 /**
  * Advanced Filtering & Sorting Component Tests
  * Phase 7 Stage 5: Enhanced Web Interface & Real-Time Features
- * 
+ *
  * Integration tests for advanced filtering and sorting functionality
  */
 
@@ -38,7 +38,7 @@ describe('Advanced Filtering & Sorting Component', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Setup mock container
     mockContainer = {
       appendChild: jest.fn(),
@@ -114,7 +114,7 @@ describe('Advanced Filtering & Sorting Component', () => {
       const initialGroupCount = component.getFilterState().groups.length;
       component.addFilterGroup();
       const newGroupCount = component.getFilterState().groups.length;
-      
+
       expect(newGroupCount).toBe(initialGroupCount + 1);
     });
 
@@ -122,20 +122,20 @@ describe('Advanced Filtering & Sorting Component', () => {
       // Add a group first
       component.addFilterGroup();
       const groupId = component.getFilterState().groups[0].id;
-      
+
       component.removeFilterGroup(groupId);
       const groups = component.getFilterState().groups;
-      
-      expect(groups.find(g => g.id === groupId)).toBeUndefined();
+
+      expect(groups.find((g) => g.id === groupId)).toBeUndefined();
     });
 
     test('should add filter condition to group', () => {
       component.addFilterGroup();
       const groupId = component.getFilterState().groups[0].id;
-      
+
       component.addFilterCondition(groupId);
-      const group = component.getFilterState().groups.find(g => g.id === groupId);
-      
+      const group = component.getFilterState().groups.find((g) => g.id === groupId);
+
       expect(group?.conditions.length).toBe(1);
     });
 
@@ -143,11 +143,11 @@ describe('Advanced Filtering & Sorting Component', () => {
       component.addFilterGroup();
       const groupId = component.getFilterState().groups[0].id;
       component.addFilterCondition(groupId);
-      
+
       const conditionId = component.getFilterState().groups[0].conditions[0].id;
       component.removeFilterCondition(groupId, conditionId);
-      
-      const group = component.getFilterState().groups.find(g => g.id === groupId);
+
+      const group = component.getFilterState().groups.find((g) => g.id === groupId);
       expect(group?.conditions.length).toBe(0);
     });
 
@@ -155,16 +155,16 @@ describe('Advanced Filtering & Sorting Component', () => {
       component.addFilterGroup();
       const groupId = component.getFilterState().groups[0].id;
       component.addFilterCondition(groupId);
-      
+
       const conditionId = component.getFilterState().groups[0].conditions[0].id;
       const updates = {
         field: 'title',
         operator: 'contains' as const,
         value: 'developer',
       };
-      
+
       component.updateFilterCondition(groupId, conditionId, updates);
-      
+
       const condition = component.getFilterState().groups[0].conditions[0];
       expect(condition.field).toBe('developer');
       expect(condition.operator).toBe('contains');
@@ -176,26 +176,26 @@ describe('Advanced Filtering & Sorting Component', () => {
       for (let i = 0; i < 5; i++) {
         component.addFilterGroup();
       }
-      
+
       // Try to add one more
       component.addFilterGroup();
-      
+
       expect(component.getFilterState().groups.length).toBe(5);
     });
 
     test('should enforce maximum conditions per group limit', () => {
       component.addFilterGroup();
       const groupId = component.getFilterState().groups[0].id;
-      
+
       // Add maximum allowed conditions
       for (let i = 0; i < 10; i++) {
         component.addFilterCondition(groupId);
       }
-      
+
       // Try to add one more
       component.addFilterCondition(groupId);
-      
-      const group = component.getFilterState().groups.find(g => g.id === groupId);
+
+      const group = component.getFilterState().groups.find((g) => g.id === groupId);
       expect(group?.conditions.length).toBe(10);
     });
   });
@@ -203,10 +203,10 @@ describe('Advanced Filtering & Sorting Component', () => {
   describe('Quick Filters', () => {
     test('should toggle quick filter', () => {
       const filterKey = 'recent';
-      
+
       component.toggleQuickFilter(filterKey);
       expect(component.getFilterState().quickFilters[filterKey]).toBe(true);
-      
+
       component.toggleQuickFilter(filterKey);
       expect(component.getFilterState().quickFilters[filterKey]).toBe(false);
     });
@@ -215,7 +215,7 @@ describe('Advanced Filtering & Sorting Component', () => {
       component.toggleQuickFilter('recent');
       component.toggleQuickFilter('remote');
       component.toggleQuickFilter('applied');
-      
+
       const quickFilters = component.getFilterState().quickFilters;
       expect(quickFilters.recent).toBe(true);
       expect(quickFilters.remote).toBe(true);
@@ -226,31 +226,31 @@ describe('Advanced Filtering & Sorting Component', () => {
   describe('Sorting', () => {
     test('should add sort option', () => {
       const initialSortCount = component.getFilterState().sortOptions.length;
-      
+
       component.addSortOption();
-      
+
       expect(component.getFilterState().sortOptions.length).toBe(initialSortCount + 1);
     });
 
     test('should remove sort option', () => {
       component.addSortOption();
       const sortId = component.getFilterState().sortOptions[0].id;
-      
+
       component.removeSortOption(sortId);
-      
+
       const sortOptions = component.getFilterState().sortOptions;
-      expect(sortOptions.find(s => s.id === sortId)).toBeUndefined();
+      expect(sortOptions.find((s) => s.id === sortId)).toBeUndefined();
     });
 
     test('should update sort option', () => {
       component.addSortOption();
       const sortId = component.getFilterState().sortOptions[0].id;
-      
+
       component.updateSortOption(sortId, {
         field: 'datePosted',
         direction: 'desc' as const,
       });
-      
+
       const sortOption = component.getFilterState().sortOptions[0];
       expect(sortOption.field).toBe('datePosted');
       expect(sortOption.direction).toBe('desc');
@@ -260,11 +260,11 @@ describe('Advanced Filtering & Sorting Component', () => {
       // Add two sort options
       component.addSortOption();
       component.addSortOption();
-      
+
       const [firstSort, secondSort] = component.getFilterState().sortOptions;
-      
+
       component.moveSortOption(secondSort.id, 'up');
-      
+
       const reorderedSorts = component.getFilterState().sortOptions;
       expect(reorderedSorts[0].id).toBe(secondSort.id);
       expect(reorderedSorts[1].id).toBe(firstSort.id);
@@ -274,11 +274,11 @@ describe('Advanced Filtering & Sorting Component', () => {
       // Add two sort options
       component.addSortOption();
       component.addSortOption();
-      
+
       const [firstSort, secondSort] = component.getFilterState().sortOptions;
-      
+
       component.moveSortOption(firstSort.id, 'down');
-      
+
       const reorderedSorts = component.getFilterState().sortOptions;
       expect(reorderedSorts[0].id).toBe(secondSort.id);
       expect(reorderedSorts[1].id).toBe(firstSort.id);
@@ -290,26 +290,29 @@ describe('Advanced Filtering & Sorting Component', () => {
       // Setup some filters
       component.addFilterGroup();
       component.toggleQuickFilter('recent');
-      
+
       const presetData = {
         name: 'Test Preset',
         description: 'A test preset for recent jobs',
         isQuickFilter: false,
       };
-      
+
       // Mock successful API response
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ id: 'preset-1', ...presetData }),
       });
-      
+
       await component.saveFilterPreset(presetData);
-      
-      expect(global.fetch).toHaveBeenCalledWith('/api/test/presets', expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.stringContaining(presetData.name),
-      }));
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/test/presets',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining(presetData.name),
+        }),
+      );
     });
 
     test('should load filter preset', async () => {
@@ -329,15 +332,15 @@ describe('Advanced Filtering & Sorting Component', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      
+
       // Mock successful API response
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => mockPreset,
       });
-      
+
       await component.loadFilterPreset(presetId);
-      
+
       const currentState = component.getFilterState();
       expect(currentState.globalSearch).toBe('developer');
       expect(currentState.quickFilters.recent).toBe(true);
@@ -345,18 +348,18 @@ describe('Advanced Filtering & Sorting Component', () => {
 
     test('should delete filter preset', async () => {
       const presetId = 'preset-1';
-      
+
       // Mock successful API response
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
       });
-      
+
       await component.deleteFilterPreset(presetId);
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/test/presets/${presetId}`,
-        expect.objectContaining({ method: 'DELETE' })
+        expect.objectContaining({ method: 'DELETE' }),
       );
     });
   });
@@ -364,16 +367,16 @@ describe('Advanced Filtering & Sorting Component', () => {
   describe('Global Search', () => {
     test('should update global search', () => {
       const searchTerm = 'software engineer';
-      
+
       component.updateGlobalSearch(searchTerm);
-      
+
       expect(component.getFilterState().globalSearch).toBe(searchTerm);
     });
 
     test('should clear global search', () => {
       component.updateGlobalSearch('test search');
       component.clearGlobalSearch();
-      
+
       expect(component.getFilterState().globalSearch).toBe('');
     });
   });
@@ -384,7 +387,7 @@ describe('Advanced Filtering & Sorting Component', () => {
       component.addFilterGroup();
       component.updateGlobalSearch('developer');
       component.toggleQuickFilter('recent');
-      
+
       // Mock successful API response
       const mockResults = {
         results: [{ id: 1, title: 'Developer Job' }],
@@ -396,40 +399,43 @@ describe('Advanced Filtering & Sorting Component', () => {
           sortTime: 5,
         },
       };
-      
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResults,
       });
-      
+
       const results = await component.applyFilters();
-      
-      expect(global.fetch).toHaveBeenCalledWith('/api/test/filter', expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.stringContaining('developer'),
-      }));
-      
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/test/filter',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining('developer'),
+        }),
+      );
+
       expect(results).toEqual(mockResults);
     });
 
     test('should handle API errors gracefully', async () => {
       // Mock API error
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       const results = await component.applyFilters();
-      
+
       expect(results).toEqual({
         results: [],
         totalCount: 0,
         filteredCount: 0,
         error: 'Network error',
       });
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('Filter application failed:', expect.any(Error));
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -437,7 +443,7 @@ describe('Advanced Filtering & Sorting Component', () => {
   describe('Export Functionality', () => {
     test('should export filtered results', async () => {
       const exportFormat = 'csv';
-      
+
       // Mock successful API response
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -451,7 +457,7 @@ describe('Advanced Filtering & Sorting Component', () => {
           },
         },
       });
-      
+
       // Mock URL.createObjectURL and click
       global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
       const mockClick = jest.fn();
@@ -462,15 +468,18 @@ describe('Advanced Filtering & Sorting Component', () => {
         style: { display: '' },
       };
       mockDocument.createElement.mockReturnValue(mockLink);
-      
+
       await component.exportFilteredResults(exportFormat);
-      
-      expect(global.fetch).toHaveBeenCalledWith('/api/test/export', expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.stringContaining(exportFormat),
-      }));
-      
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/test/export',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining(exportFormat),
+        }),
+      );
+
       expect(mockClick).toHaveBeenCalled();
     });
   });
@@ -480,27 +489,30 @@ describe('Advanced Filtering & Sorting Component', () => {
       // Setup some filters
       component.addFilterGroup();
       component.updateGlobalSearch('developer');
-      
+
       // Mock successful API response
       const mockShareResponse = {
         shareId: 'share-123',
         url: 'https://example.com/shared/share-123',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       };
-      
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => mockShareResponse,
       });
-      
+
       const shareResult = await component.shareFilterConfig({ expiresInHours: 24 });
-      
-      expect(global.fetch).toHaveBeenCalledWith('/api/test/share', expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.stringContaining('24'),
-      }));
-      
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/test/share',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining('24'),
+        }),
+      );
+
       expect(shareResult).toEqual(mockShareResponse);
     });
   });
@@ -518,31 +530,33 @@ describe('Advanced Filtering & Sorting Component', () => {
           },
         },
       };
-      
+
       // Simulate WebSocket message
-      const messageHandler = mockWebSocket.addEventListener.mock.calls
-        .find(([event]) => event === 'message')?.[1];
-      
+      const messageHandler = mockWebSocket.addEventListener.mock.calls.find(
+        ([event]) => event === 'message',
+      )?.[1];
+
       if (messageHandler) {
         messageHandler({
           data: JSON.stringify(mockMessage),
         });
       }
-      
+
       // Verify message was processed (would trigger UI updates in real implementation)
       expect(mockWebSocket.addEventListener).toHaveBeenCalledWith('message', expect.any(Function));
     });
 
     test('should handle WebSocket connection errors', () => {
-      const errorHandler = mockWebSocket.addEventListener.mock.calls
-        .find(([event]) => event === 'error')?.[1];
-      
+      const errorHandler = mockWebSocket.addEventListener.mock.calls.find(
+        ([event]) => event === 'error',
+      )?.[1];
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       if (errorHandler) {
         errorHandler(new Error('WebSocket connection failed'));
       }
-      
+
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
@@ -556,24 +570,24 @@ describe('Advanced Filtering & Sorting Component', () => {
         onFilterChange,
         debounceMs: 100,
       });
-      
+
       // Trigger multiple rapid changes
       debouncedComponent.updateGlobalSearch('a');
       debouncedComponent.updateGlobalSearch('ab');
       debouncedComponent.updateGlobalSearch('abc');
-      
+
       // Should not be called immediately
       expect(onFilterChange).not.toHaveBeenCalled();
-      
+
       // Should be called once after debounce period
       setTimeout(() => {
         expect(onFilterChange).toHaveBeenCalledTimes(1);
         expect(onFilterChange).toHaveBeenCalledWith(
           expect.objectContaining({
             globalSearch: 'abc',
-          })
+          }),
         );
-        
+
         debouncedComponent.destroy();
         done();
       }, 150);
@@ -583,13 +597,13 @@ describe('Advanced Filtering & Sorting Component', () => {
   describe('Component Lifecycle', () => {
     test('should clean up resources on destroy', () => {
       component.destroy();
-      
+
       expect(mockWebSocket.close).toHaveBeenCalled();
     });
 
     test('should handle invalid configuration gracefully', () => {
       const invalidContainer = null as any;
-      
+
       expect(() => {
         new AdvancedFilteringSorting(invalidContainer, {
           apiEndpoint: '/api/test',
@@ -603,9 +617,9 @@ describe('Advanced Filtering & Sorting Component', () => {
       component.addFilterGroup();
       const groupId = component.getFilterState().groups[0].id;
       component.addFilterCondition(groupId);
-      
+
       const conditionId = component.getFilterState().groups[0].conditions[0].id;
-      
+
       // Test invalid field
       const isValid1 = component.validateFilterCondition(groupId, conditionId, {
         field: 'invalidField',
@@ -613,7 +627,7 @@ describe('Advanced Filtering & Sorting Component', () => {
         value: 'test',
       });
       expect(isValid1).toBe(false);
-      
+
       // Test valid condition
       const isValid2 = component.validateFilterCondition(groupId, conditionId, {
         field: 'title',
@@ -627,9 +641,9 @@ describe('Advanced Filtering & Sorting Component', () => {
       component.addFilterGroup();
       const groupId = component.getFilterState().groups[0].id;
       component.addFilterCondition(groupId);
-      
+
       const conditionId = component.getFilterState().groups[0].conditions[0].id;
-      
+
       // Test operator that requires value
       const isValid1 = component.validateFilterCondition(groupId, conditionId, {
         field: 'title',
@@ -637,7 +651,7 @@ describe('Advanced Filtering & Sorting Component', () => {
         value: '', // Empty value should be invalid
       });
       expect(isValid1).toBe(false);
-      
+
       // Test operator that doesn't require value
       const isValid2 = component.validateFilterCondition(groupId, conditionId, {
         field: 'title',
@@ -658,7 +672,7 @@ describe('Advanced Filtering Performance', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockContainer = {
       appendChild: jest.fn(),
       innerHTML: '',
@@ -688,15 +702,15 @@ describe('Advanced Filtering Performance', () => {
 
   test('should handle large numbers of filter groups efficiently', () => {
     const startTime = performance.now();
-    
+
     // Add maximum allowed filter groups
     for (let i = 0; i < 5; i++) {
       component.addFilterGroup();
     }
-    
+
     const endTime = performance.now();
     const duration = endTime - startTime;
-    
+
     // Should complete within reasonable time (100ms)
     expect(duration).toBeLessThan(100);
     expect(component.getFilterState().groups.length).toBe(5);
@@ -705,21 +719,21 @@ describe('Advanced Filtering Performance', () => {
   test('should handle large numbers of conditions efficiently', () => {
     component.addFilterGroup();
     const groupId = component.getFilterState().groups[0].id;
-    
+
     const startTime = performance.now();
-    
+
     // Add maximum allowed conditions
     for (let i = 0; i < 10; i++) {
       component.addFilterCondition(groupId);
     }
-    
+
     const endTime = performance.now();
     const duration = endTime - startTime;
-    
+
     // Should complete within reasonable time (100ms)
     expect(duration).toBeLessThan(100);
-    
-    const group = component.getFilterState().groups.find(g => g.id === groupId);
+
+    const group = component.getFilterState().groups.find((g) => g.id === groupId);
     expect(group?.conditions.length).toBe(10);
   });
 });
@@ -733,7 +747,7 @@ describe('Advanced Filtering Accessibility', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockContainer = {
       appendChild: jest.fn(),
       innerHTML: '',
@@ -765,13 +779,13 @@ describe('Advanced Filtering Accessibility', () => {
 
   test('should set proper ARIA attributes', () => {
     const createElement = global.document.createElement as jest.Mock;
-    const createdElements = createElement.mock.results.map(result => result.value);
-    
+    const createdElements = createElement.mock.results.map((result) => result.value);
+
     // Check that elements have setAttribute called for ARIA attributes
-    const elementsWithSetAttribute = createdElements.filter(el => 
-      el.setAttribute && el.setAttribute.mock && el.setAttribute.mock.calls.length > 0
+    const elementsWithSetAttribute = createdElements.filter(
+      (el) => el.setAttribute?.mock && el.setAttribute.mock.calls.length > 0,
     );
-    
+
     expect(elementsWithSetAttribute.length).toBeGreaterThan(0);
   });
 

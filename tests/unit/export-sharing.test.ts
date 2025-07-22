@@ -3,10 +3,10 @@
  * Phase 7 Stage 4: Advanced UI Features & UX
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExportSharingComponent } from '../../src/web/components/export-sharing';
-import * as fs from 'fs';
-import * as path from 'path';
-import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
 
 // Mock DOM environment
 Object.defineProperty(window, 'localStorage', {

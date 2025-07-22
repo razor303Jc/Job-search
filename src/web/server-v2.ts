@@ -130,10 +130,16 @@ export class EnhancedWebServer {
       timeWindow: '1 minute',
     });
 
-    // Static files serving
+    // Static files serving - with /static/ prefix
     await this.server.register(import('@fastify/static'), {
-      root: join(__dirname, '../../web/static'),
+      root: join(__dirname, 'static'),
       prefix: '/static/',
+    });
+
+    // Static files serving - without prefix for direct access
+    await this.server.register(import('@fastify/static'), {
+      root: join(__dirname, 'static'),
+      decorateReply: false,
     });
 
     // Graceful shutdown

@@ -5,27 +5,28 @@
  */
 
 const webpush = require('web-push');
-const fs = require('fs').promises;
-const path = require('path');
+const fs = require('node:fs').promises;
+const path = require('node:path');
 
 class PushNotificationService {
   constructor() {
     this.subscriptions = new Map();
     this.subscriptionsFile = path.join(__dirname, '../../../data/push-subscriptions.json');
-    
+
     // VAPID keys - in production, these should be environment variables
     this.vapidKeys = {
-      publicKey: process.env.VAPID_PUBLIC_KEY || 'BExample-VAPID-Public-Key-Here-64-Characters-Long',
-      privateKey: process.env.VAPID_PRIVATE_KEY || 'Example-VAPID-Private-Key-Here-44-Characters'
+      publicKey:
+        process.env.VAPID_PUBLIC_KEY || 'BExample-VAPID-Public-Key-Here-64-Characters-Long',
+      privateKey: process.env.VAPID_PRIVATE_KEY || 'Example-VAPID-Private-Key-Here-44-Characters',
     };
-    
+
     // Configure web-push
     webpush.setVapidDetails(
       'mailto:admin@jobsearchpro.com',
       this.vapidKeys.publicKey,
-      this.vapidKeys.privateKey
+      this.vapidKeys.privateKey,
     );
-    
+
     this.loadSubscriptions();
   }
 
@@ -36,16 +37,11 @@ class PushNotificationService {
     try {
       const data = await fs.readFile(this.subscriptionsFile, 'utf8');
       const subscriptions = JSON.parse(data);
-      
+
       for (const [id, subscription] of Object.entries(subscriptions)) {
         this.subscriptions.set(id, subscription);
       }
-      
-      console.log(`[Push] Loaded ${this.subscriptions.size} subscriptions`);
-    } catch (error) {
-      // File doesn't exist yet - that's okay
-      console.log('[Push] No existing subscriptions file found');
-    }
+    } catch (_error) {}
   }
 
   /**
@@ -54,10 +50,7 @@ class PushNotificationService {
   async saveSubscriptions() {
     try {
       const subscriptions = Object.fromEntries(this.subscriptions);
-      await fs.writeFile(
-        this.subscriptionsFile,
-        JSON.stringify(subscriptions, null, 2)
-      );
+      await fs.writeFile(this.subscriptionsFile, JSON.stringify(subscriptions, null, 2));
     } catch (error) {
       console.error('[Push] Failed to save subscriptions:', error);
     }
@@ -69,22 +62,19 @@ class PushNotificationService {
   async addSubscription(subscriptionData, userAgent) {
     try {
       const subscriptionId = this.generateSubscriptionId(subscriptionData);
-      
+
       const subscription = {
         id: subscriptionId,
         subscription: subscriptionData,
         userAgent: userAgent,
         createdAt: new Date().toISOString(),
         lastUsed: new Date().toISOString(),
-        isActive: true
+        isActive: true,
       };
-      
+
       this.subscriptions.set(subscriptionId, subscription);
       await this.saveSubscriptions();
-      
-      console.log('[Push] New subscription added:', subscriptionId);
       return subscriptionId;
-      
     } catch (error) {
       console.error('[Push] Failed to add subscription:', error);
       throw error;
@@ -99,7 +89,6 @@ class PushNotificationService {
       if (this.subscriptions.has(subscriptionId)) {
         this.subscriptions.delete(subscriptionId);
         await this.saveSubscriptions();
-        console.log('[Push] Subscription removed:', subscriptionId);
         return true;
       }
       return false;
@@ -118,28 +107,24 @@ class PushNotificationService {
       if (!subscription) {
         throw new Error('Subscription not found');
       }
-      
+
       const result = await webpush.sendNotification(
         subscription.subscription,
-        JSON.stringify(payload)
+        JSON.stringify(payload),
       );
-      
+
       // Update last used timestamp
       subscription.lastUsed = new Date().toISOString();
       await this.saveSubscriptions();
-      
-      console.log('[Push] Notification sent to:', subscriptionId);
       return result;
-      
     } catch (error) {
       console.error('[Push] Failed to send notification:', error);
-      
+
       // Handle expired subscriptions
       if (error.statusCode === 410) {
-        console.log('[Push] Subscription expired, removing:', subscriptionId);
         await this.removeSubscription(subscriptionId);
       }
-      
+
       throw error;
     }
   }
@@ -151,9 +136,9 @@ class PushNotificationService {
     const results = {
       success: 0,
       failed: 0,
-      expired: 0
+      expired: 0,
     };
-    
+
     const promises = Array.from(this.subscriptions.keys()).map(async (subscriptionId) => {
       try {
         await this.sendNotification(subscriptionId, payload);
@@ -166,10 +151,8 @@ class PushNotificationService {
         }
       }
     });
-    
+
     await Promise.all(promises);
-    
-    console.log('[Push] Broadcast completed:', results);
     return results;
   }
 
@@ -187,38 +170,37 @@ class PushNotificationService {
       data: {
         url: `/job-details.html?id=${jobData.id}`,
         jobId: jobData.id,
-        type: 'job-alert'
+        type: 'job-alert',
       },
       actions: [
         {
           action: 'view',
-          title: 'View Job'
+          title: 'View Job',
         },
         {
           action: 'save',
-          title: 'Save for Later'
-        }
-      ]
+          title: 'Save for Later',
+        },
+      ],
     };
-    
+
     if (targetSubscriptions) {
       // Send to specific subscriptions
       const results = { success: 0, failed: 0 };
-      
+
       for (const subscriptionId of targetSubscriptions) {
         try {
           await this.sendNotification(subscriptionId, payload);
           results.success++;
-        } catch (error) {
+        } catch (_error) {
           results.failed++;
         }
       }
-      
+
       return results;
-    } else {
-      // Send to all subscriptions
-      return await this.sendNotificationToAll(payload);
     }
+    // Send to all subscriptions
+    return await this.sendNotificationToAll(payload);
   }
 
   /**
@@ -233,10 +215,10 @@ class PushNotificationService {
       data: {
         url: '/live-scraping.html',
         type: 'scraping-status',
-        status: status
-      }
+        status: status,
+      },
     };
-    
+
     return await this.sendNotificationToAll(payload);
   }
 
@@ -253,10 +235,10 @@ class PushNotificationService {
       data: {
         url: '/enhanced-dashboard.html?view=summary',
         type: 'weekly-summary',
-        summary: summaryData
-      }
+        summary: summaryData,
+      },
     };
-    
+
     return await this.sendNotificationToAll(payload);
   }
 
@@ -264,7 +246,7 @@ class PushNotificationService {
    * Generate unique subscription ID
    */
   generateSubscriptionId(subscriptionData) {
-    const crypto = require('crypto');
+    const crypto = require('node:crypto');
     const endpoint = subscriptionData.endpoint;
     return crypto.createHash('sha256').update(endpoint).digest('hex').substring(0, 16);
   }
@@ -275,25 +257,25 @@ class PushNotificationService {
   getStats() {
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
+
     let activeSubscriptions = 0;
     let recentlyUsed = 0;
-    
+
     for (const subscription of this.subscriptions.values()) {
       if (subscription.isActive) {
         activeSubscriptions++;
-        
+
         if (new Date(subscription.lastUsed) > oneWeekAgo) {
           recentlyUsed++;
         }
       }
     }
-    
+
     return {
       total: this.subscriptions.size,
       active: activeSubscriptions,
       recentlyUsed: recentlyUsed,
-      vapidConfigured: !!(this.vapidKeys.publicKey && this.vapidKeys.privateKey)
+      vapidConfigured: !!(this.vapidKeys.publicKey && this.vapidKeys.privateKey),
     };
   }
 
@@ -308,10 +290,10 @@ class PushNotificationService {
       tag: 'test-notification',
       data: {
         url: '/enhanced-dashboard.html',
-        type: 'test'
-      }
+        type: 'test',
+      },
     };
-    
+
     return await this.sendNotification(subscriptionId, payload);
   }
 
@@ -320,31 +302,27 @@ class PushNotificationService {
    */
   async cleanupExpiredSubscriptions() {
     const expiredSubscriptions = [];
-    
+
     for (const [id, subscription] of this.subscriptions) {
       try {
         // Try to send a test notification to check if subscription is still valid
-        await webpush.sendNotification(
-          subscription.subscription,
-          JSON.stringify({ test: true })
-        );
+        await webpush.sendNotification(subscription.subscription, JSON.stringify({ test: true }));
       } catch (error) {
         if (error.statusCode === 410) {
           expiredSubscriptions.push(id);
         }
       }
     }
-    
+
     // Remove expired subscriptions
     for (const id of expiredSubscriptions) {
       this.subscriptions.delete(id);
     }
-    
+
     if (expiredSubscriptions.length > 0) {
       await this.saveSubscriptions();
-      console.log(`[Push] Cleaned up ${expiredSubscriptions.length} expired subscriptions`);
     }
-    
+
     return expiredSubscriptions.length;
   }
 }

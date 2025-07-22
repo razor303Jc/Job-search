@@ -3,10 +3,10 @@
  * Manages test execution, parallel testing, and reporting
  */
 
-import path from 'path';
-import fs from 'fs';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,8 +18,8 @@ class SeleniumTestRunner {
       browsers: (process.env.TEST_BROWSERS || 'chrome,firefox').split(','),
       parallel: process.env.TEST_PARALLEL === 'true',
       headless: process.env.CI === 'true' || process.env.TEST_HEADLESS === 'true',
-      timeout: parseInt(process.env.TEST_TIMEOUT || '30000'),
-      retries: parseInt(process.env.TEST_RETRIES || '2'),
+      timeout: Number.parseInt(process.env.TEST_TIMEOUT || '30000'),
+      retries: Number.parseInt(process.env.TEST_RETRIES || '2'),
       screenshotOnFailure: process.env.TEST_SCREENSHOTS !== 'false',
       reportDir: path.join(__dirname, 'reports'),
       screenshotDir: path.join(__dirname, 'screenshots'),
@@ -44,8 +44,6 @@ class SeleniumTestRunner {
    */
   async startWebServer() {
     return new Promise((resolve, reject) => {
-      console.log('🚀 Starting web server for testing...');
-
       const serverProcess = spawn('npm', ['run', 'start:web'], {
         stdio: ['ignore', 'pipe', 'pipe'],
         cwd: path.join(__dirname, '../../'),
@@ -55,7 +53,6 @@ class SeleniumTestRunner {
 
       serverProcess.stdout.on('data', (data) => {
         const output = data.toString();
-        console.log('Server:', output.trim());
 
         if (output.includes('Server listening') || output.includes('localhost:3000')) {
           serverReady = true;
@@ -99,10 +96,9 @@ class SeleniumTestRunner {
       try {
         const response = await fetch(`${this.testConfig.baseUrl}/health`);
         if (response.ok) {
-          console.log('✅ Server is ready');
           return true;
         }
-      } catch (error) {
+      } catch (_error) {
         // Server not ready yet
       }
 
@@ -117,8 +113,6 @@ class SeleniumTestRunner {
    * Run Selenium tests
    */
   async runSeleniumTests() {
-    console.log('🧪 Running comprehensive Selenium tests');
-
     const testFiles = ['web-app-selenium.test.js', 'export-sharing-selenium.test.js'];
 
     const results = [];
@@ -127,11 +121,8 @@ class SeleniumTestRunner {
       const testPath = path.join(__dirname, testFile);
 
       if (!fs.existsSync(testPath)) {
-        console.log(`⚠️  Test file not found: ${testFile}, skipping...`);
         continue;
       }
-
-      console.log(`\n🏃 Running ${testFile}`);
 
       try {
         const result = await this.runTestFile(testPath);
@@ -205,8 +196,6 @@ class SeleniumTestRunner {
    * Generate comprehensive test report
    */
   async generateReport(results) {
-    console.log('\n📊 Generating comprehensive test report...');
-
     const summary = {
       timestamp: new Date().toISOString(),
       totalFiles: results.length,
@@ -224,9 +213,6 @@ class SeleniumTestRunner {
     // Generate JSON report
     const jsonReportPath = path.join(this.testConfig.reportDir, 'selenium-test-report.json');
     fs.writeFileSync(jsonReportPath, JSON.stringify(summary, null, 2));
-
-    console.log(`📄 HTML report: ${htmlReportPath}`);
-    console.log(`📄 JSON report: ${jsonReportPath}`);
 
     return summary;
   }
@@ -347,20 +333,9 @@ class SeleniumTestRunner {
       // Generate report
       const summary = await this.generateReport(results);
 
-      // Print final summary
-      console.log('\n' + '='.repeat(60));
-      console.log('🏁 SELENIUM TEST EXECUTION COMPLETE');
-      console.log('='.repeat(60));
-      console.log(`📊 Total Test Files: ${summary.totalFiles}`);
-      console.log(`✅ Passed: ${summary.passed}`);
-      console.log(`❌ Failed: ${summary.failed}`);
-      console.log(`📈 Success Rate: ${((summary.passed / summary.totalFiles) * 100).toFixed(1)}%`);
-
       if (summary.failed > 0) {
-        console.log('\n❌ Some tests failed. Check the detailed report for more information.');
         process.exitCode = 1;
       } else {
-        console.log('\n🎉 All Selenium tests passed!');
       }
     } catch (error) {
       console.error('❌ Test runner error:', error.message);
@@ -368,7 +343,6 @@ class SeleniumTestRunner {
     } finally {
       // Clean up server
       if (serverProcess) {
-        console.log('🛑 Stopping web server...');
         serverProcess.kill('SIGTERM');
 
         // Give server time to shut down gracefully
