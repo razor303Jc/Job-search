@@ -10,13 +10,13 @@ import { logger } from '../src/utils/logger.ts';
 async function main() {
   try {
     logger.info('Starting database migration...');
-    
+
     const db = await initializeDatabase();
-    
+
     // Get database info
     const info = db.connection.getInfo();
     const stats = db.getStats();
-    
+
     logger.info('Database migration completed successfully', {
       filename: info.filename,
       readonly: info.readonly,
@@ -31,15 +31,18 @@ async function main() {
     logger.info('Job statistics', jobStats);
 
     db.close();
-    
+
     logger.info('Migration script completed');
   } catch (error) {
-    logger.error('Migration failed', { 
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : error 
+    logger.error('Migration failed', {
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
     });
     process.exit(1);
   }

@@ -154,7 +154,7 @@ export class MigrationManager {
       // Skip empty lines and comments
       if (!trimmedLine || trimmedLine.startsWith('--')) {
         if (currentStatement) {
-          currentStatement += '\n' + line;
+          currentStatement += `\n${line}`;
         }
         continue;
       }

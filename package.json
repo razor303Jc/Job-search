@@ -28,7 +28,10 @@
     "profile": "clinic doctor -- node dist/index.js",
     "benchmark": "autocannon -c 10 -d 30 http://localhost:3000",
     "migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "web": "tsx src/web/cli.ts start",
+    "web:dev": "tsx watch src/web/cli.ts start --log-level debug",
+    "web:prod": "node dist/web/cli.js start"
   },
   "keywords": [
     "job-scraper",
@@ -46,6 +49,8 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@fastify/sensible": "^6.0.3",
     "@fastify/static": "^7.0.1",
     "@fastify/view": "^9.1.0",
     "better-sqlite3": "^9.2.2",

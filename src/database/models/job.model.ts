@@ -223,9 +223,13 @@ export class JobRepository {
   ): Promise<JobRecord> {
     try {
       const record = this.jobListingToRecord(job, searchContext);
-      const result = this.insertStmt!.run(record);
+      const result = this.insertStmt?.run(record);
 
-      const created = this.findByIdStmt!.get(result.lastInsertRowid) as JobRecord;
+      if (!result) {
+        throw new Error('Failed to insert job record');
+      }
+
+      const created = this.findByIdStmt?.get(result.lastInsertRowid) as JobRecord;
 
       logger.debug('Job created', {
         id: created.id,
@@ -246,15 +250,15 @@ export class JobRepository {
    */
   async update(id: number, updates: Partial<JobRecord>): Promise<JobRecord | null> {
     try {
-      const existing = this.findByIdStmt!.get(id) as JobRecord;
+      const existing = this.findByIdStmt?.get(id) as JobRecord;
       if (!existing) {
         return null;
       }
 
       const updated = { ...existing, ...updates, id };
-      this.updateStmt!.run(updated);
+      this.updateStmt?.run(updated);
 
-      const result = this.findByIdStmt!.get(id) as JobRecord;
+      const result = this.findByIdStmt?.get(id) as JobRecord;
 
       logger.debug('Job updated', {
         id: result.id,
@@ -273,7 +277,7 @@ export class JobRepository {
    * Find job by ID
    */
   async findById(id: number): Promise<JobRecord | null> {
-    const result = this.findByIdStmt!.get(id) as JobRecord | undefined;
+    const result = this.findByIdStmt?.get(id) as JobRecord | undefined;
     return result || null;
   }
 
@@ -281,8 +285,132 @@ export class JobRepository {
    * Find job by URL (for deduplication)
    */
   async findByUrl(url: string): Promise<JobRecord | null> {
-    const result = this.findByUrlStmt!.get(url) as JobRecord | undefined;
+    const result = this.findByUrlStmt?.get(url) as JobRecord | undefined;
     return result || null;
+  }
+
+  /**
+   * Find many jobs with filtering (simpler than search)
+   */
+  async findMany(filters: {
+    company?: string;
+    location?: string;
+    salaryMin?: number;
+    salaryMax?: number;
+    employmentType?: string;
+    remoteType?: string;
+    postedAfter?: Date;
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<JobRecord[]> {
+    const { limit = 50, offset = 0 } = filters;
+    let whereClause = 'WHERE 1=1';
+    const params: any = {};
+
+    if (filters.company) {
+      whereClause += ' AND LOWER(company) LIKE LOWER(@company)';
+      params.company = `%${filters.company}%`;
+    }
+
+    if (filters.location) {
+      whereClause += ' AND LOWER(location) LIKE LOWER(@location)';
+      params.location = `%${filters.location}%`;
+    }
+
+    if (filters.salaryMin) {
+      whereClause += ' AND (salary_min >= @salaryMin OR salary_max >= @salaryMin)';
+      params.salaryMin = filters.salaryMin;
+    }
+
+    if (filters.salaryMax) {
+      whereClause += ' AND (salary_min <= @salaryMax OR salary_max <= @salaryMax)';
+      params.salaryMax = filters.salaryMax;
+    }
+
+    if (filters.employmentType) {
+      whereClause += ' AND employment_type = @employmentType';
+      params.employmentType = filters.employmentType;
+    }
+
+    if (filters.remoteType) {
+      whereClause += ' AND remote_type = @remoteType';
+      params.remoteType = filters.remoteType;
+    }
+
+    if (filters.postedAfter) {
+      whereClause += ' AND posted_date >= @postedAfter';
+      params.postedAfter = filters.postedAfter.toISOString();
+    }
+
+    const sql = `
+      SELECT * FROM jobs 
+      ${whereClause}
+      ORDER BY scraped_at DESC
+      LIMIT @limit OFFSET @offset
+    `;
+
+    const stmt = this.db.prepare(sql);
+    return stmt.all({
+      ...params,
+      limit,
+      offset,
+    }) as JobRecord[];
+  }
+
+  /**
+   * Count jobs with filtering
+   */
+  async count(filters: {
+    company?: string;
+    location?: string;
+    salaryMin?: number;
+    salaryMax?: number;
+    employmentType?: string;
+    remoteType?: string;
+    postedAfter?: Date;
+  } = {}): Promise<number> {
+    let whereClause = 'WHERE 1=1';
+    const params: any = {};
+
+    if (filters.company) {
+      whereClause += ' AND LOWER(company) LIKE LOWER(@company)';
+      params.company = `%${filters.company}%`;
+    }
+
+    if (filters.location) {
+      whereClause += ' AND LOWER(location) LIKE LOWER(@location)';
+      params.location = `%${filters.location}%`;
+    }
+
+    if (filters.salaryMin) {
+      whereClause += ' AND (salary_min >= @salaryMin OR salary_max >= @salaryMin)';
+      params.salaryMin = filters.salaryMin;
+    }
+
+    if (filters.salaryMax) {
+      whereClause += ' AND (salary_min <= @salaryMax OR salary_max <= @salaryMax)';
+      params.salaryMax = filters.salaryMax;
+    }
+
+    if (filters.employmentType) {
+      whereClause += ' AND employment_type = @employmentType';
+      params.employmentType = filters.employmentType;
+    }
+
+    if (filters.remoteType) {
+      whereClause += ' AND remote_type = @remoteType';
+      params.remoteType = filters.remoteType;
+    }
+
+    if (filters.postedAfter) {
+      whereClause += ' AND posted_date >= @postedAfter';
+      params.postedAfter = filters.postedAfter.toISOString();
+    }
+
+    const sql = `SELECT COUNT(*) as total FROM jobs ${whereClause}`;
+    const stmt = this.db.prepare(sql);
+    const { total } = stmt.get(params) as { total: number };
+    return total;
   }
 
   /**
@@ -469,7 +597,12 @@ export class JobRepository {
    */
   async delete(id: number): Promise<boolean> {
     try {
-      const result = this.deleteStmt!.run(id);
+      const result = this.deleteStmt?.run(id);
+      
+      if (!result) {
+        throw new Error('Failed to delete job record');
+      }
+
       const deleted = result.changes > 0;
 
       if (deleted) {
@@ -508,7 +641,7 @@ export class JobRepository {
 
         try {
           // Check for duplicates by URL
-          const existing = this.findByUrlStmt!.get(job.url) as JobRecord | undefined;
+          const existing = this.findByUrlStmt?.get(job.url) as JobRecord | undefined;
           if (existing) {
             logger.debug('Skipping duplicate job', { url: job.url, title: job.title });
             results.push(existing);
@@ -516,8 +649,13 @@ export class JobRepository {
           }
 
           const record = this.jobListingToRecord(job, context);
-          const result = this.insertStmt!.run(record);
-          const created = this.findByIdStmt!.get(result.lastInsertRowid) as JobRecord;
+          const result = this.insertStmt?.run(record);
+          
+          if (!result) {
+            throw new Error('Failed to insert job record in bulk operation');
+          }
+
+          const created = this.findByIdStmt?.get(result.lastInsertRowid) as JobRecord;
           results.push(created);
         } catch (error) {
           logger.warn('Failed to insert job in bulk operation', {
