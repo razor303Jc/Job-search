@@ -303,6 +303,34 @@ export class EnhancedWebServer {
         this.handleJobSearch(ws, data);
         break;
       
+      case 'get-scraper-status':
+        this.sendScraperStatus(ws);
+        break;
+      
+      case 'get-scraper-stats':
+        this.sendScraperStats(ws);
+        break;
+      
+      case 'start-all-scrapers':
+        this.handleStartAllScrapers(ws);
+        break;
+      
+      case 'stop-all-scrapers':
+        this.handleStopAllScrapers(ws);
+        break;
+      
+      case 'create-alert':
+        this.handleCreateAlert(ws, data);
+        break;
+      
+      case 'delete-alert':
+        this.handleDeleteAlert(ws, data);
+        break;
+      
+      case 'toggle-alert':
+        this.handleToggleAlert(ws, data);
+        break;
+      
       default:
         logger.warn({ messageType: data.type }, 'Unknown WebSocket message type');
     }
@@ -521,6 +549,416 @@ export class EnhancedWebServer {
   }
 
   /**
+   * Send scraper status data for live scraping dashboard
+   */
+  private sendScraperStatus(ws: WebSocket): void {
+    const scraperData = {
+      type: 'scraper-status',
+      data: {
+        overall: 'active',
+        active: 2,
+        totalJobs: 245,
+        successRate: 87,
+        errors: 1,
+        progress: 65,
+        scrapers: [
+          {
+            name: 'LinkedIn Scraper',
+            status: 'active',
+            url: 'linkedin.com/jobs',
+            jobsFound: 89,
+            successRate: 92,
+            lastRun: '2 min ago',
+            responseTime: 1200,
+            progress: 75
+          },
+          {
+            name: 'Indeed Scraper',
+            status: 'active',
+            url: 'indeed.com',
+            jobsFound: 156,
+            successRate: 85,
+            lastRun: '1 min ago',
+            responseTime: 800,
+            progress: 60
+          },
+          {
+            name: 'Glassdoor Scraper',
+            status: 'idle',
+            url: 'glassdoor.com',
+            jobsFound: 0,
+            successRate: 78,
+            lastRun: '10 min ago',
+            responseTime: 2100,
+            progress: 0
+          },
+          {
+            name: 'AngelList Scraper',
+            status: 'error',
+            url: 'angel.co',
+            jobsFound: 0,
+            successRate: 0,
+            lastRun: '15 min ago',
+            responseTime: 0,
+            progress: 0,
+            error: 'Rate limit exceeded'
+          }
+        ]
+      }
+    };
+
+    ws.send(JSON.stringify(scraperData));
+  }
+
+  /**
+   * Send scraper statistics for performance charts
+   */
+  private sendScraperStats(ws: WebSocket): void {
+    const currentTime = Date.now();
+    const statsData = {
+      type: 'scraper-stats',
+      data: {
+        successRateHistory: [
+          { timestamp: currentTime - 300000, rate: 85 },
+          { timestamp: currentTime - 240000, rate: 87 },
+          { timestamp: currentTime - 180000, rate: 89 },
+          { timestamp: currentTime - 120000, rate: 84 },
+          { timestamp: currentTime - 60000, rate: 87 },
+          { timestamp: currentTime, rate: 87 }
+        ],
+        scraperPerformance: [
+          { name: 'LinkedIn', jobsFound: 89, successRate: 92 },
+          { name: 'Indeed', jobsFound: 156, successRate: 85 },
+          { name: 'Glassdoor', jobsFound: 0, successRate: 78 },
+          { name: 'AngelList', jobsFound: 0, successRate: 0 }
+        ],
+        errorStats: {
+          total: 12,
+          rateLimits: 5,
+          timeouts: 3,
+          parsing: 2,
+          network: 2
+        },
+        performanceMetrics: {
+          avgResponseTime: 1200,
+          totalRequests: 347,
+          successfulRequests: 302,
+          failedRequests: 45
+        }
+      }
+    };
+
+    ws.send(JSON.stringify(statsData));
+  }
+
+  /**
+   * Handle start all scrapers command
+   */
+  private handleStartAllScrapers(ws: WebSocket): void {
+    logger.info('Starting all scrapers via WebSocket command');
+    
+    // Simulate starting all scrapers
+    const response = {
+      type: 'scraper-command-response',
+      data: {
+        command: 'start-all',
+        status: 'success',
+        message: 'All scrapers started successfully',
+        timestamp: new Date().toISOString(),
+        activeScrapers: ['LinkedIn', 'Indeed', 'Glassdoor']
+      }
+    };
+
+    ws.send(JSON.stringify(response));
+
+    // Broadcast status update to all clients
+    this.connectionManager.broadcast({
+      type: 'scraper-status-update',
+      data: {
+        action: 'started',
+        affectedScrapers: ['LinkedIn', 'Indeed', 'Glassdoor'],
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    // Start a progress simulation
+    this.simulateScrapingProgress();
+  }
+
+  /**
+   * Handle stop all scrapers command
+   */
+  private handleStopAllScrapers(ws: WebSocket): void {
+    logger.info('Stopping all scrapers via WebSocket command');
+    
+    // Simulate stopping all scrapers
+    const response = {
+      type: 'scraper-command-response',
+      data: {
+        command: 'stop-all',
+        status: 'success',
+        message: 'All scrapers stopped successfully',
+        timestamp: new Date().toISOString(),
+        stoppedScrapers: ['LinkedIn', 'Indeed', 'Glassdoor']
+      }
+    };
+
+    ws.send(JSON.stringify(response));
+
+    // Broadcast status update to all clients
+    this.connectionManager.broadcast({
+      type: 'scraper-status-update',
+      data: {
+        action: 'stopped',
+        affectedScrapers: ['LinkedIn', 'Indeed', 'Glassdoor'],
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    // Update connection manager status
+    this.connectionManager.updateScrapingStatus({
+      active: false,
+      progress: 0
+    });
+  }
+
+  /**
+   * Simulate scraper errors for demo purposes
+   */
+  private simulateScraperErrors(): void {
+    const errorTypes = [
+      'Rate limit exceeded',
+      'Connection timeout',
+      'Parsing error',
+      'Network error',
+      'Authentication failed'
+    ];
+
+    setInterval(() => {
+      if (Math.random() < 0.3) { // 30% chance of error every interval
+        const error = errorTypes[Math.floor(Math.random() * errorTypes.length)];
+        this.connectionManager.broadcast({
+          type: 'scraping-error',
+          data: {
+            message: error,
+            scraper: ['LinkedIn', 'Indeed', 'Glassdoor'][Math.floor(Math.random() * 3)],
+            severity: Math.random() > 0.5 ? 'warning' : 'error',
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+    }, 15000); // Every 15 seconds
+  }
+
+  /**
+   * Handle creating a new job alert
+   */
+  private handleCreateAlert(ws: WebSocket, data: any): void {
+    try {
+      const alert = data.data;
+      logger.info({ alertId: alert.id, criteria: alert.criteria }, 'New job alert created');
+      
+      const response = {
+        type: 'alert-created',
+        data: {
+          alertId: alert.id,
+          status: 'success',
+          message: 'Alert created successfully',
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      ws.send(JSON.stringify(response));
+
+      // Simulate immediate job matching check
+      setTimeout(() => {
+        this.checkExistingJobsForAlert(alert);
+      }, 2000);
+
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to create job alert');
+      ws.send(JSON.stringify({
+        type: 'alert-error',
+        data: {
+          message: 'Failed to create alert',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }));
+    }
+  }
+
+  /**
+   * Handle deleting a job alert
+   */
+  private handleDeleteAlert(ws: WebSocket, data: any): void {
+    try {
+      const { alertId } = data.data;
+      logger.info({ alertId }, 'Job alert deleted');
+      
+      const response = {
+        type: 'alert-deleted',
+        data: {
+          alertId,
+          status: 'success',
+          message: 'Alert deleted successfully',
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      ws.send(JSON.stringify(response));
+
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to delete job alert');
+      ws.send(JSON.stringify({
+        type: 'alert-error',
+        data: {
+          message: 'Failed to delete alert',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }));
+    }
+  }
+
+  /**
+   * Handle toggling a job alert active/inactive
+   */
+  private handleToggleAlert(ws: WebSocket, data: any): void {
+    try {
+      const { alertId, active } = data.data;
+      logger.info({ alertId, active }, 'Job alert toggled');
+      
+      const response = {
+        type: 'alert-toggled',
+        data: {
+          alertId,
+          active,
+          status: 'success',
+          message: `Alert ${active ? 'activated' : 'deactivated'} successfully`,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      ws.send(JSON.stringify(response));
+
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to toggle job alert');
+      ws.send(JSON.stringify({
+        type: 'alert-error',
+        data: {
+          message: 'Failed to toggle alert',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }));
+    }
+  }
+
+  /**
+   * Check existing jobs against a new alert for immediate matches
+   */
+  private checkExistingJobsForAlert(alert: any): void {
+    // Mock job matching simulation
+    const mockJobs = [
+      {
+        id: '1',
+        title: 'Senior React Developer',
+        company: 'Google',
+        location: 'San Francisco, CA',
+        salary: { min: 140000, max: 200000, currency: 'USD' },
+        remote: false,
+        employmentType: 'full-time'
+      },
+      {
+        id: '2',
+        title: 'Frontend Engineer',
+        company: 'Microsoft',
+        location: 'Remote',
+        salary: { min: 120000, max: 170000, currency: 'USD' },
+        remote: true,
+        employmentType: 'full-time'
+      }
+    ];
+
+    // Simple matching logic for demo
+    const matchingJobs = mockJobs.filter(job => {
+      if (alert.criteria.keywords && alert.criteria.keywords.length > 0) {
+        return alert.criteria.keywords.some((keyword: string) =>
+          job.title.toLowerCase().includes(keyword.toLowerCase())
+        );
+      }
+      return false;
+    });
+
+    if (matchingJobs.length > 0) {
+      this.connectionManager.broadcast({
+        type: 'job-match',
+        data: {
+          alert: alert,
+          matchingJobs: matchingJobs,
+          totalMatches: matchingJobs.length,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      logger.info({ 
+        alertId: alert.id, 
+        matches: matchingJobs.length 
+      }, 'Job matches found for new alert');
+    }
+  }
+
+  /**
+   * Simulate new job notifications for demo purposes
+   */
+  private simulateNewJobNotifications(): void {
+    const mockJobTitles = [
+      'Senior Software Engineer',
+      'Frontend Developer',
+      'Backend Engineer',
+      'Full Stack Developer',
+      'DevOps Engineer',
+      'Data Scientist',
+      'Product Manager',
+      'UI/UX Designer'
+    ];
+
+    const mockCompanies = [
+      'Google', 'Microsoft', 'Amazon', 'Meta', 'Apple', 
+      'Netflix', 'Salesforce', 'Uber', 'Airbnb', 'Spotify'
+    ];
+
+    const mockLocations = [
+      'San Francisco, CA', 'New York, NY', 'Seattle, WA', 
+      'Austin, TX', 'Remote', 'Boston, MA', 'Los Angeles, CA'
+    ];
+
+    setInterval(() => {
+      if (Math.random() < 0.4) { // 40% chance of new job every interval
+        const newJob = {
+          id: `job_${Date.now()}`,
+          title: mockJobTitles[Math.floor(Math.random() * mockJobTitles.length)],
+          company: mockCompanies[Math.floor(Math.random() * mockCompanies.length)],
+          location: mockLocations[Math.floor(Math.random() * mockLocations.length)],
+          salary: {
+            min: 80000 + Math.floor(Math.random() * 100000),
+            max: 120000 + Math.floor(Math.random() * 100000),
+            currency: 'USD'
+          },
+          remote: Math.random() > 0.6,
+          employmentType: ['full-time', 'contract', 'part-time'][Math.floor(Math.random() * 3)],
+          postedDate: new Date().toISOString()
+        };
+
+        this.connectionManager.broadcast({
+          type: 'new-job',
+          data: newJob
+        });
+
+        logger.info({ jobId: newJob.id, title: newJob.title }, 'New job posted');
+      }
+    }, 20000); // Every 20 seconds
+  }
+
+  /**
    * Simulate scraping progress for demo purposes
    */
   simulateScrapingProgress(): void {
@@ -554,6 +992,12 @@ export class EnhancedWebServer {
 
       // Start demo scraping simulation
       setTimeout(() => this.simulateScrapingProgress(), 2000);
+      
+      // Start error simulation for demo
+      setTimeout(() => this.simulateScraperErrors(), 5000);
+      
+      // Start new job notifications simulation
+      setTimeout(() => this.simulateNewJobNotifications(), 10000);
     } catch (error) {
       logger.error({ err: error }, 'Failed to start enhanced web server');
       throw error;

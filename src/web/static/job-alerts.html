@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Alerts - Job Dorker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .connection-indicator::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f44336;
+        }
+
+        .connection-indicator.connected::before {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .notification-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .notification-status.granted {
+            color: #4caf50;
+        }
+
+        .notification-status.denied {
+            color: #f44336;
+        }
+
+        .notification-status.default {
+            color: #ff9800;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .create-alert-section, .alerts-list-section {
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .tags-container {
+            min-height: 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tag-remove {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tag-remove:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .alert-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .alert-item.active {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, 0.05);
+        }
+
+        .alert-item.inactive {
+            border-color: #f44336;
+            background: rgba(244, 67, 54, 0.05);
+            opacity: 0.8;
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .alert-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .alert-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .alert-status {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .alert-status.active {
+            background: #4caf50;
+            color: white;
+        }
+
+        .alert-status.inactive {
+            background: #f44336;
+            color: white;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .alert-criteria {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .criteria-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .criteria-item {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .alert-last-triggered {
+            font-size: 0.8em;
+            color: #888;
+            font-style: italic;
+        }
+
+        .no-alerts {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-alerts p {
+            margin-bottom: 10px;
+        }
+
+        .success-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .success-notification.show {
+            transform: translateX(0);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .alert-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .alert-meta {
+                flex-wrap: wrap;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Job Alert System</h1>
+            <p style="color: rgba(255,255,255,0.9); margin-top: 10px;">Get notified about jobs that match your criteria</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="enhanced-dashboard.html" class="nav-link">📊 Dashboard</a>
+            <a href="live-scraping.html" class="nav-link">🔍 Live Scraping</a>
+            <a href="job-alerts.html" class="nav-link">🔔 Job Alerts</a>
+        </div>
+
+        <div class="status-bar">
+            <div class="connection-indicator" id="alertConnectionStatus">Connecting...</div>
+            <div>
+                <span>Notification Status: </span>
+                <span class="notification-status" id="notificationStatus">Checking...</span>
+            </div>
+            <div>
+                <span>Total Matches: </span>
+                <strong id="totalMatches">0</strong>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Create Alert Section -->
+            <div class="create-alert-section">
+                <h2 class="section-title">Create New Alert</h2>
+                
+                <form id="createAlertForm">
+                    <div class="form-group">
+                        <label class="form-label">Alert Name</label>
+                        <input type="text" name="alertName" class="form-input" placeholder="e.g., Senior Frontend Jobs" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Keywords</label>
+                        <input type="text" id="keywords" class="form-input" placeholder="Press Enter to add keywords">
+                        <div class="tags-container" id="keywordTags"></div>
+                        <small style="color: #666;">Add job title keywords like "React", "Senior Developer", etc.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <select name="location" class="form-select">
+                            <option value="any">Any Location</option>
+                            <option value="remote">Remote Only</option>
+                            <option value="San Francisco">San Francisco, CA</option>
+                            <option value="New York">New York, NY</option>
+                            <option value="Seattle">Seattle, WA</option>
+                            <option value="Austin">Austin, TX</option>
+                            <option value="Boston">Boston, MA</option>
+                            <option value="Los Angeles">Los Angeles, CA</option>
+                            <option value="Chicago">Chicago, IL</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Min Salary ($)</label>
+                            <input type="number" name="minSalary" class="form-input" placeholder="e.g., 80000" min="0" step="5000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Salary ($)</label>
+                            <input type="number" name="maxSalary" class="form-input" placeholder="e.g., 150000" min="0" step="5000">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Employment Type</label>
+                        <select name="employmentType" class="form-select">
+                            <option value="any">Any Type</option>
+                            <option value="full-time">Full-time</option>
+                            <option value="part-time">Part-time</option>
+                            <option value="contract">Contract</option>
+                            <option value="freelance">Freelance</option>
+                            <option value="internship">Internship</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Target Companies</label>
+                        <input type="text" id="company" class="form-input" placeholder="Press Enter to add companies">
+                        <div class="tags-container" id="companyTags"></div>
+                        <small style="color: #666;">Add specific companies you're interested in</small>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" name="remote" id="remotePreference">
+                        <label for="remotePreference">Prioritize remote positions</label>
+                    </div>
+
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">
+                        🔔 Create Alert
+                    </button>
+                </form>
+            </div>
+
+            <!-- Active Alerts Section -->
+            <div class="alerts-list-section">
+                <h2 class="section-title">Active Alerts</h2>
+                <div id="alertsList">
+                    <!-- Alerts will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="components/job-alert-system.js"></script>
+    <script>
+        // Initialize the job alert system
+        let jobAlertSystem;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            jobAlertSystem = new JobAlertSystem();
+        });
+    </script>
+</body>
+</html>

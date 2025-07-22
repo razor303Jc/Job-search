@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Scraping Dashboard - Job Dorker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .status-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.active {
+            background: #4caf50;
+        }
+
+        .status-indicator.idle {
+            background: #ff9800;
+            animation: none;
+        }
+
+        .status-indicator.error {
+            background: #f44336;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #81c784);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .scraper-list {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .scraper-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background 0.2s ease;
+        }
+
+        .scraper-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .scraper-item:last-child {
+            border-bottom: none;
+        }
+
+        .scraper-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .scraper-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .scraper-url {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .scraper-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .error-log {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 10px;
+            border-left: 4px solid #f44336;
+            background: rgba(244, 67, 54, 0.1);
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .log-timestamp {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .log-message {
+            color: #333;
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-overview {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .scraper-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .connection-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-dot.disconnected {
+            background: #f44336;
+            animation: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status">
+        <div class="connection-dot" id="connectionDot"></div>
+        <span id="connectionText">Connecting...</span>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Live Scraping Dashboard</h1>
+            <p style="color: rgba(255,255,255,0.9); margin-top: 10px;">Real-time job scraping monitoring and control</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn success" id="startAllBtn">▶ Start All Scrapers</button>
+            <button class="btn danger" id="stopAllBtn">⏹ Stop All Scrapers</button>
+            <button class="btn" id="refreshBtn">🔄 Refresh Data</button>
+            <a href="enhanced-dashboard.html" class="btn">📊 Analytics Dashboard</a>
+        </div>
+
+        <div class="status-overview" id="statusOverview">
+            <!-- Status cards will be populated dynamically -->
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="chart-section">
+                <h3 class="chart-title">Success Rate Over Time</h3>
+                <div class="chart-container">
+                    <canvas id="successChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-section">
+                <h3 class="chart-title">Jobs Found Per Scraper</h3>
+                <div class="chart-container">
+                    <canvas id="scraperChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="scraper-list">
+            <h3 class="chart-title">Active Scrapers</h3>
+            <div id="scraperList">
+                <!-- Scraper items will be populated dynamically -->
+            </div>
+        </div>
+
+        <div class="error-log">
+            <h3 class="chart-title">Recent Errors</h3>
+            <div id="errorLog">
+                <!-- Error entries will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class LiveScrapingDashboard {
+            constructor() {
+                this.ws = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                this.charts = {};
+                this.scraperData = new Map();
+                this.errorLog = [];
+                
+                this.init();
+            }
+
+            init() {
+                this.connectWebSocket();
+                this.setupEventListeners();
+                this.initializeCharts();
+                this.loadInitialData();
+            }
+
+            connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                
+                this.ws = new WebSocket(wsUrl);
+                
+                this.ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    this.updateConnectionStatus(true);
+                    this.reconnectAttempts = 0;
+                    
+                    // Request initial scraping data
+                    this.sendMessage({ type: 'get-scraper-status' });
+                    this.sendMessage({ type: 'get-scraper-stats' });
+                };
+                
+                this.ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        this.handleMessage(data);
+                    } catch (error) {
+                        console.error('Error parsing WebSocket message:', error);
+                    }
+                };
+                
+                this.ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    this.updateConnectionStatus(false);
+                    this.attemptReconnect();
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    this.updateConnectionStatus(false);
+                };
+            }
+
+            handleMessage(data) {
+                switch (data.type) {
+                    case 'scraper-status':
+                        this.updateScraperStatus(data.data);
+                        break;
+                    case 'scraper-stats':
+                        this.updateScraperStats(data.data);
+                        break;
+                    case 'scraping-progress':
+                        this.updateProgress(data.data);
+                        break;
+                    case 'scraping-error':
+                        this.addError(data.data);
+                        break;
+                    case 'jobs-found':
+                        this.updateJobsFound(data.data);
+                        break;
+                    default:
+                        console.log('Unknown message type:', data.type);
+                }
+            }
+
+            updateConnectionStatus(connected) {
+                const dot = document.getElementById('connectionDot');
+                const text = document.getElementById('connectionText');
+                
+                if (connected) {
+                    dot.classList.remove('disconnected');
+                    text.textContent = 'Connected';
+                } else {
+                    dot.classList.add('disconnected');
+                    text.textContent = 'Disconnected';
+                }
+            }
+
+            updateScraperStatus(data) {
+                const overview = document.getElementById('statusOverview');
+                overview.innerHTML = '';
+
+                // Overall stats card
+                const overallCard = this.createStatusCard(
+                    'Overall Status',
+                    data.overall || 'idle',
+                    {
+                        'Active Scrapers': data.active || 0,
+                        'Total Jobs Found': data.totalJobs || 0,
+                        'Success Rate': `${data.successRate || 0}%`,
+                        'Errors': data.errors || 0
+                    },
+                    data.progress || 0
+                );
+                overview.appendChild(overallCard);
+
+                // Individual scraper cards
+                if (data.scrapers) {
+                    data.scrapers.forEach(scraper => {
+                        const card = this.createStatusCard(
+                            scraper.name,
+                            scraper.status,
+                            {
+                                'Jobs Found': scraper.jobsFound || 0,
+                                'Success Rate': `${scraper.successRate || 0}%`,
+                                'Last Run': scraper.lastRun || 'Never',
+                                'Response Time': `${scraper.responseTime || 0}ms`
+                            },
+                            scraper.progress || 0
+                        );
+                        overview.appendChild(card);
+                    });
+                }
+
+                this.updateScraperList(data.scrapers || []);
+            }
+
+            createStatusCard(title, status, metrics, progress) {
+                const card = document.createElement('div');
+                card.className = 'status-card';
+
+                let statusClass = 'idle';
+                if (status === 'active' || status === 'running') statusClass = 'active';
+                if (status === 'error' || status === 'failed') statusClass = 'error';
+
+                let metricsHtml = '';
+                for (const [label, value] of Object.entries(metrics)) {
+                    metricsHtml += `
+                        <div class="metric">
+                            <span class="metric-label">${label}</span>
+                            <span class="metric-value">${value}</span>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="status-header">
+                        <span class="status-title">${title}</span>
+                        <div class="status-indicator ${statusClass}"></div>
+                    </div>
+                    ${metricsHtml}
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            updateScraperList(scrapers) {
+                const list = document.getElementById('scraperList');
+                list.innerHTML = '';
+
+                if (scrapers.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #666;">No active scrapers</p>';
+                    return;
+                }
+
+                scrapers.forEach(scraper => {
+                    const item = document.createElement('div');
+                    item.className = 'scraper-item';
+                    
+                    let statusClass = 'idle';
+                    if (scraper.status === 'active' || scraper.status === 'running') statusClass = 'active';
+                    if (scraper.status === 'error' || scraper.status === 'failed') statusClass = 'error';
+
+                    item.innerHTML = `
+                        <div class="scraper-info">
+                            <div class="status-indicator ${statusClass}"></div>
+                            <div>
+                                <div class="scraper-name">${scraper.name}</div>
+                                <div class="scraper-url">${scraper.url || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="scraper-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${scraper.jobsFound || 0}</div>
+                                <div class="stat-label">Jobs</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${scraper.successRate || 0}%</div>
+                                <div class="stat-label">Success</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${scraper.responseTime || 0}ms</div>
+                                <div class="stat-label">Response</div>
+                            </div>
+                        </div>
+                    `;
+
+                    list.appendChild(item);
+                });
+            }
+
+            addError(errorData) {
+                this.errorLog.unshift({
+                    timestamp: new Date(),
+                    ...errorData
+                });
+
+                // Keep only last 20 errors
+                if (this.errorLog.length > 20) {
+                    this.errorLog = this.errorLog.slice(0, 20);
+                }
+
+                this.updateErrorLog();
+            }
+
+            updateErrorLog() {
+                const logContainer = document.getElementById('errorLog');
+                logContainer.innerHTML = '';
+
+                if (this.errorLog.length === 0) {
+                    logContainer.innerHTML = '<p style="text-align: center; color: #666;">No recent errors</p>';
+                    return;
+                }
+
+                this.errorLog.forEach(error => {
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry';
+                    entry.innerHTML = `
+                        <div class="log-timestamp">${error.timestamp.toLocaleString()}</div>
+                        <div class="log-message">${error.message || error.error || 'Unknown error'}</div>
+                    `;
+                    logContainer.appendChild(entry);
+                });
+            }
+
+            setupEventListeners() {
+                document.getElementById('startAllBtn').addEventListener('click', () => {
+                    this.sendMessage({ type: 'start-all-scrapers' });
+                });
+
+                document.getElementById('stopAllBtn').addEventListener('click', () => {
+                    this.sendMessage({ type: 'stop-all-scrapers' });
+                });
+
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.sendMessage({ type: 'get-scraper-status' });
+                    this.sendMessage({ type: 'get-scraper-stats' });
+                });
+            }
+
+            initializeCharts() {
+                // Success Rate Chart
+                const successCtx = document.getElementById('successChart').getContext('2d');
+                this.charts.success = new Chart(successCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Success Rate %',
+                            data: [],
+                            borderColor: '#4caf50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+
+                // Scraper Performance Chart
+                const scraperCtx = document.getElementById('scraperChart').getContext('2d');
+                this.charts.scraper = new Chart(scraperCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Jobs Found',
+                            data: [],
+                            backgroundColor: [
+                                '#667eea',
+                                '#764ba2',
+                                '#f093fb',
+                                '#f5576c',
+                                '#4facfe',
+                                '#00f2fe'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateScraperStats(data) {
+                if (data.successRateHistory) {
+                    this.charts.success.data.labels = data.successRateHistory.map(item => 
+                        new Date(item.timestamp).toLocaleTimeString()
+                    );
+                    this.charts.success.data.datasets[0].data = data.successRateHistory.map(item => item.rate);
+                    this.charts.success.update();
+                }
+
+                if (data.scraperPerformance) {
+                    this.charts.scraper.data.labels = data.scraperPerformance.map(item => item.name);
+                    this.charts.scraper.data.datasets[0].data = data.scraperPerformance.map(item => item.jobsFound);
+                    this.charts.scraper.update();
+                }
+            }
+
+            loadInitialData() {
+                // Load with mock data for development
+                setTimeout(() => {
+                    const mockData = {
+                        overall: 'active',
+                        active: 3,
+                        totalJobs: 245,
+                        successRate: 87,
+                        errors: 2,
+                        progress: 65,
+                        scrapers: [
+                            {
+                                name: 'LinkedIn Scraper',
+                                status: 'active',
+                                url: 'linkedin.com/jobs',
+                                jobsFound: 89,
+                                successRate: 92,
+                                lastRun: '2 min ago',
+                                responseTime: 1200,
+                                progress: 75
+                            },
+                            {
+                                name: 'Indeed Scraper',
+                                status: 'active',
+                                url: 'indeed.com',
+                                jobsFound: 156,
+                                successRate: 85,
+                                lastRun: '1 min ago',
+                                responseTime: 800,
+                                progress: 60
+                            },
+                            {
+                                name: 'Glassdoor Scraper',
+                                status: 'idle',
+                                url: 'glassdoor.com',
+                                jobsFound: 0,
+                                successRate: 78,
+                                lastRun: '10 min ago',
+                                responseTime: 2100,
+                                progress: 0
+                            }
+                        ]
+                    };
+
+                    this.updateScraperStatus(mockData);
+
+                    // Mock stats data
+                    const mockStats = {
+                        successRateHistory: [
+                            { timestamp: Date.now() - 300000, rate: 85 },
+                            { timestamp: Date.now() - 240000, rate: 87 },
+                            { timestamp: Date.now() - 180000, rate: 89 },
+                            { timestamp: Date.now() - 120000, rate: 84 },
+                            { timestamp: Date.now() - 60000, rate: 87 },
+                            { timestamp: Date.now(), rate: 87 }
+                        ],
+                        scraperPerformance: [
+                            { name: 'LinkedIn', jobsFound: 89 },
+                            { name: 'Indeed', jobsFound: 156 },
+                            { name: 'Glassdoor', jobsFound: 0 }
+                        ]
+                    };
+
+                    this.updateScraperStats(mockStats);
+
+                    // Add some mock errors
+                    this.addError({
+                        message: 'Rate limit exceeded on LinkedIn scraper',
+                        scraper: 'LinkedIn',
+                        severity: 'warning'
+                    });
+
+                    this.addError({
+                        message: 'Connection timeout for Glassdoor',
+                        scraper: 'Glassdoor',
+                        severity: 'error'
+                    });
+                }, 1000);
+            }
+
+            sendMessage(message) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(message));
+                } else {
+                    console.warn('WebSocket not connected, cannot send message:', message);
+                }
+            }
+
+            attemptReconnect() {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+                    
+                    setTimeout(() => {
+                        this.connectWebSocket();
+                    }, Math.pow(2, this.reconnectAttempts) * 1000);
+                }
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new LiveScrapingDashboard();
+        });
+    </script>
+</body>
+</html>
