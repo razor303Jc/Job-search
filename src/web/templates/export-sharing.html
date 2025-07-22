@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export & Sharing - Job Search Platform</title>
+    <link rel="stylesheet" href="advanced-job-search.css">
+    <link rel="stylesheet" href="export-sharing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Main Export & Sharing Interface -->
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1><i class="fas fa-download"></i> Export & Share</h1>
+                    <p>Export your job search results or share collections with others</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="exportSharing.clearAll()">
+                        <i class="fas fa-broom"></i>
+                        Clear All
+                    </button>
+                    <button class="btn-primary" onclick="exportSharing.showHelp()">
+                        <i class="fas fa-question-circle"></i>
+                        Help
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <button class="tab-button active" data-tab="export">
+                <i class="fas fa-file-export"></i>
+                Export Data
+            </button>
+            <button class="tab-button" data-tab="sharing">
+                <i class="fas fa-share-alt"></i>
+                Share Results
+            </button>
+            <button class="tab-button" data-tab="templates">
+                <i class="fas fa-file-contract"></i>
+                Report Templates
+            </button>
+            <button class="tab-button" data-tab="collections">
+                <i class="fas fa-folder"></i>
+                Job Collections
+            </button>
+        </nav>
+
+        <!-- Export Data Tab -->
+        <div class="tab-content active" id="export-tab">
+            <!-- Quick Export Section -->
+            <section class="export-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-bolt"></i> Quick Export</h3>
+                    <p>Export your current job search results in popular formats</p>
+                </div>
+                
+                <div class="quick-export">
+                    <h4>One-Click Export</h4>
+                    <div class="quick-export-buttons">
+                        <button class="export-btn" onclick="exportSharing.quickExport('csv')">
+                            <i class="fas fa-file-csv btn-icon"></i>
+                            Export CSV
+                        </button>
+                        <button class="export-btn" onclick="exportSharing.quickExport('json')">
+                            <i class="fas fa-file-code btn-icon"></i>
+                            Export JSON
+                        </button>
+                        <button class="export-btn" onclick="exportSharing.quickExport('pdf')">
+                            <i class="fas fa-file-pdf btn-icon"></i>
+                            Export PDF
+                        </button>
+                        <button class="export-btn" onclick="exportSharing.quickExport('xlsx')">
+                            <i class="fas fa-file-excel btn-icon"></i>
+                            Export Excel
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Custom Export Section -->
+            <section class="export-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-cogs"></i> Custom Export</h3>
+                    <p>Configure detailed export settings for your specific needs</p>
+                </div>
+                
+                <div class="custom-export">
+                    <form class="export-form" id="export-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="export-format">Export Format</label>
+                                <select id="export-format" name="format">
+                                    <option value="csv">CSV - Comma Separated Values</option>
+                                    <option value="json">JSON - JavaScript Object Notation</option>
+                                    <option value="xlsx">XLSX - Microsoft Excel</option>
+                                    <option value="pdf">PDF - Portable Document</option>
+                                    <option value="xml">XML - Extensible Markup Language</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="export-filename">Filename</label>
+                                <input type="text" id="export-filename" name="filename" placeholder="job-search-results" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fields to Include</label>
+                            <div class="field-checkboxes">
+                                <label><input type="checkbox" name="fields" value="title" checked> Job Title</label>
+                                <label><input type="checkbox" name="fields" value="company" checked> Company</label>
+                                <label><input type="checkbox" name="fields" value="location" checked> Location</label>
+                                <label><input type="checkbox" name="fields" value="salary" checked> Salary</label>
+                                <label><input type="checkbox" name="fields" value="description"> Description</label>
+                                <label><input type="checkbox" name="fields" value="requirements"> Requirements</label>
+                                <label><input type="checkbox" name="fields" value="posted_date"> Posted Date</label>
+                                <label><input type="checkbox" name="fields" value="application_url"> Apply URL</label>
+                                <label><input type="checkbox" name="fields" value="source"> Job Source</label>
+                                <label><input type="checkbox" name="fields" value="skills"> Skills</label>
+                                <label><input type="checkbox" name="fields" value="experience"> Experience</label>
+                                <label><input type="checkbox" name="fields" value="benefits"> Benefits</label>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="limit-results">Limit Results</label>
+                                <input type="number" id="limit-results" name="limit" placeholder="No limit" min="1" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="sort-by">Sort By</label>
+                                <select id="sort-by" name="sortBy">
+                                    <option value="">No sorting</option>
+                                    <option value="title">Job Title</option>
+                                    <option value="company">Company</option>
+                                    <option value="salary">Salary</option>
+                                    <option value="posted_date">Posted Date</option>
+                                    <option value="relevance">Relevance Score</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Date Range Filter</label>
+                            <div class="date-range">
+                                <input type="date" id="date-from" name="dateFrom" title="From date" aria-label="From date" />
+                                <span>to</span>
+                                <input type="date" id="date-to" name="dateTo" title="To date" aria-label="To date" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="export-notes">Export Notes</label>
+                            <textarea id="export-notes" name="notes" rows="3" placeholder="Add notes or comments for this export..."></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="exportSharing.resetForm()">
+                                <i class="fas fa-undo"></i>
+                                Reset
+                            </button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-download"></i>
+                                Create Export
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Export Queue Section -->
+            <section class="export-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-list"></i> Export Queue</h3>
+                    <p>Track the progress of your export requests</p>
+                </div>
+                
+                <div class="export-queue">
+                    <div id="queue-list" class="queue-list">
+                        <!-- Dynamic queue items will be inserted here -->
+                    </div>
+                    <div id="queue-empty" class="empty-state hidden">
+                        <p>No exports in queue</p>
+                        <p>Create an export above to see progress here</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sharing Tab -->
+        <div class="tab-content" id="sharing-tab">
+            <section class="sharing-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-share-alt"></i> Share Your Results</h3>
+                    <p>Generate shareable links or post to social media</p>
+                </div>
+
+                <div class="share-options">
+                    <div class="share-option" onclick="exportSharing.generateShareLink()">
+                        <div class="share-icon">
+                            <i class="fas fa-link icon-primary"></i>
+                        </div>
+                        <div class="share-content">
+                            <h4>Generate Link</h4>
+                            <p>Create a shareable URL for your current search results</p>
+                            <button class="btn-primary">Generate Link</button>
+                        </div>
+                    </div>
+
+                    <div class="share-option">
+                        <div class="share-icon">
+                            <i class="fab fa-facebook icon-facebook"></i>
+                        </div>
+                        <div class="share-content">
+                            <h4>Social Media</h4>
+                            <p>Share your job search findings on social platforms</p>
+                            <div class="social-buttons">
+                                <button class="social-btn" onclick="exportSharing.shareToSocial('linkedin')">
+                                    <i class="fab fa-linkedin"></i> LinkedIn
+                                </button>
+                                <button class="social-btn" onclick="exportSharing.shareToSocial('twitter')">
+                                    <i class="fab fa-twitter"></i> Twitter
+                                </button>
+                                <button class="social-btn" onclick="exportSharing.shareToSocial('facebook')">
+                                    <i class="fab fa-facebook"></i> Facebook
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="share-option" onclick="exportSharing.shareByEmail()">
+                        <div class="share-icon">
+                            <i class="fas fa-envelope icon-info"></i>
+                        </div>
+                        <div class="share-content">
+                            <h4>Email Share</h4>
+                            <p>Send your job search results via email</p>
+                            <button class="btn-primary">Compose Email</button>
+                        </div>
+                    </div>
+
+                    <div class="share-option" onclick="exportSharing.embedCode()">
+                        <div class="share-icon">
+                            <i class="fas fa-code icon-success"></i>
+                        </div>
+                        <div class="share-content">
+                            <h4>Embed Code</h4>
+                            <p>Generate HTML code to embed results on your website</p>
+                            <button class="btn-primary">Get Code</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Shared Links Section -->
+            <section class="sharing-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-history"></i> Shared Links</h3>
+                    <p>Manage your previously shared links</p>
+                </div>
+
+                <div class="shared-links">
+                    <div id="links-list" class="links-list">
+                        <!-- Dynamic shared links will be inserted here -->
+                    </div>
+                    <div id="links-empty" class="empty-state hidden">
+                        <p>No shared links yet</p>
+                        <p>Generate a shareable link above to see it here</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Templates Tab -->
+        <div class="tab-content" id="templates-tab">
+            <section class="templates-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-file-contract"></i> Report Templates</h3>
+                    <p>Create and manage custom export templates</p>
+                </div>
+
+                <div class="form-actions create-actions">
+                    <button class="btn-primary" onclick="exportSharing.showCreateTemplateDialog()">
+                        <i class="fas fa-plus"></i>
+                        Create Template
+                    </button>
+                    <button class="btn-secondary" onclick="exportSharing.importTemplate()">
+                        <i class="fas fa-upload"></i>
+                        Import Template
+                    </button>
+                </div>
+
+                <div id="templates-grid" class="templates-grid">
+                    <!-- Dynamic template cards will be inserted here -->
+                </div>
+                
+                <div id="templates-empty" class="empty-state hidden">
+                    <p>No templates created yet</p>
+                    <p>Create your first template to save export configurations</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Collections Tab -->
+        <div class="tab-content" id="collections-tab">
+            <section class="collections-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-folder"></i> Job Collections</h3>
+                    <p>Create and manage curated collections of job listings</p>
+                </div>
+
+                <div class="form-actions create-actions">
+                    <button class="btn-primary" onclick="exportSharing.showCreateCollectionDialog()">
+                        <i class="fas fa-plus"></i>
+                        Create Collection
+                    </button>
+                    <button class="btn-secondary" onclick="exportSharing.importJobs()">
+                        <i class="fas fa-upload"></i>
+                        Import Jobs
+                    </button>
+                </div>
+
+                <div id="collections-grid" class="collections-grid">
+                    <!-- Dynamic collection cards will be inserted here -->
+                </div>
+                
+                <div id="collections-empty" class="empty-state hidden">
+                    <p>No collections created yet</p>
+                    <p>Create your first collection to organize job listings</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Share Link Modal -->
+    <div id="share-link-modal" class="modal">
+        <div class="modal-overlay" onclick="exportSharing.closeModal('share-link-modal')">
+            <div class="modal-dialog" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Share Link Generated</h3>
+                    <button class="modal-close" onclick="exportSharing.closeModal('share-link-modal')" title="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-content">
+                    <p>Your shareable link has been generated. Anyone with this link can view your search results.</p>
+                    
+                    <div class="share-url">
+                        <input type="text" id="generated-url" readonly title="Generated shareable URL" placeholder="Shareable URL will appear here" />
+                        <button class="btn-copy" onclick="exportSharing.copyToClipboard('generated-url')">
+                            <i class="fas fa-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    
+                    <div class="share-expires" id="share-expires">
+                        Link expires in 7 days
+                    </div>
+
+                    <div class="form-group">
+                        <label for="link-privacy">Privacy Settings</label>
+                        <select id="link-privacy">
+                            <option value="public">Public - Anyone with link can view</option>
+                            <option value="unlisted">Unlisted - Only shared recipients can view</option>
+                            <option value="password">Password Protected - Requires password</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="password-field" hidden>
+                        <label for="share-password">Password</label>
+                        <input type="text" id="share-password" placeholder="Enter password..." />
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="exportSharing.closeModal('share-link-modal')">
+                        Close
+                    </button>
+                    <button class="btn-primary" onclick="exportSharing.updateShareSettings()">
+                        Update Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Template Modal -->
+    <div id="create-template-modal" class="modal">
+        <div class="modal-overlay" onclick="exportSharing.closeModal('create-template-modal')">
+            <div class="modal-dialog" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Create Report Template</h3>
+                    <button class="modal-close" onclick="exportSharing.closeModal('create-template-modal')" title="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-content">
+                    <form id="template-form">
+                        <div class="form-group">
+                            <label for="template-name">Template Name</label>
+                            <input type="text" id="template-name" name="name" required placeholder="My Custom Template" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="template-description">Description</label>
+                            <textarea id="template-description" name="description" rows="3" placeholder="Describe what this template is for..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="template-format">Format</label>
+                                <select id="template-format" name="format">
+                                    <option value="csv">CSV</option>
+                                    <option value="json">JSON</option>
+                                    <option value="xlsx">Excel</option>
+                                    <option value="pdf">PDF</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="template-category">Category</label>
+                                <select id="template-category" name="category">
+                                    <option value="general">General</option>
+                                    <option value="analytics">Analytics</option>
+                                    <option value="sharing">Sharing</option>
+                                    <option value="reporting">Reporting</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Include Fields</label>
+                            <div class="field-checkboxes">
+                                <label><input type="checkbox" name="template-fields" value="title" checked> Job Title</label>
+                                <label><input type="checkbox" name="template-fields" value="company" checked> Company</label>
+                                <label><input type="checkbox" name="template-fields" value="location" checked> Location</label>
+                                <label><input type="checkbox" name="template-fields" value="salary" checked> Salary</label>
+                                <label><input type="checkbox" name="template-fields" value="description"> Description</label>
+                                <label><input type="checkbox" name="template-fields" value="requirements"> Requirements</label>
+                                <label><input type="checkbox" name="template-fields" value="posted_date"> Posted Date</label>
+                                <label><input type="checkbox" name="template-fields" value="application_url"> Apply URL</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="exportSharing.closeModal('create-template-modal')">
+                        Cancel
+                    </button>
+                    <button class="btn-primary" onclick="exportSharing.saveTemplate()">
+                        Create Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Collection Modal -->
+    <div id="create-collection-modal" class="modal">
+        <div class="modal-overlay" onclick="exportSharing.closeModal('create-collection-modal')">
+            <div class="modal-dialog" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Create Job Collection</h3>
+                    <button class="modal-close" onclick="exportSharing.closeModal('create-collection-modal')" title="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-content">
+                    <form id="collection-form">
+                        <div class="form-group">
+                            <label for="collection-name">Collection Name</label>
+                            <input type="text" id="collection-name" name="name" required placeholder="My Job Collection" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="collection-description">Description</label>
+                            <textarea id="collection-description" name="description" rows="3" placeholder="Describe this collection..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="collection-visibility">Visibility</label>
+                                <select id="collection-visibility" name="visibility">
+                                    <option value="private">Private - Only visible to me</option>
+                                    <option value="public">Public - Visible to others</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="collection-tags">Tags</label>
+                                <input type="text" id="collection-tags" name="tags" placeholder="remote, tech, senior" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="exportSharing.closeModal('create-collection-modal')">
+                        Cancel
+                    </button>
+                    <button class="btn-primary" onclick="exportSharing.saveCollection()">
+                        Create Collection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Export Modal -->
+    <div id="schedule-export-modal" class="modal">
+        <div class="modal-overlay" onclick="exportSharing.closeModal('schedule-export-modal')">
+            <div class="modal-dialog" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Schedule Export</h3>
+                    <button class="modal-close" onclick="exportSharing.closeModal('schedule-export-modal')" title="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-content">
+                    <form id="schedule-form">
+                        <div class="form-group">
+                            <label for="schedule-frequency">Frequency</label>
+                            <select id="schedule-frequency" name="frequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="schedule-time">Time</label>
+                                <input type="time" id="schedule-time" name="time" value="09:00" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="schedule-email">Email To</label>
+                                <input type="email" id="schedule-email" name="email" placeholder="your@email.com" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="exportSharing.closeModal('schedule-export-modal')">
+                        Cancel
+                    </button>
+                    <button class="btn-primary" onclick="exportSharing.saveSchedule()">
+                        Schedule Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="advanced-job-search.js"></script>
+    <script src="export-sharing.js"></script>
+
+    <script>
+        // Initialize Export & Sharing interface
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tab navigation
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.dataset.tab;
+                    
+                    // Update active tab button
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active tab content
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(`${targetTab}-tab`).classList.add('active');
+                    
+                    // Load tab-specific data
+                    exportSharing.loadTabData(targetTab);
+                });
+            });
+            
+            // Initialize export form
+            document.getElementById('export-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                exportSharing.createCustomExport();
+            });
+            
+            // Initialize privacy settings change
+            document.getElementById('link-privacy').addEventListener('change', function() {
+                const passwordField = document.getElementById('password-field');
+                if (this.value === 'password') {
+                    passwordField.style.display = 'block';
+                } else {
+                    passwordField.style.display = 'none';
+                }
+            });
+            
+            // Initialize export sharing system
+            exportSharing.init();
+            
+            console.log('Export & Sharing interface initialized');
+        });
+    </script>
+</body>
+</html>
