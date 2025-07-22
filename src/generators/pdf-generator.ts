@@ -377,7 +377,7 @@ export class PdfGenerator {
       if (filters.includeDescription !== false && job.description) {
         const description =
           job.description.length > 200
-            ? job.description.substring(0, 200) + '...'
+            ? `${job.description.substring(0, 200)}...`
             : job.description;
 
         doc

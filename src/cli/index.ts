@@ -17,14 +17,16 @@ const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
  */
 function parseJobData(rawData: unknown): any[] {
   const rawJobs = Array.isArray(rawData) ? rawData : (rawData as any)?.jobs || [];
-  
+
   return rawJobs.map((job: any) => ({
     ...job,
     postedDate: job.postedDate ? new Date(job.postedDate) : undefined,
-    source: job.source ? {
-      ...job.source,
-      scrapedAt: job.source.scrapedAt ? new Date(job.source.scrapedAt) : new Date(),
-    } : undefined,
+    source: job.source
+      ? {
+          ...job.source,
+          scrapedAt: job.source.scrapedAt ? new Date(job.source.scrapedAt) : new Date(),
+        }
+      : undefined,
   }));
 }
 
@@ -122,7 +124,7 @@ program
         // Load job data
         const jobData = JSON.parse(await fs.readFile(inputPath, 'utf-8'));
         const jobs = parseJobData(jobData);
-        
+
         const pdfOptions = {
           outputPath,
           title: options.title,
@@ -142,7 +144,8 @@ program
             includeRequirements: options.includeRequirements,
             includeBenefits: options.includeBenefits,
           },
-        };        await PdfGenerator.generateReport(jobs, pdfOptions);
+        };
+        await PdfGenerator.generateReport(jobs, pdfOptions);
       } else if (format === 'csv') {
         const { CsvGenerator } = await import('../generators/csv-generator.js');
         const { promises: fs } = await import('node:fs');
@@ -244,6 +247,38 @@ program
       }
     } catch (error) {
       logger.error({ err: error }, chalk.red('❌ Configuration command failed'));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('web')
+  .description('Start enhanced web dashboard with real-time features')
+  .option('-p, --port <port>', 'Server port', '3000')
+  .option('-h, --host <host>', 'Server host', '0.0.0.0')
+  .action(async (options) => {
+    try {
+      logger.info(chalk.blue('🚀 Starting enhanced web dashboard...'));
+
+      const { EnhancedWebServer } = await import('../web/server-v2.js');
+      const server = new EnhancedWebServer();
+
+      await server.start(Number(options.port), options.host);
+
+      logger.info(
+        chalk.green(`✅ Enhanced web dashboard running at http://localhost:${options.port}`),
+      );
+      logger.info(chalk.cyan(`📡 WebSocket endpoint: ws://localhost:${options.port}/ws`));
+      logger.info(chalk.yellow('Press Ctrl+C to stop'));
+
+      // Graceful shutdown
+      process.on('SIGINT', async () => {
+        logger.info(chalk.blue('🛑 Shutting down...'));
+        await server.close();
+        process.exit(0);
+      });
+    } catch (error) {
+      logger.error({ err: error }, chalk.red('❌ Failed to start web dashboard'));
       process.exit(1);
     }
   });
