@@ -31,7 +31,8 @@
     "seed": "tsx scripts/seed.ts",
     "web": "tsx src/web/cli.ts start",
     "web:dev": "tsx watch src/web/cli.ts start --log-level debug",
-    "web:prod": "node dist/web/cli.js start"
+    "web:prod": "node dist/web/cli.js start",
+    "dev:web": "tsx watch src/web/cli.ts start --host 0.0.0.0 --port 3001 --log-level debug"
   },
   "keywords": [
     "job-scraper",
@@ -109,7 +110,7 @@
     "*.md": ["prettier --write"]
   },
   "tsup": {
-    "entry": ["src/index.ts", "src/cli/index.ts"],
+    "entry": ["src/index.ts", "src/cli/index.ts", "src/web/cli.ts"],
     "format": ["esm"],
     "dts": true,
     "clean": true,

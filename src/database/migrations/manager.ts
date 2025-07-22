@@ -115,7 +115,15 @@ export class MigrationManager {
       ORDER BY id ASC
     `);
 
-    return stmt.all().map((row: any) => ({
+    return (
+      stmt.all() as {
+        id: number;
+        name: string;
+        filename: string;
+        sql: string;
+        applied_at: string;
+      }[]
+    ).map((row) => ({
       id: row.id,
       name: row.name,
       filename: row.filename,
@@ -355,10 +363,11 @@ export class MigrationManager {
     logger.warn('Resetting all migrations - this will drop all data!');
 
     // Get all table names except migrations
-    const tables = this.db
+    const tableRows = this.db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name != 'migrations'")
-      .all()
-      .map((row: any) => row.name);
+      .all() as { name: string }[];
+
+    const tables = tableRows.map((row) => row.name);
 
     // Drop all tables
     for (const tableName of tables) {
