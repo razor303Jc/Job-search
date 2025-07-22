@@ -12,13 +12,35 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '../../package.json');
 const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
 
+interface RawJobData {
+  id?: string;
+  title?: string;
+  company?: string;
+  location?: string;
+  description?: string;
+  url?: string;
+  postedDate?: string | Date;
+  source?: {
+    scrapedAt?: string | Date;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface RawDataWithJobs {
+  jobs?: RawJobData[];
+  [key: string]: unknown;
+}
+
 /**
  * Parse job data from JSON and convert date strings to Date objects
  */
 function parseJobData(rawData: unknown): any[] {
-  const rawJobs = Array.isArray(rawData) ? rawData : (rawData as any)?.jobs || [];
+  const rawJobs = Array.isArray(rawData)
+    ? (rawData as RawJobData[])
+    : (rawData as RawDataWithJobs)?.jobs || [];
 
-  return rawJobs.map((job: any) => ({
+  return rawJobs.map((job: RawJobData) => ({
     ...job,
     postedDate: job.postedDate ? new Date(job.postedDate) : undefined,
     source: job.source

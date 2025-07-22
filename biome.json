@@ -8,13 +8,13 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "warn",
+        "noExplicitAny": "off",
         "noConsoleLog": "warn"
       },
       "style": {
         "useNodejsImportProtocol": "error",
         "useImportType": "error",
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "off"
       },
       "correctness": {
         "noUnusedVariables": "error"

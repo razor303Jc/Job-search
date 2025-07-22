@@ -180,12 +180,23 @@ export class JsonGenerator {
 
       if (data.jobs) {
         // Validate each job has required fields
-        data.jobs.forEach((job: any, index: number) => {
-          if (!job.id) errors.push(`Job ${index}: missing id`);
-          if (!job.title) errors.push(`Job ${index}: missing title`);
-          if (!job.company) errors.push(`Job ${index}: missing company`);
-          if (!job.url) errors.push(`Job ${index}: missing url`);
-        });
+        data.jobs.forEach(
+          (
+            job: {
+              id?: string;
+              title?: string;
+              company?: string;
+              url?: string;
+              [key: string]: unknown;
+            },
+            index: number,
+          ) => {
+            if (!job.id) errors.push(`Job ${index}: missing id`);
+            if (!job.title) errors.push(`Job ${index}: missing title`);
+            if (!job.company) errors.push(`Job ${index}: missing company`);
+            if (!job.url) errors.push(`Job ${index}: missing url`);
+          },
+        );
       }
 
       return {
