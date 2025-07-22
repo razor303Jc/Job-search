@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Job Search & Filtering - Job Dorker</title>
+    
+    <!-- Core Styles -->
+    <link rel="stylesheet" href="../static/enhanced-dashboard.css">
+    <link rel="stylesheet" href="../static/advanced-filtering.css">
+    <link rel="stylesheet" href="../static/job-comparison.css">
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="../static/favicon.ico">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>🔍 Job Dorker</h1>
+                <span class="nav-subtitle">Advanced Search & Filtering</span>
+            </div>
+            <div class="nav-links">
+                <a href="../static/enhanced-dashboard.html" class="nav-link">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <a href="advanced-job-search.html" class="nav-link active">
+                    <span class="nav-icon">🔍</span> Advanced Search
+                </a>
+                <a href="job-comparison.html" class="nav-link">
+                    <span class="nav-icon">⚖️</span> Compare Jobs
+                </a>
+                <a href="../static/live-scraping.html" class="nav-link">
+                    <span class="nav-icon">🔄</span> Live Scraping
+                </a>
+                <a href="../static/job-alerts.html" class="nav-link">
+                    <span class="nav-icon">🔔</span> Job Alerts
+                </a>
+            </div>
+            <div class="connection-status">
+                <span id="ws-status" class="status-indicator">🔴 Disconnected</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="search-container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2>🔍 Advanced Job Search & Filtering</h2>
+                <p class="page-description">
+                    Use powerful filters and sorting options to find the perfect job opportunities. 
+                    Save your favorite search configurations and get real-time analytics.
+                </p>
+            </div>
+
+            <!-- Quick Search Bar -->
+            <div class="quick-search-section">
+                <div class="search-input-group">
+                    <input type="text" id="quick-search" placeholder="Quick search: job title, company, skills..." 
+                           class="main-search-input">
+                    <button id="quick-search-btn" class="search-button">
+                        <span>🔍</span> Search
+                    </button>
+                </div>
+                <div class="search-suggestions" id="search-suggestions"></div>
+            </div>
+
+            <!-- Search Results Summary -->
+            <div class="results-summary" id="results-summary">
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-results">0</span>
+                        <span class="stat-label">Total Results</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="new-today">0</span>
+                        <span class="stat-label">New Today</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="remote-jobs">0</span>
+                        <span class="stat-label">Remote Jobs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="avg-salary">$0</span>
+                        <span class="stat-label">Avg. Salary</span>
+                    </div>
+                </div>
+                <div class="search-actions">
+                    <button id="export-results" class="action-btn secondary">
+                        📁 Export Results
+                    </button>
+                    <button id="save-search" class="action-btn primary">
+                        💾 Save Search
+                    </button>
+                    <button id="create-alert" class="action-btn accent">
+                        🔔 Create Alert
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Search Interface -->
+            <div class="search-interface">
+                <!-- Left Column: Filters -->
+                <div class="filters-column">
+                    <!-- Filter Presets -->
+                    <div id="filter-presets"></div>
+                    
+                    <!-- Advanced Filters -->
+                    <div id="advanced-filters"></div>
+                </div>
+
+                <!-- Right Column: Results & Analytics -->
+                <div class="results-column">
+                    <!-- Sort Controls -->
+                    <div id="sort-controls"></div>
+                    
+                    <!-- Filter Analytics -->
+                    <div id="filter-analytics"></div>
+                    
+                    <!-- Search Results -->
+                    <div class="search-results" id="search-results">
+                        <div class="results-header">
+                            <h3>🎯 Search Results</h3>
+                            <div class="view-toggles">
+                                <button class="view-toggle active" data-view="list">
+                                    📋 List
+                                </button>
+                                <button class="view-toggle" data-view="grid">
+                                    ⊞ Grid
+                                </button>
+                                <button class="view-toggle" data-view="map">
+                                    🗺️ Map
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Results List -->
+                        <div class="results-list" id="results-list">
+                            <!-- Results will be populated here -->
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="pagination" id="pagination">
+                            <button class="page-btn" id="prev-page" disabled>← Previous</button>
+                            <div class="page-numbers" id="page-numbers"></div>
+                            <button class="page-btn" id="next-page">Next →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saved Searches -->
+            <div class="saved-searches-section">
+                <h3>💾 Saved Searches</h3>
+                <div class="saved-searches-grid" id="saved-searches">
+                    <!-- Saved searches will be populated here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Export Modal -->
+    <div class="modal" id="export-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📁 Export Search Results</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <h4>Export Format</h4>
+                    <div class="format-options">
+                        <label class="format-option">
+                            <input type="radio" name="export-format" value="csv" checked>
+                            <span class="option-label">📊 CSV Spreadsheet</span>
+                            <small>Compatible with Excel and Google Sheets</small>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="export-format" value="json">
+                            <span class="option-label">🔗 JSON Data</span>
+                            <small>Structured data for developers</small>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="export-format" value="pdf">
+                            <span class="option-label">📄 PDF Report</span>
+                            <small>Professional formatted document</small>
+                        </label>
+                    </div>
+                    
+                    <h4>Include Fields</h4>
+                    <div class="field-options">
+                        <label><input type="checkbox" checked> Job Title</label>
+                        <label><input type="checkbox" checked> Company</label>
+                        <label><input type="checkbox" checked> Location</label>
+                        <label><input type="checkbox" checked> Salary</label>
+                        <label><input type="checkbox"> Description</label>
+                        <label><input type="checkbox"> Requirements</label>
+                        <label><input type="checkbox"> Skills</label>
+                        <label><input type="checkbox"> Benefits</label>
+                        <label><input type="checkbox"> Posted Date</label>
+                        <label><input type="checkbox"> Application URL</label>
+                    </div>
+                    
+                    <h4>Additional Options</h4>
+                    <div class="export-settings">
+                        <label>
+                            <input type="checkbox" id="include-analytics">
+                            Include search analytics and statistics
+                        </label>
+                        <label>
+                            <input type="checkbox" id="include-filters">
+                            Include applied filters summary
+                        </label>
+                        <div class="file-options">
+                            <label for="filename">Filename:</label>
+                            <input type="text" id="filename" value="job-search-results" placeholder="Enter filename">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancel-export">Cancel</button>
+                <button class="btn-export" id="confirm-export">📁 Export Results</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Search Modal -->
+    <div class="modal" id="save-search-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💾 Save Search Configuration</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="save-search-form">
+                    <div class="form-group">
+                        <label for="search-name">Search Name *</label>
+                        <input type="text" id="search-name" placeholder="e.g., Remote React Developer Jobs" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="search-description">Description</label>
+                        <textarea id="search-description" rows="3" 
+                                  placeholder="Brief description of this search configuration..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="create-alert-on-save">
+                            Create job alert for this search
+                        </label>
+                        <small>Get notifications when new jobs match these criteria</small>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="set-as-default">
+                            Set as default search
+                        </label>
+                        <small>Load these filters automatically when visiting this page</small>
+                    </div>
+                </div>
+                <div class="search-preview">
+                    <h4>Current Search Criteria:</h4>
+                    <div id="criteria-preview"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancel-save">Cancel</button>
+                <button class="btn-save" id="confirm-save">💾 Save Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Alert Modal -->
+    <div class="modal" id="alert-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔔 Create Job Alert</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-form">
+                    <div class="form-group">
+                        <label for="alert-name">Alert Name *</label>
+                        <input type="text" id="alert-name" placeholder="e.g., Senior Frontend Developer" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="alert-frequency">Notification Frequency</label>
+                        <select id="alert-frequency">
+                            <option value="instant">Instant (as jobs are found)</option>
+                            <option value="daily" selected>Daily digest</option>
+                            <option value="weekly">Weekly summary</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notification Methods</label>
+                        <div class="notification-methods">
+                            <label><input type="checkbox" checked> Browser notifications</label>
+                            <label><input type="checkbox"> Email notifications</label>
+                            <label><input type="checkbox"> SMS alerts (premium)</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="alert-threshold">Minimum Results</label>
+                        <input type="number" id="alert-threshold" value="1" min="1" 
+                               placeholder="Only notify if at least X jobs match">
+                        <small>Set higher to reduce notification frequency</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancel-alert">Cancel</button>
+                <button class="btn-create" id="confirm-alert">🔔 Create Alert</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Searching for jobs...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../components/advanced-search.ts" type="module"></script>
+    <script src="../components/advanced-filtering.ts" type="module"></script>
+    <script>
+        // Initialize the advanced filtering system
+        document.addEventListener('DOMContentLoaded', () => {
+            const filteringComponent = new AdvancedFilteringComponent();
+            
+            // WebSocket connection
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${location.host}/ws`;
+            
+            const connectWebSocket = () => {
+                const ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('Connected to WebSocket server');
+                    document.getElementById('ws-status').innerHTML = '🟢 Connected';
+                    filteringComponent.setWebSocket(ws);
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket connection closed');
+                    document.getElementById('ws-status').innerHTML = '🔴 Disconnected';
+                    // Attempt to reconnect after 5 seconds
+                    setTimeout(connectWebSocket, 5000);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    document.getElementById('ws-status').innerHTML = '⚠️ Error';
+                };
+            };
+            
+            connectWebSocket();
+            
+            // Initialize modal handlers
+            initializeModals();
+            
+            // Initialize quick search
+            initializeQuickSearch();
+            
+            // Initialize view toggles
+            initializeViewToggles();
+            
+            // Initialize export functionality
+            initializeExportSystem();
+        });
+        
+        // Modal management
+        function initializeModals() {
+            const modals = ['export-modal', 'save-search-modal', 'alert-modal'];
+            
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                const closeBtn = modal.querySelector('.modal-close');
+                
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                });
+                
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Modal trigger buttons
+            document.getElementById('export-results').addEventListener('click', () => {
+                document.getElementById('export-modal').classList.add('active');
+            });
+            
+            document.getElementById('save-search').addEventListener('click', () => {
+                document.getElementById('save-search-modal').classList.add('active');
+                updateCriteriaPreview();
+            });
+            
+            document.getElementById('create-alert').addEventListener('click', () => {
+                document.getElementById('alert-modal').classList.add('active');
+            });
+        }
+        
+        // Quick search functionality
+        function initializeQuickSearch() {
+            const quickSearchInput = document.getElementById('quick-search');
+            const quickSearchBtn = document.getElementById('quick-search-btn');
+            
+            const performQuickSearch = () => {
+                const query = quickSearchInput.value.trim();
+                if (query) {
+                    showLoading();
+                    // Simulate search - replace with actual API call
+                    setTimeout(() => {
+                        hideLoading();
+                        updateSearchResults();
+                    }, 1500);
+                }
+            };
+            
+            quickSearchBtn.addEventListener('click', performQuickSearch);
+            quickSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performQuickSearch();
+                }
+            });
+        }
+        
+        // View toggle functionality
+        function initializeViewToggles() {
+            const toggles = document.querySelectorAll('.view-toggle');
+            
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    toggles.forEach(t => t.classList.remove('active'));
+                    toggle.classList.add('active');
+                    
+                    const view = toggle.dataset.view;
+                    switchResultsView(view);
+                });
+            });
+        }
+        
+        // Export system
+        function initializeExportSystem() {
+            document.getElementById('confirm-export').addEventListener('click', () => {
+                const format = document.querySelector('input[name="export-format"]:checked').value;
+                const filename = document.getElementById('filename').value || 'job-search-results';
+                const includeAnalytics = document.getElementById('include-analytics').checked;
+                const includeFilters = document.getElementById('include-filters').checked;
+                
+                // Collect selected fields
+                const fields = Array.from(document.querySelectorAll('.field-options input:checked'))
+                    .map(input => input.parentElement.textContent.trim());
+                
+                exportResults(format, filename, fields, includeAnalytics, includeFilters);
+                document.getElementById('export-modal').classList.remove('active');
+            });
+        }
+        
+        // Utility functions
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.add('active');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.remove('active');
+        }
+        
+        function updateSearchResults() {
+            // Mock results update - replace with actual implementation
+            document.getElementById('total-results').textContent = '1,247';
+            document.getElementById('new-today').textContent = '23';
+            document.getElementById('remote-jobs').textContent = '456';
+            document.getElementById('avg-salary').textContent = '$95,500';
+            
+            // Update results list with mock data
+            const resultsList = document.getElementById('results-list');
+            resultsList.innerHTML = generateMockResults();
+        }
+        
+        function switchResultsView(view) {
+            const resultsList = document.getElementById('results-list');
+            resultsList.className = `results-list view-${view}`;
+            
+            if (view === 'map') {
+                // Initialize map view
+                resultsList.innerHTML = '<div class="map-placeholder">🗺️ Map view would be implemented here</div>';
+            } else {
+                // Update list/grid view
+                updateSearchResults();
+            }
+        }
+        
+        function updateCriteriaPreview() {
+            // Mock criteria preview
+            const preview = document.getElementById('criteria-preview');
+            preview.innerHTML = `
+                <div class="criteria-item">Keywords: "React Developer"</div>
+                <div class="criteria-item">Location: Remote</div>
+                <div class="criteria-item">Salary: $80,000 - $120,000</div>
+                <div class="criteria-item">Experience: Mid, Senior</div>
+            `;
+        }
+        
+        function exportResults(format, filename, fields, includeAnalytics, includeFilters) {
+            console.log('Exporting results:', { format, filename, fields, includeAnalytics, includeFilters });
+            // Implement actual export functionality
+            alert(`Export started: ${filename}.${format}`);
+        }
+        
+        function generateMockResults() {
+            const mockJobs = [
+                {
+                    title: 'Senior React Developer',
+                    company: 'TechCorp Inc',
+                    location: 'Remote',
+                    salary: '$90,000 - $130,000',
+                    posted: '2 days ago',
+                    skills: ['React', 'TypeScript', 'Node.js']
+                },
+                {
+                    title: 'Full Stack Engineer',
+                    company: 'StartupXYZ',
+                    location: 'San Francisco, CA',
+                    salary: '$110,000 - $150,000',
+                    posted: '1 day ago',
+                    skills: ['JavaScript', 'Python', 'AWS']
+                },
+                {
+                    title: 'Frontend Developer',
+                    company: 'Design Studio',
+                    location: 'New York, NY',
+                    salary: '$70,000 - $95,000',
+                    posted: '3 days ago',
+                    skills: ['Vue.js', 'CSS', 'Figma']
+                }
+            ];
+            
+            return mockJobs.map(job => `
+                <div class="job-result">
+                    <div class="job-header">
+                        <h4 class="job-title">${job.title}</h4>
+                        <div class="job-actions">
+                            <button class="action-btn small">💾 Save</button>
+                            <button class="action-btn small">⚖️ Compare</button>
+                            <button class="action-btn small primary">📝 Apply</button>
+                        </div>
+                    </div>
+                    <div class="job-info">
+                        <span class="company">🏢 ${job.company}</span>
+                        <span class="location">📍 ${job.location}</span>
+                        <span class="salary">💰 ${job.salary}</span>
+                        <span class="posted">📅 ${job.posted}</span>
+                    </div>
+                    <div class="job-skills">
+                        ${job.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+    
+    <style>
+        /* Additional page-specific styles */
+        .search-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .page-header h2 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary, #333);
+            font-size: 2rem;
+        }
+        
+        .page-description {
+            color: var(--text-secondary, #666);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        .quick-search-section {
+            margin-bottom: 32px;
+            position: relative;
+        }
+        
+        .search-input-group {
+            display: flex;
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .main-search-input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid var(--border-color, #e0e0e0);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+        
+        .main-search-input:focus {
+            outline: none;
+            border-color: var(--primary-color, #007bff);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+        
+        .search-button {
+            padding: 14px 24px;
+            background: var(--primary-color, #007bff);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .search-button:hover {
+            background: var(--primary-hover, #0056b3);
+            transform: translateY(-1px);
+        }
+        
+        .results-summary {
+            background: white;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .summary-stats {
+            display: flex;
+            gap: 32px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color, #007bff);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary, #666);
+        }
+        
+        .search-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn.primary {
+            background: var(--primary-color, #007bff);
+            color: white;
+        }
+        
+        .action-btn.secondary {
+            background: var(--secondary-color, #6c757d);
+            color: white;
+        }
+        
+        .action-btn.accent {
+            background: var(--accent-color, #17a2b8);
+            color: white;
+        }
+        
+        .action-btn.small {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+        
+        .search-interface {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .filters-column {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .results-column {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .search-results {
+            background: white;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light, #dee2e6);
+        }
+        
+        .results-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-primary, #333);
+        }
+        
+        .view-toggles {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .view-toggle {
+            padding: 8px 12px;
+            background: var(--background-light, #f8f9fa);
+            border: 1px solid var(--border-light, #dee2e6);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .view-toggle.active {
+            background: var(--primary-color, #007bff);
+            color: white;
+            border-color: var(--primary-color, #007bff);
+        }
+        
+        .job-result {
+            padding: 16px;
+            border: 1px solid var(--border-light, #dee2e6);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .job-result:hover {
+            border-color: var(--primary-color, #007bff);
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+        }
+        
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .job-title {
+            margin: 0;
+            color: var(--text-primary, #333);
+            font-size: 1.1rem;
+        }
+        
+        .job-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .job-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 12px;
+            font-size: 0.875rem;
+            color: var(--text-secondary, #666);
+        }
+        
+        .job-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .skill-tag {
+            padding: 3px 8px;
+            background: var(--primary-light, #e3f2fd);
+            color: var(--primary-color, #007bff);
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        
+        .saved-searches-section {
+            background: white;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        
+        .saved-searches-section h3 {
+            margin: 0 0 20px 0;
+            color: var(--text-primary, #333);
+        }
+        
+        .saved-searches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-light, #dee2e6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-primary, #333);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary, #666);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-light, #dee2e6);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn-cancel,
+        .btn-export,
+        .btn-save,
+        .btn-create {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-cancel {
+            background: var(--secondary-color, #6c757d);
+            color: white;
+        }
+        
+        .btn-export,
+        .btn-save,
+        .btn-create {
+            background: var(--primary-color, #007bff);
+            color: white;
+        }
+        
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 2000;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-light, #dee2e6);
+            border-top-color: var(--primary-color, #007bff);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @media (max-width: 1024px) {
+            .search-interface {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-stats {
+                flex-wrap: wrap;
+                gap: 16px;
+                justify-content: center;
+            }
+            
+            .results-summary {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .search-input-group {
+                flex-direction: column;
+                max-width: none;
+            }
+            
+            .search-actions {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .view-toggles {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</body>
+</html>
