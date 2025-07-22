@@ -14,7 +14,13 @@ export interface DatabaseServices {
   migrate: () => Promise<void>;
   reset: () => Promise<void>;
   backup: (filename: string) => Promise<void>;
-  getStats: () => any;
+  getStats: () => {
+    pageCount: number;
+    pageSize: number;
+    cacheSize: number;
+    freelistCount: number;
+    walMode: boolean;
+  };
   close: () => void;
 }
 

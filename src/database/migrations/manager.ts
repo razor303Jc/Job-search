@@ -138,6 +138,74 @@ export class MigrationManager {
   }
 
   /**
+   * Parse SQL into individual statements, respecting block boundaries
+   */
+  private parseSqlStatements(sql: string): string[] {
+    const statements: string[] = [];
+    let currentStatement = '';
+    let inBlock = false;
+    let blockKeyword = '';
+    
+    const lines = sql.split('\n');
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Skip empty lines and comments
+      if (!trimmedLine || trimmedLine.startsWith('--')) {
+        if (currentStatement) {
+          currentStatement += '\n' + line;
+        }
+        continue;
+      }
+      
+      currentStatement += (currentStatement ? '\n' : '') + line;
+      
+      // Check for block start keywords
+      const upperLine = trimmedLine.toUpperCase();
+      if (!inBlock) {
+        if (upperLine.includes('CREATE TRIGGER') || 
+            upperLine.includes('CREATE FUNCTION') || 
+            upperLine.includes('CREATE PROCEDURE')) {
+          inBlock = true;
+          blockKeyword = 'BEGIN';
+        } else if (upperLine.includes('BEGIN')) {
+          inBlock = true;
+          blockKeyword = 'BEGIN';
+        }
+      }
+      
+      // Check for block end
+      if (inBlock && upperLine.includes('END')) {
+        // Check if this END matches our block type
+        if (blockKeyword === 'BEGIN') {
+          inBlock = false;
+          blockKeyword = '';
+        }
+      }
+      
+      // Check for statement end
+      if (trimmedLine.endsWith(';') && !inBlock) {
+        const statement = currentStatement.trim();
+        if (statement && !statement.startsWith('--')) {
+          statements.push(statement);
+        }
+        currentStatement = '';
+      }
+    }
+    
+    // Add any remaining statement
+    if (currentStatement.trim()) {
+      const statement = currentStatement.trim();
+      if (statement && !statement.startsWith('--')) {
+        statements.push(statement);
+      }
+    }
+    
+    return statements;
+  }
+
+  /**
    * Apply a single migration
    */
   private applyMigration(migration: Migration): MigrationResult {
@@ -146,14 +214,33 @@ export class MigrationManager {
     try {
       // Run migration in a transaction
       const transaction = this.db.transaction(() => {
-        // Split SQL by semicolon and execute each statement
-        const statements = migration.sql
-          .split(';')
-          .map(stmt => stmt.trim())
-          .filter(stmt => stmt.length > 0);
+        // Parse SQL into proper statements
+        const statements = this.parseSqlStatements(migration.sql);
+        
+        logger.debug('Parsed migration statements', {
+          migrationId: migration.id,
+          statementCount: statements.length,
+        });
 
-        for (const sql of statements) {
-          this.db.exec(sql);
+        for (let i = 0; i < statements.length; i++) {
+          const sql = statements[i];
+          
+          if (!sql) continue;
+          
+          try {
+            this.db.exec(sql);
+            logger.debug(`Statement ${i + 1} executed successfully`, {
+              migrationId: migration.id,
+              preview: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
+            });
+          } catch (statementError) {
+            logger.error(`Statement ${i + 1} failed`, {
+              migrationId: migration.id,
+              sql: sql,
+              error: statementError,
+            });
+            throw statementError;
+          }
         }
 
         // Record migration as applied
