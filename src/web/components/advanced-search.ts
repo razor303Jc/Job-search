@@ -74,7 +74,7 @@ class AdvancedSearchComponent {
     this.state.searchTime = searchTime;
     this.state.loading = false;
     this.state.error = null;
-    
+
     this.renderResults();
     this.renderSearchStats();
   }
@@ -242,11 +242,16 @@ class AdvancedSearchComponent {
 
     // Filter inputs
     const filterInputs = [
-      'locationFilter', 'companyFilter', 'employmentTypeFilter',
-      'minSalary', 'maxSalary', 'remoteFilter', 'postedWithinFilter'
+      'locationFilter',
+      'companyFilter',
+      'employmentTypeFilter',
+      'minSalary',
+      'maxSalary',
+      'remoteFilter',
+      'postedWithinFilter',
     ];
 
-    filterInputs.forEach(id => {
+    filterInputs.forEach((id) => {
       const element = document.getElementById(id);
       if (element) {
         element.addEventListener('change', () => {
@@ -257,7 +262,9 @@ class AdvancedSearchComponent {
     });
 
     // Filter actions
-    document.getElementById('clearFilters')?.addEventListener('click', () => this.clearAllFilters());
+    document
+      .getElementById('clearFilters')
+      ?.addEventListener('click', () => this.clearAllFilters());
     document.getElementById('applyFilters')?.addEventListener('click', () => this.performSearch());
   }
 
@@ -265,7 +272,7 @@ class AdvancedSearchComponent {
     if (this.debounceTimeout) {
       clearTimeout(this.debounceTimeout);
     }
-    
+
     this.debounceTimeout = setTimeout(() => {
       this.performSearch();
     }, 300);
@@ -274,7 +281,7 @@ class AdvancedSearchComponent {
   private performSearch(): void {
     this.collectFilters();
     this.setLoading(true);
-    
+
     if (this.onSearchCallback) {
       this.onSearchCallback(this.state.filters);
     }
@@ -284,28 +291,48 @@ class AdvancedSearchComponent {
     const mainInput = document.getElementById('mainSearchInput') as HTMLInputElement;
     const locationFilter = document.getElementById('locationFilter') as HTMLSelectElement;
     const companyFilter = document.getElementById('companyFilter') as HTMLInputElement;
-    const employmentTypeFilter = document.getElementById('employmentTypeFilter') as HTMLSelectElement;
+    const employmentTypeFilter = document.getElementById(
+      'employmentTypeFilter',
+    ) as HTMLSelectElement;
     const minSalaryInput = document.getElementById('minSalary') as HTMLInputElement;
     const maxSalaryInput = document.getElementById('maxSalary') as HTMLInputElement;
     const remoteFilter = document.getElementById('remoteFilter') as HTMLInputElement;
     const postedWithinFilter = document.getElementById('postedWithinFilter') as HTMLSelectElement;
 
-    this.state.filters = {
-      query: mainInput?.value?.trim() || undefined,
-      location: locationFilter?.value || undefined,
-      company: companyFilter?.value?.trim() || undefined,
-      employmentType: employmentTypeFilter?.value || undefined,
-      minSalary: minSalaryInput?.value ? parseInt(minSalaryInput.value) : undefined,
-      maxSalary: maxSalaryInput?.value ? parseInt(maxSalaryInput.value) : undefined,
-      remote: remoteFilter?.checked || undefined,
-      postedWithin: postedWithinFilter?.value || undefined,
-    };
+    const filters: SearchFilters = {};
+    
+    const queryValue = mainInput?.value?.trim();
+    if (queryValue) filters.query = queryValue;
+    
+    const locationValue = locationFilter?.value;
+    if (locationValue) filters.location = locationValue;
+    
+    const companyValue = companyFilter?.value?.trim();
+    if (companyValue) filters.company = companyValue;
+    
+    const employmentTypeValue = employmentTypeFilter?.value;
+    if (employmentTypeValue) filters.employmentType = employmentTypeValue;
+    
+    if (remoteFilter?.checked) filters.remote = true;
+    
+    const postedWithinValue = postedWithinFilter?.value;
+    if (postedWithinValue) filters.postedWithin = postedWithinValue;
+    
+    if (minSalaryInput?.value) {
+      filters.minSalary = Number.parseInt(minSalaryInput.value);
+    }
+    
+    if (maxSalaryInput?.value) {
+      filters.maxSalary = Number.parseInt(maxSalaryInput.value);
+    }
+    
+    this.state.filters = filters;
   }
 
   private toggleFilters(): void {
     const filtersPanel = document.getElementById('filtersPanel');
     const toggleButton = document.getElementById('toggleFilters');
-    
+
     if (filtersPanel && toggleButton) {
       const isVisible = filtersPanel.style.display !== 'none';
       filtersPanel.style.display = isVisible ? 'none' : 'block';
@@ -317,11 +344,11 @@ class AdvancedSearchComponent {
     this.collectFilters();
     const activeFiltersContainer = document.getElementById('activeFilters');
     const activeFiltersCount = document.getElementById('activeFiltersCount');
-    
+
     if (!activeFiltersContainer || !activeFiltersCount) return;
 
     const activeFilters: string[] = [];
-    
+
     Object.entries(this.state.filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== false) {
         let filterText = '';
@@ -357,9 +384,9 @@ class AdvancedSearchComponent {
 
     // Update active filters display
     if (activeFilters.length > 0) {
-      activeFiltersContainer.innerHTML = activeFilters.map(filter => 
-        `<span class="filter-tag">${filter}</span>`
-      ).join('');
+      activeFiltersContainer.innerHTML = activeFilters
+        .map((filter) => `<span class="filter-tag">${filter}</span>`)
+        .join('');
       activeFiltersCount.textContent = `${activeFilters.length} active`;
       activeFiltersCount.style.display = 'inline';
     } else {
@@ -399,7 +426,9 @@ class AdvancedSearchComponent {
       return;
     }
 
-    const resultsHtml = this.state.results.map(job => `
+    const resultsHtml = this.state.results
+      .map(
+        (job) => `
       <div class="job-result-card" data-job-id="${job.id}">
         <div class="job-header">
           <h3 class="job-title">${job.title}</h3>
@@ -411,11 +440,15 @@ class AdvancedSearchComponent {
         
         <div class="job-details">
           <div class="job-location">📍 ${job.location}</div>
-          ${job.salary ? `
+          ${
+            job.salary
+              ? `
             <div class="job-salary">
               💰 $${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
           <div class="job-type">⏰ ${job.employmentType}</div>
           <div class="job-posted">📅 ${this.formatDate(job.postedDate)}</div>
         </div>
@@ -425,7 +458,7 @@ class AdvancedSearchComponent {
         </div>
         
         <div class="job-skills">
-          ${job.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+          ${job.skills.map((skill) => `<span class="skill-tag">${skill}</span>`).join('')}
         </div>
         
         <div class="job-actions">
@@ -433,7 +466,9 @@ class AdvancedSearchComponent {
           <button class="btn-save-job" data-job-id="${job.id}">Save Job</button>
         </div>
       </div>
-    `).join('');
+    `,
+      )
+      .join('');
 
     resultsContainer.innerHTML = resultsHtml;
 
@@ -487,7 +522,7 @@ class AdvancedSearchComponent {
 
   private setupJobCardListeners(): void {
     // View job details
-    document.querySelectorAll('.btn-view-job').forEach(button => {
+    document.querySelectorAll('.btn-view-job').forEach((button) => {
       button.addEventListener('click', (e) => {
         const jobId = (e.target as HTMLElement).dataset.jobId;
         if (jobId) {
@@ -497,7 +532,7 @@ class AdvancedSearchComponent {
     });
 
     // Save job
-    document.querySelectorAll('.btn-save-job').forEach(button => {
+    document.querySelectorAll('.btn-save-job').forEach((button) => {
       button.addEventListener('click', (e) => {
         const jobId = (e.target as HTMLElement).dataset.jobId;
         if (jobId) {
@@ -508,25 +543,20 @@ class AdvancedSearchComponent {
   }
 
   private viewJobDetails(jobId: string): void {
-    const job = this.state.results.find(j => j.id === jobId);
+    const job = this.state.results.find((j) => j.id === jobId);
     if (job) {
-      // This would open a modal or navigate to job details page
-      console.log('View job details:', job);
       // For now, just log the job details
     }
   }
 
   private saveJob(jobId: string): void {
-    // This would save the job to user's saved jobs
-    console.log('Save job:', jobId);
-    
     // Show feedback to user
     const button = document.querySelector(`[data-job-id="${jobId}"].btn-save-job`) as HTMLElement;
     if (button) {
       const originalText = button.textContent;
       button.textContent = 'Saved!';
       button.style.background = '#4caf50';
-      
+
       setTimeout(() => {
         button.textContent = originalText;
         button.style.background = '';
@@ -538,7 +568,7 @@ class AdvancedSearchComponent {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just posted';
     if (diffInHours < 24) return `${diffInHours} hours ago`;
     if (diffInHours < 48) return 'Yesterday';

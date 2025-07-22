@@ -227,7 +227,7 @@
 }
 
 .filter-checkbox:checked + .checkbox-custom::after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -348,8 +348,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .no-results-state h3,
@@ -517,33 +521,33 @@
   .search-input-group {
     flex-direction: column;
   }
-  
+
   .filters-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .job-details {
     grid-template-columns: 1fr;
   }
-  
+
   .job-actions {
     flex-direction: column;
   }
-  
+
   .stats-summary {
     flex-direction: column;
     gap: 5px;
     align-items: flex-start;
   }
-  
+
   .filters-actions {
     flex-direction: column;
   }
-  
+
   .salary-inputs {
     flex-direction: column;
   }
-  
+
   .search-header h2 {
     font-size: 1.8em;
   }
@@ -553,11 +557,11 @@
   .advanced-search-container {
     padding: 15px;
   }
-  
+
   .job-result-card {
     padding: 20px;
   }
-  
+
   .filters-panel {
     padding: 20px;
   }
