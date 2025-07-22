@@ -288,19 +288,235 @@ export class EnhancedWebServer {
   private handleWebSocketMessage(ws: WebSocket, data: any): void {
     switch (data.type) {
       case 'ping':
-        this.connectionManager.sendToConnection(ws, { type: 'pong' });
+        ws.send(JSON.stringify({ type: 'pong' }));
         break;
-
-      case 'subscribe-jobs':
-        // Subscribe to job updates for specific criteria
-        this.connectionManager.sendToConnection(ws, {
-          type: 'subscribed',
-          data: { subscription: 'jobs', criteria: data.criteria },
-        });
+      
+      case 'get-stats':
+        this.sendServerStats(ws);
         break;
-
+      
+      case 'get-analytics':
+        this.sendAnalyticsData(ws);
+        break;
+      
+      case 'search':
+        this.handleJobSearch(ws, data);
+        break;
+      
       default:
         logger.warn({ messageType: data.type }, 'Unknown WebSocket message type');
+    }
+  }
+
+  private sendServerStats(ws: WebSocket): void {
+    const uptime = process.uptime();
+    const formatUptime = (seconds: number): string => {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${minutes}m`;
+    };
+
+    const stats = {
+      type: 'stats',
+      data: {
+        activeConnections: this.connectionManager.getConnectionCount(),
+        uptime: formatUptime(uptime),
+        totalJobs: 1247, // Mock data - will integrate with database
+        serverStartTime: new Date(Date.now() - uptime * 1000).toISOString(),
+        memoryUsage: process.memoryUsage(),
+      },
+    };
+
+    ws.send(JSON.stringify(stats));
+  }
+
+  private sendAnalyticsData(ws: WebSocket): void {
+    // Mock analytics data - will integrate with database
+    const analyticsData = {
+      type: 'analytics',
+      data: {
+        salaryDistribution: [125, 287, 365, 198, 89], // $30-50k, $50-75k, $75-100k, $100-150k, $150k+
+        topCompanies: [
+          { company: 'Google', count: 67 },
+          { company: 'Microsoft', count: 54 },
+          { company: 'Amazon', count: 48 },
+          { company: 'Meta', count: 42 },
+          { company: 'Apple', count: 39 },
+          { company: 'Netflix', count: 31 },
+          { company: 'Salesforce', count: 28 },
+          { company: 'Uber', count: 25 }
+        ],
+        topLocations: [
+          { location: 'Remote', count: 234 },
+          { location: 'San Francisco, CA', count: 189 },
+          { location: 'New York, NY', count: 156 },
+          { location: 'Seattle, WA', count: 134 },
+          { location: 'Austin, TX', count: 89 },
+          { location: 'Boston, MA', count: 78 },
+          { location: 'Los Angeles, CA', count: 65 }
+        ],
+        employmentTypes: {
+          'Full-time': 856,
+          'Contract': 198,
+          'Part-time': 123,
+          'Freelance': 45,
+          'Internship': 25
+        },
+        industryTrends: [
+          { industry: 'Technology', count: 445, growth: '+12%' },
+          { industry: 'Healthcare', count: 234, growth: '+8%' },
+          { industry: 'Finance', count: 198, growth: '+15%' },
+          { industry: 'Education', count: 156, growth: '+6%' },
+          { industry: 'Retail', count: 134, growth: '-2%' }
+        ]
+      },
+    };
+
+    ws.send(JSON.stringify(analyticsData));
+  }
+
+  private async handleJobSearch(ws: WebSocket, data: any): Promise<void> {
+    try {
+      const { query = '', filters = {} } = data;
+      
+      // Mock search results - will integrate with database
+      const allMockJobs = [
+        {
+          id: '1',
+          title: 'Senior Frontend Developer',
+          company: 'Google',
+          location: 'San Francisco, CA',
+          salary: { min: 140000, max: 200000, currency: 'USD' },
+          remote: false,
+          employmentType: 'full-time',
+          description: 'Build amazing user experiences with React and TypeScript',
+          skills: ['React', 'TypeScript', 'JavaScript', 'CSS'],
+          postedDate: new Date('2024-01-15').toISOString(),
+        },
+        {
+          id: '2',
+          title: 'Backend Engineer',
+          company: 'Microsoft',
+          location: 'Remote',
+          salary: { min: 120000, max: 170000, currency: 'USD' },
+          remote: true,
+          employmentType: 'full-time',
+          description: 'Design and build scalable backend systems',
+          skills: ['Node.js', 'Python', 'PostgreSQL', 'AWS'],
+          postedDate: new Date('2024-01-14').toISOString(),
+        },
+        {
+          id: '3',
+          title: 'Full Stack Developer',
+          company: 'Amazon',
+          location: 'Seattle, WA',
+          salary: { min: 110000, max: 160000, currency: 'USD' },
+          remote: false,
+          employmentType: 'full-time',
+          description: 'Work on both frontend and backend systems',
+          skills: ['React', 'Node.js', 'AWS', 'DynamoDB'],
+          postedDate: new Date('2024-01-13').toISOString(),
+        },
+        {
+          id: '4',
+          title: 'DevOps Engineer',
+          company: 'Meta',
+          location: 'New York, NY',
+          salary: { min: 130000, max: 180000, currency: 'USD' },
+          remote: false,
+          employmentType: 'contract',
+          description: 'Manage infrastructure and deployment pipelines',
+          skills: ['Kubernetes', 'Docker', 'AWS', 'Terraform'],
+          postedDate: new Date('2024-01-12').toISOString(),
+        },
+        {
+          id: '5',
+          title: 'Data Scientist',
+          company: 'Apple',
+          location: 'Remote',
+          salary: { min: 135000, max: 185000, currency: 'USD' },
+          remote: true,
+          employmentType: 'full-time',
+          description: 'Analyze data to drive business decisions',
+          skills: ['Python', 'Machine Learning', 'SQL', 'Tableau'],
+          postedDate: new Date('2024-01-11').toISOString(),
+        },
+        {
+          id: '6',
+          title: 'Mobile Developer',
+          company: 'Netflix',
+          location: 'Los Angeles, CA',
+          salary: { min: 125000, max: 175000, currency: 'USD' },
+          remote: false,
+          employmentType: 'full-time',
+          description: 'Build mobile apps for iOS and Android',
+          skills: ['Swift', 'Kotlin', 'React Native', 'Flutter'],
+          postedDate: new Date('2024-01-10').toISOString(),
+        }
+      ];
+
+      // Apply search filters
+      let filteredJobs = allMockJobs;
+
+      // Text search
+      if (query) {
+        const searchTerm = query.toLowerCase();
+        filteredJobs = filteredJobs.filter(job =>
+          job.title.toLowerCase().includes(searchTerm) ||
+          job.company.toLowerCase().includes(searchTerm) ||
+          job.description.toLowerCase().includes(searchTerm) ||
+          job.skills.some(skill => skill.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      // Location filter
+      if (filters.location) {
+        const locationFilter = filters.location.toLowerCase();
+        filteredJobs = filteredJobs.filter(job =>
+          job.location.toLowerCase().includes(locationFilter) ||
+          (locationFilter === 'remote' && job.remote)
+        );
+      }
+
+      // Salary filter
+      if (filters.minSalary) {
+        const minSalary = parseInt(filters.minSalary);
+        filteredJobs = filteredJobs.filter(job =>
+          job.salary && job.salary.min >= minSalary
+        );
+      }
+
+      // Send search results
+      const response = {
+        type: 'search-results',
+        data: filteredJobs.slice(0, 20), // Limit to 20 results
+        metadata: {
+          total: filteredJobs.length,
+          query,
+          filters,
+          searchTime: Date.now(),
+        },
+      };
+
+      ws.send(JSON.stringify(response));
+
+      // Log search activity
+      logger.info({
+        query,
+        filters,
+        resultsCount: filteredJobs.length,
+      }, 'Job search performed');
+
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to handle job search');
+      const errorResponse = {
+        type: 'search-error',
+        data: {
+          message: 'Search failed. Please try again.',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+      ws.send(JSON.stringify(errorResponse));
     }
   }
 
