@@ -3,14 +3,14 @@
  * Handles CRUD operations for job listings
  */
 
-import type Database from 'better-sqlite3';
 import type { JobListing } from '@/scrapers/base-scraper.js';
 import { logger } from '@/utils/logger.js';
+import type Database from 'better-sqlite3';
 
 export interface JobRecord {
   // Database-specific fields
   id?: number;
-  
+
   // Job listing fields
   title: string;
   company: string;
@@ -20,7 +20,7 @@ export interface JobRecord {
   description?: string;
   salary?: string;
   posted_date?: string;
-  
+
   // Additional fields
   employment_type?: string;
   experience_level?: string;
@@ -30,20 +30,20 @@ export interface JobRecord {
   industry?: string;
   skills?: string; // JSON array
   benefits?: string; // JSON array
-  
+
   // Metadata fields (flattened from JobListing.metadata)
   scraped_at: string; // ISO date string
   updated_at?: string;
   confidence_score: number;
   has_details: boolean;
   raw_data?: string; // JSON
-  
+
   // Search context
   search_query?: string;
   search_params?: string; // JSON
   page_number?: number;
   position_on_page?: number;
-  
+
   // Status tracking
   status?: 'active' | 'expired' | 'filled' | 'removed';
   duplicate_of?: number;
@@ -140,12 +140,15 @@ export class JobRepository {
   /**
    * Convert JobListing to JobRecord for database storage
    */
-  private jobListingToRecord(job: JobListing, searchContext?: {
-    query?: string;
-    params?: Record<string, any>;
-    pageNumber?: number;
-    positionOnPage?: number;
-  }): Omit<JobRecord, 'id'> {
+  private jobListingToRecord(
+    job: JobListing,
+    searchContext?: {
+      query?: string;
+      params?: Record<string, any>;
+      pageNumber?: number;
+      positionOnPage?: number;
+    },
+  ): Omit<JobRecord, 'id'> {
     const record: Omit<JobRecord, 'id'> = {
       title: job.title,
       company: job.company,
@@ -163,7 +166,7 @@ export class JobRepository {
     if (job.salary) record.salary = job.salary;
     if (job.postedDate) record.posted_date = job.postedDate;
     if (job.raw) record.raw_data = JSON.stringify(job.raw);
-    
+
     // Search context
     if (searchContext?.query) record.search_query = searchContext.query;
     if (searchContext?.params) record.search_params = JSON.stringify(searchContext.params);
@@ -209,25 +212,28 @@ export class JobRepository {
   /**
    * Create a new job record
    */
-  async create(job: JobListing, searchContext?: {
-    query?: string;
-    params?: Record<string, any>;
-    pageNumber?: number;
-    positionOnPage?: number;
-  }): Promise<JobRecord> {
+  async create(
+    job: JobListing,
+    searchContext?: {
+      query?: string;
+      params?: Record<string, any>;
+      pageNumber?: number;
+      positionOnPage?: number;
+    },
+  ): Promise<JobRecord> {
     try {
       const record = this.jobListingToRecord(job, searchContext);
       const result = this.insertStmt!.run(record);
-      
+
       const created = this.findByIdStmt!.get(result.lastInsertRowid) as JobRecord;
-      
+
       logger.debug('Job created', {
         id: created.id,
         title: created.title,
         company: created.company,
         source: created.source,
       });
-      
+
       return created;
     } catch (error) {
       logger.error('Failed to create job', { error, job: job.title });
@@ -247,15 +253,15 @@ export class JobRepository {
 
       const updated = { ...existing, ...updates, id };
       this.updateStmt!.run(updated);
-      
+
       const result = this.findByIdStmt!.get(id) as JobRecord;
-      
+
       logger.debug('Job updated', {
         id: result.id,
         title: result.title,
         changes: Object.keys(updates),
       });
-      
+
       return result;
     } catch (error) {
       logger.error('Failed to update job', { error, id, updates });
@@ -288,12 +294,7 @@ export class JobRepository {
     page: number;
     pageSize: number;
   }> {
-    const {
-      limit = 50,
-      offset = 0,
-      sort_by = 'scraped_at',
-      sort_order = 'DESC',
-    } = options;
+    const { limit = 50, offset = 0, sort_by = 'scraped_at', sort_order = 'DESC' } = options;
 
     let whereClause = 'WHERE 1=1';
     const params: any = {};
@@ -385,8 +386,10 @@ export class JobRepository {
       GROUP BY source
     `);
     const by_source = Object.fromEntries(
-      (bySourceStmt.all() as Array<{ source: string; count: number }>)
-        .map(row => [row.source, row.count])
+      (bySourceStmt.all() as Array<{ source: string; count: number }>).map((row) => [
+        row.source,
+        row.count,
+      ]),
     );
 
     const byStatusStmt = this.db.prepare(`
@@ -395,8 +398,10 @@ export class JobRepository {
       GROUP BY status
     `);
     const by_status = Object.fromEntries(
-      (byStatusStmt.all() as Array<{ status: string; count: number }>)
-        .map(row => [row.status, row.count])
+      (byStatusStmt.all() as Array<{ status: string; count: number }>).map((row) => [
+        row.status,
+        row.count,
+      ]),
     );
 
     const byEmploymentStmt = this.db.prepare(`
@@ -406,8 +411,10 @@ export class JobRepository {
       GROUP BY employment_type
     `);
     const by_employment_type = Object.fromEntries(
-      (byEmploymentStmt.all() as Array<{ employment_type: string; count: number }>)
-        .map(row => [row.employment_type, row.count])
+      (byEmploymentStmt.all() as Array<{ employment_type: string; count: number }>).map((row) => [
+        row.employment_type,
+        row.count,
+      ]),
     );
 
     const byRemoteStmt = this.db.prepare(`
@@ -417,8 +424,10 @@ export class JobRepository {
       GROUP BY remote_type
     `);
     const by_remote_type = Object.fromEntries(
-      (byRemoteStmt.all() as Array<{ remote_type: string; count: number }>)
-        .map(row => [row.remote_type, row.count])
+      (byRemoteStmt.all() as Array<{ remote_type: string; count: number }>).map((row) => [
+        row.remote_type,
+        row.count,
+      ]),
     );
 
     // Recent counts
@@ -462,11 +471,11 @@ export class JobRepository {
     try {
       const result = this.deleteStmt!.run(id);
       const deleted = result.changes > 0;
-      
+
       if (deleted) {
         logger.debug('Job deleted', { id });
       }
-      
+
       return deleted;
     } catch (error) {
       logger.error('Failed to delete job', { error, id });
@@ -477,23 +486,26 @@ export class JobRepository {
   /**
    * Bulk insert jobs (more efficient for large imports)
    */
-  async bulkCreate(jobs: JobListing[], searchContext?: {
-    query?: string;
-    params?: Record<string, any>;
-    pageNumber?: number;
-  }): Promise<JobRecord[]> {
+  async bulkCreate(
+    jobs: JobListing[],
+    searchContext?: {
+      query?: string;
+      params?: Record<string, any>;
+      pageNumber?: number;
+    },
+  ): Promise<JobRecord[]> {
     const transaction = this.db.transaction((jobsToInsert: JobListing[]) => {
       const results: JobRecord[] = [];
-      
+
       for (let i = 0; i < jobsToInsert.length; i++) {
         const job = jobsToInsert[i];
         if (!job) continue;
-        
+
         const context = {
           ...searchContext,
           positionOnPage: i + 1,
         };
-        
+
         try {
           // Check for duplicates by URL
           const existing = this.findByUrlStmt!.get(job.url) as JobRecord | undefined;
@@ -515,19 +527,19 @@ export class JobRepository {
           });
         }
       }
-      
+
       return results;
     });
 
     try {
       const results = transaction(jobs);
-      
+
       logger.info('Bulk job creation completed', {
         attempted: jobs.length,
         successful: results.length,
         duplicates: jobs.length - results.length,
       });
-      
+
       return results;
     } catch (error) {
       logger.error('Bulk job creation failed', { error, count: jobs.length });
@@ -540,14 +552,16 @@ export class JobRepository {
    */
   async markDuplicate(duplicateId: number, originalId: number): Promise<boolean> {
     try {
-      const stmt = this.db.prepare('UPDATE jobs SET duplicate_of = @originalId WHERE id = @duplicateId');
+      const stmt = this.db.prepare(
+        'UPDATE jobs SET duplicate_of = @originalId WHERE id = @duplicateId',
+      );
       const result = stmt.run({ originalId, duplicateId });
-      
+
       const marked = result.changes > 0;
       if (marked) {
         logger.debug('Job marked as duplicate', { duplicateId, originalId });
       }
-      
+
       return marked;
     } catch (error) {
       logger.error('Failed to mark job as duplicate', { error, duplicateId, originalId });

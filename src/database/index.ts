@@ -3,10 +3,10 @@
  * Coordinates connection, migrations, and repository setup
  */
 
+import { logger } from '@/utils/logger.js';
 import { dbConnection } from './connection.js';
 import MigrationManager from './migrations/manager.js';
 import JobRepository from './models/job.model.js';
-import { logger } from '@/utils/logger.js';
 
 export interface DatabaseServices {
   jobs: JobRepository;
@@ -38,7 +38,7 @@ export async function initializeDatabase(): Promise<DatabaseServices> {
     logger.debug('Initializing job repository...');
     const jobs = new JobRepository(db);
     logger.debug('Job repository initialized');
-    
+
     // Setup migration manager
     logger.debug('Setting up migration manager...');
     const migrationManager = new MigrationManager(db);
@@ -71,12 +71,15 @@ export async function initializeDatabase(): Promise<DatabaseServices> {
       },
     };
   } catch (error) {
-    logger.error('Failed to initialize database', { 
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : error 
+    logger.error('Failed to initialize database', {
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
     });
     throw error;
   }

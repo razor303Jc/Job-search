@@ -3,10 +3,10 @@
  * Provides fast, synchronous database operations with WAL mode
  */
 
-import Database from 'better-sqlite3';
-import { join } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { logger } from '@/utils/logger.js';
+import Database from 'better-sqlite3';
 
 export interface DatabaseConfig {
   filename: string;
@@ -54,7 +54,9 @@ export class DatabaseConnection {
         readonly: this.config.readonly,
         fileMustExist: this.config.fileMustExist,
         timeout: this.config.timeout,
-        verbose: this.config.verbose ? (message?: unknown) => logger.debug('SQL', { message }) : undefined,
+        verbose: this.config.verbose
+          ? (message?: unknown) => logger.debug('SQL', { message })
+          : undefined,
       });
 
       // Configure database for performance
@@ -162,13 +164,13 @@ export class DatabaseConnection {
    */
   async backup(filename: string): Promise<void> {
     const db = this.getDatabase();
-    
+
     try {
       const backup = await db.backup(filename);
-      logger.info('Database backup completed', { 
+      logger.info('Database backup completed', {
         filename,
         pages: backup.totalPages,
-        size: `${Math.round(backup.totalPages * this.getStats().pageSize / 1024)}KB`
+        size: `${Math.round((backup.totalPages * this.getStats().pageSize) / 1024)}KB`,
       });
     } catch (error) {
       logger.error('Database backup failed', { error, filename });
@@ -187,7 +189,7 @@ export class DatabaseConnection {
     walMode: boolean;
   } {
     const db = this.getDatabase();
-    
+
     return {
       pageCount: db.pragma('page_count', { simple: true }) as number,
       pageSize: db.pragma('page_size', { simple: true }) as number,

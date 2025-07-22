@@ -3,10 +3,10 @@
  * Handles schema evolution and data migrations
  */
 
-import type Database from 'better-sqlite3';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { logger } from '@/utils/logger.js';
+import type Database from 'better-sqlite3';
 
 export interface Migration {
   id: number;
@@ -57,9 +57,9 @@ export class MigrationManager {
   private loadMigrationsFromDisk(): Migration[] {
     try {
       logger.debug('Loading migrations from', { path: this.migrationsPath });
-      
+
       const files = readdirSync(this.migrationsPath)
-        .filter(file => file.endsWith('.sql'))
+        .filter((file) => file.endsWith('.sql'))
         .sort();
 
       logger.debug('Found migration files', { files });
@@ -74,17 +74,17 @@ export class MigrationManager {
         }
 
         const [, idStr, name] = match;
-        
+
         if (!idStr || !name) {
           logger.warn('Invalid migration filename format', { filename });
           continue;
         }
-        
-        const id = parseInt(idStr, 10);
+
+        const id = Number.parseInt(idStr, 10);
         const filepath = join(this.migrationsPath, filename);
-        
+
         logger.debug('Loading migration file', { id, name, filepath });
-        
+
         const sql = readFileSync(filepath, 'utf-8');
 
         migrations.push({
@@ -93,7 +93,7 @@ export class MigrationManager {
           filename,
           sql: sql.trim(),
         });
-        
+
         logger.debug('Loaded migration', { id, name, sqlLength: sql.length });
       }
 
@@ -132,9 +132,9 @@ export class MigrationManager {
 
     const diskMigrations = this.loadMigrationsFromDisk();
     const appliedMigrations = this.getAppliedMigrations();
-    const appliedIds = new Set(appliedMigrations.map(m => m.id));
+    const appliedIds = new Set(appliedMigrations.map((m) => m.id));
 
-    return diskMigrations.filter(migration => !appliedIds.has(migration.id));
+    return diskMigrations.filter((migration) => !appliedIds.has(migration.id));
   }
 
   /**
@@ -145,12 +145,12 @@ export class MigrationManager {
     let currentStatement = '';
     let inBlock = false;
     let blockKeyword = '';
-    
+
     const lines = sql.split('\n');
-    
+
     for (const line of lines) {
       const trimmedLine = line.trim();
-      
+
       // Skip empty lines and comments
       if (!trimmedLine || trimmedLine.startsWith('--')) {
         if (currentStatement) {
@@ -158,15 +158,17 @@ export class MigrationManager {
         }
         continue;
       }
-      
+
       currentStatement += (currentStatement ? '\n' : '') + line;
-      
+
       // Check for block start keywords
       const upperLine = trimmedLine.toUpperCase();
       if (!inBlock) {
-        if (upperLine.includes('CREATE TRIGGER') || 
-            upperLine.includes('CREATE FUNCTION') || 
-            upperLine.includes('CREATE PROCEDURE')) {
+        if (
+          upperLine.includes('CREATE TRIGGER') ||
+          upperLine.includes('CREATE FUNCTION') ||
+          upperLine.includes('CREATE PROCEDURE')
+        ) {
           inBlock = true;
           blockKeyword = 'BEGIN';
         } else if (upperLine.includes('BEGIN')) {
@@ -174,7 +176,7 @@ export class MigrationManager {
           blockKeyword = 'BEGIN';
         }
       }
-      
+
       // Check for block end
       if (inBlock && upperLine.includes('END')) {
         // Check if this END matches our block type
@@ -183,7 +185,7 @@ export class MigrationManager {
           blockKeyword = '';
         }
       }
-      
+
       // Check for statement end
       if (trimmedLine.endsWith(';') && !inBlock) {
         const statement = currentStatement.trim();
@@ -193,7 +195,7 @@ export class MigrationManager {
         currentStatement = '';
       }
     }
-    
+
     // Add any remaining statement
     if (currentStatement.trim()) {
       const statement = currentStatement.trim();
@@ -201,7 +203,7 @@ export class MigrationManager {
         statements.push(statement);
       }
     }
-    
+
     return statements;
   }
 
@@ -216,7 +218,7 @@ export class MigrationManager {
       const transaction = this.db.transaction(() => {
         // Parse SQL into proper statements
         const statements = this.parseSqlStatements(migration.sql);
-        
+
         logger.debug('Parsed migration statements', {
           migrationId: migration.id,
           statementCount: statements.length,
@@ -224,9 +226,9 @@ export class MigrationManager {
 
         for (let i = 0; i < statements.length; i++) {
           const sql = statements[i];
-          
+
           if (!sql) continue;
-          
+
           try {
             this.db.exec(sql);
             logger.debug(`Statement ${i + 1} executed successfully`, {
@@ -269,7 +271,7 @@ export class MigrationManager {
     } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       logger.error('Migration failed', {
         id: migration.id,
         name: migration.name,
@@ -314,8 +316,8 @@ export class MigrationManager {
       }
     }
 
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
 
     logger.info('Migration process completed', {
       successful,
@@ -374,8 +376,12 @@ export class MigrationManager {
    * Rollback to a specific migration (if supported)
    */
   async rollback(_targetId: number): Promise<void> {
-    logger.warn('Migration rollback is not implemented - SQLite does not support schema rollbacks easily');
-    throw new Error('Migration rollback is not supported. Consider using database backup/restore instead.');
+    logger.warn(
+      'Migration rollback is not implemented - SQLite does not support schema rollbacks easily',
+    );
+    throw new Error(
+      'Migration rollback is not supported. Consider using database backup/restore instead.',
+    );
   }
 }
 
