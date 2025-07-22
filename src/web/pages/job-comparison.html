@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Comparison Tool - Job Scraper Dashboard</title>
+    <link rel="stylesheet" href="../static/dashboard.css">
+    <link rel="stylesheet" href="../static/job-comparison.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>🔍 Job Scraper</h1>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+                <li class="nav-item"><a href="advanced-search.html" class="nav-link">Search</a></li>
+                <li class="nav-item"><a href="job-comparison.html" class="nav-link active">Compare</a></li>
+                <li class="nav-item"><a href="live-scraping.html" class="nav-link">Live Scraping</a></li>
+                <li class="nav-item"><a href="job-alerts.html" class="nav-link">Alerts</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="comparison-header">
+            <div class="header-content">
+                <h2>🔀 Job Comparison Tool</h2>
+                <p>Compare jobs side-by-side to make informed career decisions</p>
+            </div>
+            <div class="comparison-actions">
+                <button id="addJobBtn" class="btn btn-primary">
+                    <span>➕ Add Job</span>
+                </button>
+                <button id="clearAllBtn" class="btn btn-outline">
+                    <span>🗑️ Clear All</span>
+                </button>
+                <button id="exportComparisonBtn" class="btn btn-secondary">
+                    <span>📊 Export</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Job Selection Panel -->
+        <div class="job-selection-panel hidden" id="jobSelectionPanel">
+            <div class="panel-content">
+                <div class="selection-header">
+                    <h3>Select Jobs to Compare</h3>
+                    <button id="closeSelectionPanel" class="btn-close">✕</button>
+                </div>
+                <div class="search-jobs">
+                    <input type="text" id="jobSearchInput" placeholder="Search for jobs to compare...">
+                    <div class="job-search-results" id="jobSearchResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Grid -->
+        <div class="comparison-grid" id="comparisonGrid">
+            <div class="comparison-placeholder">
+                <div class="placeholder-content">
+                    <div class="placeholder-icon">🔀</div>
+                    <h3>No Jobs to Compare</h3>
+                    <p>Add jobs to start comparing salaries, benefits, requirements, and more.</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('addJobBtn').click()">
+                        Add Your First Job
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Analytics -->
+        <div class="comparison-analytics hidden" id="comparisonAnalytics">
+            <div class="analytics-header">
+                <h3>📈 Comparison Analytics</h3>
+                <div class="analytics-controls">
+                    <select id="analyticsView" aria-label="Select analytics view">
+                        <option value="salary">Salary Comparison</option>
+                        <option value="requirements">Requirements Gap</option>
+                        <option value="benefits">Benefits Analysis</option>
+                        <option value="company">Company Ratings</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="analytics-content">
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+                <div class="insights-panel">
+                    <h4>💡 Key Insights</h4>
+                    <div id="analyticsInsights">
+                        <div class="insight-item">
+                            <span class="insight-icon">💰</span>
+                            <span class="insight-text">Salary analysis will appear here</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Requirements Gap Analysis -->
+        <div class="gap-analysis hidden" id="gapAnalysis">
+            <div class="gap-header">
+                <h3>🎯 Requirements Gap Analysis</h3>
+                <p>Identify skills and requirements gaps for each position</p>
+            </div>
+            <div class="gap-content">
+                <div class="gap-summary">
+                    <div class="gap-metric">
+                        <span class="metric-value" id="averageMatch">--</span>
+                        <span class="metric-label">Average Match</span>
+                    </div>
+                    <div class="gap-metric">
+                        <span class="metric-value" id="missingSkills">--</span>
+                        <span class="metric-label">Missing Skills</span>
+                    </div>
+                    <div class="gap-metric">
+                        <span class="metric-value" id="strongMatches">--</span>
+                        <span class="metric-label">Strong Matches</span>
+                    </div>
+                </div>
+                <div class="gap-details" id="gapDetails"></div>
+            </div>
+        </div>
+
+        <!-- Saved Comparisons -->
+        <div class="saved-comparisons" id="savedComparisons">
+            <div class="saved-header">
+                <h3>💾 Saved Comparisons</h3>
+                <button id="saveCurrentComparison" class="btn btn-outline" disabled>
+                    💾 Save Current
+                </button>
+            </div>
+            <div class="saved-list" id="savedComparisonsList">
+                <div class="empty-state">
+                    <p>No saved comparisons yet. Compare some jobs and save your analysis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status">
+        <span class="status-indicator"></span>
+        <span class="status-text">Connecting...</span>
+    </div>
+
+    <!-- Job Comparison Component Scripts -->
+    <script src="../components/job-comparison-tool.js"></script>
+    <script>
+        // Initialize Job Comparison Tool
+        document.addEventListener('DOMContentLoaded', () => {
+            const comparisonTool = new JobComparisonTool();
+            window.jobComparisonTool = comparisonTool;
+            
+            // Handle navigation
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.getAttribute('href').startsWith('http')) return;
+                    
+                    e.preventDefault();
+                    const href = link.getAttribute('href');
+                    window.location.href = href;
+                });
+            });
+
+            // Connection status monitoring
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            function updateConnectionStatus(isConnected) {
+                const indicator = connectionStatus.querySelector('.status-indicator');
+                const text = connectionStatus.querySelector('.status-text');
+                
+                if (isConnected) {
+                    indicator.className = 'status-indicator connected';
+                    text.textContent = 'Connected';
+                } else {
+                    indicator.className = 'status-indicator disconnected';
+                    text.textContent = 'Disconnected';
+                }
+            }
+
+            // Initialize WebSocket connection for real-time updates
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            try {
+                const ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => updateConnectionStatus(true);
+                ws.onclose = () => updateConnectionStatus(false);
+                ws.onerror = () => updateConnectionStatus(false);
+                
+                // Pass WebSocket to comparison tool for real-time data
+                comparisonTool.setWebSocket(ws);
+                
+            } catch (error) {
+                console.error('WebSocket connection failed:', error);
+                updateConnectionStatus(false);
+            }
+        });
+    </script>
+</body>
+</html>

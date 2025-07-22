@@ -300,32 +300,32 @@ class AdvancedSearchComponent {
     const postedWithinFilter = document.getElementById('postedWithinFilter') as HTMLSelectElement;
 
     const filters: SearchFilters = {};
-    
+
     const queryValue = mainInput?.value?.trim();
     if (queryValue) filters.query = queryValue;
-    
+
     const locationValue = locationFilter?.value;
     if (locationValue) filters.location = locationValue;
-    
+
     const companyValue = companyFilter?.value?.trim();
     if (companyValue) filters.company = companyValue;
-    
+
     const employmentTypeValue = employmentTypeFilter?.value;
     if (employmentTypeValue) filters.employmentType = employmentTypeValue;
-    
+
     if (remoteFilter?.checked) filters.remote = true;
-    
+
     const postedWithinValue = postedWithinFilter?.value;
     if (postedWithinValue) filters.postedWithin = postedWithinValue;
-    
+
     if (minSalaryInput?.value) {
       filters.minSalary = Number.parseInt(minSalaryInput.value);
     }
-    
+
     if (maxSalaryInput?.value) {
       filters.maxSalary = Number.parseInt(maxSalaryInput.value);
     }
-    
+
     this.state.filters = filters;
   }
 
