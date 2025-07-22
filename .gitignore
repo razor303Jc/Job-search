@@ -131,3 +131,5 @@ profile-*
 
 # Local development
 .local/
+
+.fake

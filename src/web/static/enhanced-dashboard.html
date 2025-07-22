@@ -3,7 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Dorker - Enhanced Dashboard</title>
+    <title>Job Search Pro - Enhanced Dashboard</title>
+    <meta name="description" content="Advanced job search and monitoring dashboard with real-time updates and analytics">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Job Search Pro">
+    <meta name="msapplication-TileColor" content="#2563eb">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- PWA Links -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/icon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/js/pwa-manager.js" as="script">
+    <link rel="preload" href="/js/websocket-client.js" as="script">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -802,6 +823,59 @@
         // Initialize dashboard when page loads
         document.addEventListener('DOMContentLoaded', () => {
             new EnhancedDashboard();
+        });
+    </script>
+
+    <!-- PWA Scripts -->
+    <script src="/js/pwa-manager.js"></script>
+    <script>
+        // PWA Event Listeners
+        window.addEventListener('pwa:ready', (event) => {
+            console.log('[Dashboard] PWA ready:', event.detail);
+            
+            // Show PWA features in UI
+            if (event.detail.isInstalled) {
+                document.body.classList.add('pwa-installed');
+            }
+            
+            if (event.detail.hasNotifications) {
+                console.log('[Dashboard] Push notifications enabled');
+            }
+        });
+
+        window.addEventListener('pwa:installed', () => {
+            console.log('[Dashboard] PWA installed successfully');
+            document.body.classList.add('pwa-installed');
+            
+            // Show success notification
+            if (window.showNotification) {
+                window.showNotification('App installed successfully!', 'success');
+            }
+        });
+
+        window.addEventListener('pwa:updated', () => {
+            console.log('[Dashboard] PWA updated');
+            
+            // Show update notification
+            if (window.showNotification) {
+                window.showNotification('App updated to latest version!', 'info');
+            }
+        });
+
+        // Handle offline/online status
+        window.addEventListener('online', () => {
+            console.log('[Dashboard] Back online');
+            document.body.classList.remove('offline');
+            
+            // Refresh data when back online
+            if (window.dashboard) {
+                window.dashboard.refreshData();
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('[Dashboard] Gone offline');
+            document.body.classList.add('offline');
         });
     </script>
 </body>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Job Search Pro</title>
+    <meta name="description" content="You're currently offline. Some features may be limited.">
+    
+    <!-- Inline critical CSS for offline page -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .offline-container {
+            background: white;
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+            margin: 20px;
+        }
+        
+        .offline-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            opacity: 0.8;
+        }
+        
+        .offline-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .offline-subtitle {
+            font-size: 18px;
+            color: #6b7280;
+            margin-bottom: 32px;
+        }
+        
+        .offline-message {
+            font-size: 16px;
+            color: #4b5563;
+            margin-bottom: 32px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .offline-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .connection-status {
+            margin-top: 32px;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status-offline {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .status-online {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .cached-content {
+            margin-top: 32px;
+            text-align: left;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .cached-content h3 {
+            color: #1e293b;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .cached-list {
+            list-style: none;
+        }
+        
+        .cached-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .cached-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .cached-list a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .cached-list a:hover {
+            text-decoration: underline;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: #2563eb;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 640px) {
+            .offline-container {
+                padding: 32px 24px;
+            }
+            
+            .offline-title {
+                font-size: 24px;
+            }
+            
+            .offline-subtitle {
+                font-size: 16px;
+            }
+            
+            .offline-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container fade-in">
+        <div class="offline-icon">🌐</div>
+        
+        <h1 class="offline-title">You're Offline</h1>
+        <p class="offline-subtitle">Don't worry, you can still access some features</p>
+        
+        <div class="offline-message">
+            <strong>Limited Connectivity:</strong> Some features require an internet connection, but cached content is still available for viewing.
+        </div>
+        
+        <div class="offline-actions">
+            <button class="btn btn-primary" onclick="tryReconnect()">
+                <span class="loading-spinner" id="reconnect-spinner" style="display: none;"></span>
+                <span id="reconnect-text">Try Again</span>
+            </button>
+            <a href="/" class="btn btn-secondary">View Cached Content</a>
+        </div>
+        
+        <div class="connection-status status-offline" id="connection-status">
+            📡 Currently offline - Some features are limited
+        </div>
+        
+        <div class="cached-content">
+            <h3>📋 Available Offline Features:</h3>
+            <ul class="cached-list">
+                <li>
+                    <span>📊</span>
+                    <a href="/enhanced-dashboard.html">Dashboard (cached data)</a>
+                </li>
+                <li>
+                    <span>🔍</span>
+                    <a href="/advanced-job-search.html">Search (cached results)</a>
+                </li>
+                <li>
+                    <span>⚡</span>
+                    <a href="/live-scraping.html">Monitoring (last status)</a>
+                </li>
+                <li>
+                    <span>🔔</span>
+                    <a href="/job-alerts.html">Alerts (view saved)</a>
+                </li>
+                <li>
+                    <span>⚖️</span>
+                    <a href="/job-comparison.html">Comparison Tool</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Connection status monitoring
+        let isOnline = navigator.onLine;
+        
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connection-status');
+            
+            if (navigator.onLine) {
+                statusEl.className = 'connection-status status-online';
+                statusEl.innerHTML = '✅ Back online - Full functionality restored';
+                
+                // Auto-redirect after a short delay when back online
+                setTimeout(() => {
+                    window.location.href = '/enhanced-dashboard.html';
+                }, 2000);
+            } else {
+                statusEl.className = 'connection-status status-offline';
+                statusEl.innerHTML = '📡 Currently offline - Some features are limited';
+            }
+        }
+        
+        // Listen for online/offline events
+        window.addEventListener('online', () => {
+            console.log('[Offline Page] Back online');
+            updateConnectionStatus();
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('[Offline Page] Gone offline');
+            updateConnectionStatus();
+        });
+        
+        // Try to reconnect
+        async function tryReconnect() {
+            const spinner = document.getElementById('reconnect-spinner');
+            const text = document.getElementById('reconnect-text');
+            
+            spinner.style.display = 'inline-block';
+            text.textContent = 'Checking...';
+            
+            try {
+                // Try to fetch a small resource to test connectivity
+                const response = await fetch('/manifest.json', {
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    text.textContent = 'Connected!';
+                    setTimeout(() => {
+                        window.location.href = '/enhanced-dashboard.html';
+                    }, 1000);
+                } else {
+                    throw new Error('No connection');
+                }
+            } catch (error) {
+                console.log('[Offline Page] Still offline');
+                text.textContent = 'Still Offline';
+                
+                setTimeout(() => {
+                    text.textContent = 'Try Again';
+                    spinner.style.display = 'none';
+                }, 2000);
+            }
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            updateConnectionStatus();
+            
+            // Check for cached content and update the list
+            if ('caches' in window) {
+                checkCachedContent();
+            }
+        });
+        
+        // Check what content is available in cache
+        async function checkCachedContent() {
+            try {
+                const cacheNames = await caches.keys();
+                console.log('[Offline Page] Available caches:', cacheNames);
+                
+                // Could enhance this to show more specific cached content
+                // For now, we'll show the static list
+            } catch (error) {
+                console.error('[Offline Page] Error checking cache:', error);
+            }
+        }
+        
+        // Service Worker messaging
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data.type === 'CACHE_UPDATED') {
+                    console.log('[Offline Page] Cache updated');
+                    // Could update the cached content list here
+                }
+            });
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'r' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                tryReconnect();
+            } else if (event.key === 'h' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                window.location.href = '/enhanced-dashboard.html';
+            }
+        });
+        
+        console.log('[Offline Page] Offline page loaded. Press Ctrl+R to retry connection, Ctrl+H for home.');
+    </script>
+</body>
+</html>
