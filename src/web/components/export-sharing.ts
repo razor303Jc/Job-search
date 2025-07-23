@@ -3,7 +3,9 @@
  * Phase 7 Stage 4: Advanced UI Features & UX
  */
 
-// Export & Sharing Types
+import { SecurityUtils } from '../utils/security-utils.js';
+
+// Export/Sharing Types
 interface ExportOptions {
   format: 'csv' | 'json' | 'pdf' | 'xlsx';
   filename?: string;
@@ -271,7 +273,7 @@ class ExportSharingComponent {
       </div>
     `;
 
-    container.innerHTML = html;
+    SecurityUtils.setSecureHTML(container, html);
   }
 
   /**
@@ -332,7 +334,7 @@ class ExportSharingComponent {
       </div>
     `;
 
-    container.innerHTML = html;
+    SecurityUtils.setSecureHTML(container, html);
   }
 
   /**
@@ -343,7 +345,7 @@ class ExportSharingComponent {
     if (!container) return;
 
     if (this.reportTemplates.length === 0) {
-      container.innerHTML = `
+      const htmlContent = `
         <div class="templates-section">
           <div class="section-header">
             <h3>📋 Report Templates</h3>
@@ -354,6 +356,7 @@ class ExportSharingComponent {
           </div>
         </div>
       `;
+      SecurityUtils.setSecureHTML(container, htmlContent);
       return;
     }
 
@@ -425,7 +428,7 @@ class ExportSharingComponent {
     if (!container) return;
 
     if (this.jobCollections.length === 0) {
-      container.innerHTML = `
+      const emptyStateHtml = `
         <div class="collections-section">
           <div class="section-header">
             <h3>📚 Job Collections</h3>
@@ -439,6 +442,7 @@ class ExportSharingComponent {
           </div>
         </div>
       `;
+      SecurityUtils.setSecureHTML(container, emptyStateHtml);
       return;
     }
 
@@ -618,7 +622,10 @@ class ExportSharingComponent {
     if (!container) return;
 
     if (this.exportQueue.length === 0) {
-      container.innerHTML = '<div class="empty-state"><p>No exports in progress</p></div>';
+      SecurityUtils.setSecureHTML(
+        container,
+        '<div class="empty-state"><p>No exports in progress</p></div>',
+      );
       return;
     }
 
@@ -645,7 +652,7 @@ class ExportSharingComponent {
       )
       .join('');
 
-    container.innerHTML = html;
+    SecurityUtils.setSecureHTML(container, html);
   }
 
   /**
@@ -719,7 +726,7 @@ class ExportSharingComponent {
    */
   private openEmailShareDialog(): void {
     const modal = this.createModal('email-share-modal', 'Share via Email');
-    modal.innerHTML += `
+    const emailFormHtml = `
       <div class="modal-content">
         <form id="email-share-form">
           <div class="form-group">
@@ -743,6 +750,7 @@ class ExportSharingComponent {
         </form>
       </div>
     `;
+    SecurityUtils.setSecureHTML(modal, modal.innerHTML + emailFormHtml);
 
     document.body.appendChild(modal);
     this.showModal('email-share-modal');
@@ -779,7 +787,7 @@ class ExportSharingComponent {
    */
   private showScheduleDialog(): void {
     const modal = this.createModal('schedule-dialog', 'Schedule Report');
-    modal.innerHTML += `
+    const scheduleFormHtml = `
       <div class="modal-content">
         <form id="schedule-form">
           <div class="form-group">
@@ -801,6 +809,7 @@ class ExportSharingComponent {
         </form>
       </div>
     `;
+    SecurityUtils.setSecureHTML(modal, modal.innerHTML + scheduleFormHtml);
     document.body.appendChild(modal);
     this.showModal('schedule-dialog');
   }
@@ -810,7 +819,7 @@ class ExportSharingComponent {
    */
   private showCreateCollectionDialog(): void {
     const modal = this.createModal('create-collection-dialog', 'Create Job Collection');
-    modal.innerHTML += `
+    const collectionFormHtml = `
       <div class="modal-content">
         <form id="create-collection-form">
           <div class="form-group">
@@ -834,6 +843,7 @@ class ExportSharingComponent {
         </form>
       </div>
     `;
+    SecurityUtils.setSecureHTML(modal, modal.innerHTML + collectionFormHtml);
     document.body.appendChild(modal);
     this.showModal('create-collection-dialog');
   }
@@ -1097,16 +1107,17 @@ class ExportSharingComponent {
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.id = id;
-    modal.innerHTML = `
+    const modalHtml = `
       <div class="modal-overlay">
         <div class="modal-dialog">
           <div class="modal-header">
-            <h3>${title}</h3>
+            <h3>${SecurityUtils.escapeHTML(title)}</h3>
             <button class="modal-close">&times;</button>
           </div>
         </div>
       </div>
     `;
+    SecurityUtils.setSecureHTML(modal, modalHtml);
     return modal;
   }
 

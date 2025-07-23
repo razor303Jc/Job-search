@@ -3,6 +3,8 @@
  * Phase 7 Stage 5: Enhanced Web Interface & Real-Time Features
  */
 
+import { SecurityUtils } from '../utils/security-utils.js';
+
 // Advanced Filtering Types
 interface FilterOperator {
   id: string;
@@ -677,17 +679,8 @@ class AdvancedFilteringSortingComponent {
       </div>
     `;
 
-    // Use safe DOM manipulation
-    while (this.container.firstChild) {
-      this.container.removeChild(this.container.firstChild);
-    }
-
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = html;
-
-    while (wrapper.firstChild) {
-      this.container.appendChild(wrapper.firstChild);
-    }
+    // Use safe DOM manipulation to prevent XSS
+    SecurityUtils.setSecureHTML(this.container, html);
 
     this.attachAdvancedEventListeners();
   }
@@ -1393,7 +1386,7 @@ class AdvancedFilteringSortingComponent {
     const container = this.container.querySelector('.results-info-section');
     if (container) {
       const newInfo = this.renderResultsInfo();
-      container.innerHTML = newInfo;
+      SecurityUtils.setSecureHTML(container as HTMLElement, newInfo);
     }
   }
 
@@ -1519,7 +1512,7 @@ class AdvancedFilteringSortingComponent {
           )
           .join('');
 
-        select.innerHTML = optionsHtml;
+        SecurityUtils.setSecureHTML(select as HTMLElement, optionsHtml);
       }
     });
   }
@@ -1620,7 +1613,7 @@ class AdvancedFilteringSortingComponent {
     ).indexOf(conditionElement);
 
     const newHtml = this.renderFilterCondition(condition, conditionIndex, groupId);
-    conditionElement.outerHTML = newHtml;
+    SecurityUtils.setSecureHTML(conditionElement as HTMLElement, newHtml);
   }
 
   /**
@@ -1724,7 +1717,7 @@ class AdvancedFilteringSortingComponent {
   private renderSortingOptionsSection(): void {
     const container = this.container.querySelector('.sorting-section');
     if (container) {
-      container.innerHTML = this.renderSortingOptions();
+      SecurityUtils.setSecureHTML(container as HTMLElement, this.renderSortingOptions());
     }
   }
 
@@ -1797,7 +1790,7 @@ class AdvancedFilteringSortingComponent {
   private renderPresets(): void {
     const container = this.container.querySelector('.presets-section');
     if (container) {
-      container.innerHTML = this.renderPresetsPanel();
+      SecurityUtils.setSecureHTML(container as HTMLElement, this.renderPresetsPanel());
     }
   }
 
@@ -2152,7 +2145,7 @@ class AdvancedFilteringSortingComponent {
 
     // Clear the container
     if (this.container) {
-      this.container.innerHTML = '';
+      SecurityUtils.setSecureHTML(this.container, '');
     }
   }
 }

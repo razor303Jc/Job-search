@@ -190,6 +190,12 @@ self.addEventListener('notificationclick', (event) => {
 
   const urlToOpen = action === 'view' && data?.url ? data.url : '/enhanced-dashboard.html';
 
+  // Validate URL for security before opening
+  if (!urlToOpen.startsWith('/') && !urlToOpen.startsWith('https://')) {
+    console.warn('[SW] Ignoring navigation to untrusted URL:', urlToOpen);
+    return;
+  }
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // Try to focus existing window

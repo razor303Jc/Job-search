@@ -4,6 +4,8 @@
  * Builds upon the basic advanced-search component with enhanced filtering capabilities
  */
 
+import { SecurityUtils } from '../utils/security-utils.js';
+
 // Extended filter types
 interface AdvancedFilters extends SearchFilters {
   experience?: string[];
@@ -150,7 +152,7 @@ export class AdvancedFilteringComponent {
       </div>
     `;
 
-    filterContainer.innerHTML = html;
+    SecurityUtils.setSecureHTML(filterContainer, html);
     this.attachFilterListeners();
   }
 
@@ -491,7 +493,7 @@ export class AdvancedFilteringComponent {
       </div>
     `;
 
-    presetContainer.innerHTML = html;
+    SecurityUtils.setSecureHTML(presetContainer, html);
     this.attachPresetListeners();
   }
 
@@ -527,7 +529,7 @@ export class AdvancedFilteringComponent {
       </div>
     `;
 
-    sortContainer.innerHTML = html;
+    SecurityUtils.setSecureHTML(sortContainer, html);
     this.attachSortingListeners();
   }
 
@@ -578,7 +580,7 @@ export class AdvancedFilteringComponent {
       </div>
     `;
 
-    analyticsContainer.innerHTML = html;
+    SecurityUtils.setSecureHTML(analyticsContainer, html);
     this.initializeAnalyticsCharts();
   }
 
@@ -1068,13 +1070,14 @@ export class AdvancedFilteringComponent {
 
     const suggestions = document.getElementById('skills-suggestions');
     if (suggestions) {
-      suggestions.innerHTML = filteredSkills
+      const skillsHtml = filteredSkills
         .map(
           (skill) => `
-        <div class="skill-suggestion" data-skill="${skill}">${skill}</div>
+        <div class="skill-suggestion" data-skill="${SecurityUtils.escapeHTML(skill)}">${SecurityUtils.escapeHTML(skill)}</div>
       `,
         )
         .join('');
+      SecurityUtils.setSecureHTML(suggestions, skillsHtml);
       suggestions.style.display = filteredSkills.length ? 'block' : 'none';
 
       // Add click listeners to suggestions
@@ -1123,16 +1126,17 @@ export class AdvancedFilteringComponent {
   private renderSelectedSkills(): void {
     const selectedSkillsEl = document.getElementById('selected-skills');
     if (selectedSkillsEl) {
-      selectedSkillsEl.innerHTML = (this.currentFilters.skills || [])
+      const skillsHtml = (this.currentFilters.skills || [])
         .map(
           (skill) => `
         <span class="skill-tag">
-          ${skill}
-          <button class="remove-skill" data-skill="${skill}">×</button>
+          ${SecurityUtils.escapeHTML(skill)}
+          <button class="remove-skill" data-skill="${SecurityUtils.escapeHTML(skill)}">×</button>
         </span>
       `,
         )
         .join('');
+      SecurityUtils.setSecureHTML(selectedSkillsEl, skillsHtml);
 
       // Reattach listeners to remove buttons
       selectedSkillsEl.querySelectorAll('.remove-skill').forEach((button) => {

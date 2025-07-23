@@ -94,8 +94,13 @@ class PWAManager {
         this.handleServiceWorkerUpdate();
       });
 
-      // Listen for service worker messages
+      // Listen for service worker messages with origin validation
       navigator.serviceWorker.addEventListener('message', (event) => {
+        // Validate origin for security (allow same origin or service worker)
+        if (event.origin && event.origin !== window.location.origin) {
+          console.warn('Ignoring message from untrusted origin:', event.origin);
+          return;
+        }
         this.handleServiceWorkerMessage(event);
       });
 
@@ -701,6 +706,11 @@ class PWAManager {
     // Handle app shortcuts navigation
     if ('serviceWorker' in navigator && 'navigate' in navigator.serviceWorker) {
       navigator.serviceWorker.addEventListener('message', (event) => {
+        // Validate origin for security
+        if (event.origin && event.origin !== window.location.origin) {
+          console.warn('Ignoring navigation message from untrusted origin:', event.origin);
+          return;
+        }
         if (event.data.type === 'NAVIGATE') {
           window.location.href = event.data.url;
         }

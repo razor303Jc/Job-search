@@ -42,14 +42,27 @@ export class JobDorkerServer {
    * Setup Fastify plugins
    */
   private async setupPlugins(): Promise<void> {
-    // Static file serving (make it optional if directory doesn't exist)
+    // Static file serving for HTML pages (priority)
+    try {
+      await this.server.register(import('@fastify/static'), {
+        root: join(process.cwd(), 'src', 'web', 'static'),
+        prefix: '/',
+      });
+      logger.debug('Static HTML files served from src/web/static');
+    } catch (error) {
+      logger.warn('Static HTML serving disabled - static directory not found', { error });
+    }
+
+    // Static file serving for public assets (CSS, JS, images) using a different route
     try {
       await this.server.register(import('@fastify/static'), {
         root: join(process.cwd(), 'src', 'web', 'public'),
         prefix: '/public/',
+        decorateReply: false,
       });
+      logger.debug('Public assets served from src/web/public');
     } catch (error) {
-      logger.warn('Static file serving disabled - public directory not found', { error });
+      logger.warn('Public assets serving disabled - public directory not found', { error });
     }
 
     // CORS support

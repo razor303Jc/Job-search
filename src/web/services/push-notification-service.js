@@ -15,17 +15,23 @@ class PushNotificationService {
 
     // VAPID keys - in production, these should be environment variables
     this.vapidKeys = {
-      publicKey:
-        process.env.VAPID_PUBLIC_KEY || 'BExample-VAPID-Public-Key-Here-64-Characters-Long',
-      privateKey: process.env.VAPID_PRIVATE_KEY || 'Example-VAPID-Private-Key-Here-44-Characters',
+      publicKey: process.env.VAPID_PUBLIC_KEY || 'REPLACE-WITH-YOUR-VAPID-PUBLIC-KEY',
+      privateKey: process.env.VAPID_PRIVATE_KEY || 'REPLACE-WITH-YOUR-VAPID-PRIVATE-KEY',
     };
 
-    // Configure web-push
-    webpush.setVapidDetails(
-      'mailto:admin@jobsearchpro.com',
-      this.vapidKeys.publicKey,
-      this.vapidKeys.privateKey,
-    );
+    // Only configure web-push if valid keys are provided
+    if (
+      this.vapidKeys.publicKey !== 'REPLACE-WITH-YOUR-VAPID-PUBLIC-KEY' &&
+      this.vapidKeys.privateKey !== 'REPLACE-WITH-YOUR-VAPID-PRIVATE-KEY'
+    ) {
+      webpush.setVapidDetails(
+        'mailto:admin@jobsearchpro.com',
+        this.vapidKeys.publicKey,
+        this.vapidKeys.privateKey,
+      );
+    } else {
+      console.warn('VAPID keys not configured. Push notifications will be disabled.');
+    }
 
     this.loadSubscriptions();
   }

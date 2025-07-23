@@ -3,6 +3,8 @@
  * Phase 7 Stage 4: Advanced UI Features & UX
  */
 
+import { SecurityUtils } from '../utils/security-utils.js';
+
 // Job Comparison Types
 interface ComparisonJob {
   id: string;
@@ -274,7 +276,7 @@ class JobComparisonTool {
       )
       .join('');
 
-    resultsContainer.innerHTML = html;
+    SecurityUtils.setSecureHTML(resultsContainer, html);
   }
 
   addJobToComparison(jobId: string): void {
@@ -336,7 +338,9 @@ class JobComparisonTool {
     if (!grid) return;
 
     if (this.comparedJobs.length === 0) {
-      grid.innerHTML = `
+      SecurityUtils.setSecureHTML(
+        grid,
+        `
         <div class="comparison-placeholder">
           <div class="placeholder-content">
             <div class="placeholder-icon">🔀</div>
@@ -347,7 +351,8 @@ class JobComparisonTool {
             </button>
           </div>
         </div>
-      `;
+      `,
+      );
       return;
     }
 
@@ -436,7 +441,7 @@ class JobComparisonTool {
       )
       .join('');
 
-    grid.innerHTML = html;
+    SecurityUtils.setSecureHTML(grid, html);
 
     // Enable action buttons
     const saveBtn = document.getElementById('saveCurrentComparison') as HTMLButtonElement;
@@ -765,7 +770,7 @@ class JobComparisonTool {
       )
       .join('');
 
-    container.innerHTML = html;
+    SecurityUtils.setSecureHTML(container, html);
   }
 
   private updateGapAnalysis(): void {
@@ -845,7 +850,7 @@ class JobComparisonTool {
       )
       .join('');
 
-    gapDetailsElem.innerHTML = detailsHtml;
+    SecurityUtils.setSecureHTML(gapDetailsElem, detailsHtml);
   }
 
   private saveCurrentComparison(): void {
@@ -944,11 +949,14 @@ class JobComparisonTool {
     if (!container) return;
 
     if (this.savedComparisons.length === 0) {
-      container.innerHTML = `
+      SecurityUtils.setSecureHTML(
+        container,
+        `
         <div class="empty-state">
           <p>No saved comparisons yet. Compare some jobs and save your analysis.</p>
         </div>
-      `;
+      `,
+      );
       return;
     }
 
@@ -973,7 +981,7 @@ class JobComparisonTool {
       )
       .join('');
 
-    container.innerHTML = html;
+    SecurityUtils.setSecureHTML(container, html);
   }
 
   loadSavedComparison(comparisonId: string): void {
