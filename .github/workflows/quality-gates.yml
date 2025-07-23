@@ -1,0 +1,248 @@
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main, stage, dev]
+  workflow_call:
+    inputs:
+      coverage-threshold:
+        description: 'Minimum code coverage percentage'
+        required: false
+        default: '80'
+        type: string
+
+env:
+  NODE_VERSION: '20'
+  COVERAGE_THRESHOLD: ${{ inputs.coverage-threshold || '80' }}
+
+jobs:
+  quality-gates:
+    name: Quality Gates Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Lint check
+        id: lint
+        run: |
+          echo "🔍 Running linter..."
+          npm run lint > lint-output.txt 2>&1
+          lint_exit_code=$?
+          
+          if [ $lint_exit_code -eq 0 ]; then
+            echo "✅ Linting passed"
+            echo "lint_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Linting failed"
+            echo "lint_status=failed" >> $GITHUB_OUTPUT
+            cat lint-output.txt
+          fi
+          
+          exit $lint_exit_code
+          
+      - name: Type check
+        id: typecheck
+        run: |
+          echo "🔍 Running type checker..."
+          npm run typecheck > typecheck-output.txt 2>&1
+          typecheck_exit_code=$?
+          
+          if [ $typecheck_exit_code -eq 0 ]; then
+            echo "✅ Type checking passed"
+            echo "typecheck_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Type checking failed"
+            echo "typecheck_status=failed" >> $GITHUB_OUTPUT
+            cat typecheck-output.txt
+          fi
+          
+          exit $typecheck_exit_code
+          
+      - name: Security audit
+        id: security
+        run: |
+          echo "🔍 Running security audit..."
+          npm audit --audit-level moderate > audit-output.txt 2>&1
+          audit_exit_code=$?
+          
+          if [ $audit_exit_code -eq 0 ]; then
+            echo "✅ Security audit passed"
+            echo "security_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Security vulnerabilities found"
+            echo "security_status=warning" >> $GITHUB_OUTPUT
+            cat audit-output.txt
+          fi
+          
+          # Don't fail on security warnings for now
+          exit 0
+          
+      - name: Test coverage
+        id: coverage
+        run: |
+          echo "🔍 Running tests with coverage..."
+          npm run test:coverage
+          
+          # Extract coverage percentage
+          coverage=$(npm run test:coverage 2>&1 | grep -oP 'All files\s+\|\s+\K[\d.]+' | tail -1)
+          
+          if [ -z "$coverage" ]; then
+            echo "❌ Could not extract coverage information"
+            echo "coverage_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "Coverage: ${coverage}%"
+          echo "coverage_percentage=${coverage}" >> $GITHUB_OUTPUT
+          
+          # Check if coverage meets threshold
+          if (( $(echo "$coverage >= $COVERAGE_THRESHOLD" | bc -l) )); then
+            echo "✅ Coverage threshold met (${coverage}% >= ${COVERAGE_THRESHOLD}%)"
+            echo "coverage_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Coverage below threshold (${coverage}% < ${COVERAGE_THRESHOLD}%)"
+            echo "coverage_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+      - name: Performance benchmark
+        id: performance
+        run: |
+          echo "🔍 Running performance tests..."
+          npm run test:unit -- tests/unit/performance/ > perf-output.txt 2>&1
+          perf_exit_code=$?
+          
+          if [ $perf_exit_code -eq 0 ]; then
+            echo "✅ Performance tests passed"
+            echo "performance_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Performance tests failed"
+            echo "performance_status=failed" >> $GITHUB_OUTPUT
+            cat perf-output.txt
+          fi
+          
+          exit $perf_exit_code
+          
+      - name: Bundle size check
+        id: bundle-size
+        run: |
+          echo "🔍 Checking bundle size..."
+          npm run build
+          
+          # Check if dist directory exists and has files
+          if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then
+            echo "❌ Build output not found"
+            echo "bundle_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Calculate total bundle size
+          total_size=$(du -sb dist/ | cut -f1)
+          size_mb=$(echo "scale=2; $total_size / 1024 / 1024" | bc)
+          
+          echo "Bundle size: ${size_mb}MB"
+          echo "bundle_size_mb=${size_mb}" >> $GITHUB_OUTPUT
+          
+          # Check if bundle size is reasonable (< 10MB for this project)
+          if (( $(echo "$size_mb <= 10" | bc -l) )); then
+            echo "✅ Bundle size is acceptable (${size_mb}MB <= 10MB)"
+            echo "bundle_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Bundle size is large (${size_mb}MB > 10MB)"
+            echo "bundle_status=warning" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Quality Gates Summary
+        run: |
+          echo "## 📊 Quality Gates Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 Linting | ${{ steps.lint.outputs.lint_status == 'passed' && '✅ PASSED' || '❌ FAILED' }} | Code style and formatting |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 Type Check | ${{ steps.typecheck.outputs.typecheck_status == 'passed' && '✅ PASSED' || '❌ FAILED' }} | TypeScript compilation |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Security | ${{ steps.security.outputs.security_status == 'passed' && '✅ PASSED' || (steps.security.outputs.security_status == 'warning' && '⚠️ WARNING' || '❌ FAILED') }} | Dependency vulnerabilities |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📈 Coverage | ${{ steps.coverage.outputs.coverage_status == 'passed' && '✅ PASSED' || '❌ FAILED' }} | ${{ steps.coverage.outputs.coverage_percentage }}% (≥ ${{ env.COVERAGE_THRESHOLD }}%) |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚡ Performance | ${{ steps.performance.outputs.performance_status == 'passed' && '✅ PASSED' || '❌ FAILED' }} | Performance benchmarks |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 Bundle Size | ${{ steps.bundle-size.outputs.bundle_status == 'passed' && '✅ PASSED' || (steps.bundle-size.outputs.bundle_status == 'warning' && '⚠️ WARNING' || '❌ FAILED') }} | ${{ steps.bundle-size.outputs.bundle_size_mb }}MB |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if all critical gates passed
+          if [[ "${{ steps.lint.outputs.lint_status }}" == "passed" && \
+                "${{ steps.typecheck.outputs.typecheck_status }}" == "passed" && \
+                "${{ steps.coverage.outputs.coverage_status }}" == "passed" && \
+                "${{ steps.performance.outputs.performance_status }}" == "passed" ]]; then
+            echo "🎉 **All quality gates passed!** Ready for merge." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Some quality gates failed.** Please review and fix issues before merging." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          allow-licenses: MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC, 0BSD
+          deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.1, LGPL-3.0, AGPL-3.0
+
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
