@@ -332,7 +332,8 @@ describe('PWA Manager Functionality', () => {
 
     it('should gracefully degrade without service worker support', () => {
       const mockNavigatorNoSW = { ...mockNavigator };
-      // eslint-disable-next-line biome/performance/noDelete
+      // Need to delete property to test 'in' operator properly
+      // biome-ignore lint/performance/noDelete: Test requires actual property deletion
       delete (mockNavigatorNoSW as any).serviceWorker;
 
       const initPWA = (nav: any) => {
