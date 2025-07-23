@@ -1,3 +1,4 @@
+import { SecurityConfig } from "../utils/security-config.js";
 /**
  * Advanced Filtering & Sorting UI Component
  * Phase 7 Stage 5: Enhanced Web Interface & Real-Time Features
@@ -778,7 +779,7 @@ class AdvancedFilteringSortingComponent {
    */
   private renderFilterGroup(group: FilterGroup, groupIndex: number): string {
     return `
-      <div class="filter-group" data-group-id="${group.id}">
+      <div class="filter-group" data-group-id="${this.escapeHtml(group.id)}">
         <div class="filter-group-header">
           <div class="group-controls">
             <input 
@@ -820,7 +821,7 @@ class AdvancedFilteringSortingComponent {
             .join('')}
         </div>
         
-        <button type="button" class="add-filter-condition" data-group-id="${group.id}">
+        <button type="button" class="add-filter-condition" data-group-id="${this.escapeHtml(group.id)}">
           Add Condition
         </button>
       </div>
@@ -840,7 +841,7 @@ class AdvancedFilteringSortingComponent {
     const operators = this.operators[operatorType]?.operators || [];
 
     return `
-      <div class="filter-condition" data-condition-id="${condition.id}">
+      <div class="filter-condition" data-condition-id="${this.escapeHtml(condition.id)}">
         <div class="condition-controls">
           <input 
             type="checkbox" 
@@ -852,8 +853,8 @@ class AdvancedFilteringSortingComponent {
             ${this.fields
               .map(
                 (field) => `
-              <option value="${field.key}" ${condition.field === field.key ? 'selected' : ''}>
-                ${field.label}
+              <option value="${this.escapeHtml(field.key)}" ${condition.field === field.key ? 'selected' : ''}>
+                ${this.escapeHtml(field.label)}
               </option>
             `,
               )
@@ -864,8 +865,8 @@ class AdvancedFilteringSortingComponent {
             ${operators
               .map(
                 (op) => `
-              <option value="${op.value}" ${condition.operator === op.value ? 'selected' : ''}>
-                ${op.label}
+              <option value="${this.escapeHtml(op.value)}" ${condition.operator === op.value ? 'selected' : ''}>
+                ${this.escapeHtml(op.label)}
               </option>
             `,
               )
@@ -877,8 +878,8 @@ class AdvancedFilteringSortingComponent {
           <button 
             type="button" 
             class="remove-filter-condition" 
-            data-condition-id="${condition.id}"
-            data-group-id="${groupId}"
+            data-condition-id="${this.escapeHtml(condition.id)}"
+            data-group-id="${this.escapeHtml(groupId)}"
             ${conditionIndex === 0 && this.state.groups.find((g) => g.id === groupId)?.conditions.length === 1 ? 'disabled' : ''}
           >
             ×
@@ -921,8 +922,8 @@ class AdvancedFilteringSortingComponent {
               field.options
                 ?.map(
                   (option) => `
-              <option value="${option.value}" ${condition.value === option.value ? 'selected' : ''}>
-                ${option.label}${option.count ? ` (${option.count})` : ''}
+              <option value="${this.escapeHtml(option.value)}" ${condition.value === option.value ? 'selected' : ''}>
+                ${this.escapeHtml(option.label)}${option.count ? ` (${option.count})` : ''}
               </option>
             `,
                 )
@@ -938,7 +939,7 @@ class AdvancedFilteringSortingComponent {
               type="text" 
               class="filter-value-input multiselect-input" 
               placeholder="Type to search options..."
-              value="${Array.isArray(condition.value) ? condition.value.join(', ') : condition.value || ''}"
+              value="${this.escapeHtml(Array.isArray(condition.value) ? condition.value.join(', ') : condition.value || '')}"
             />
             <div class="multiselect-dropdown" style="display: none;">
               ${
@@ -948,10 +949,10 @@ class AdvancedFilteringSortingComponent {
                 <label class="multiselect-option">
                   <input 
                     type="checkbox" 
-                    value="${option.value}"
+                    value="${this.escapeHtml(option.value)}"
                     ${Array.isArray(condition.value) && condition.value.includes(option.value) ? 'checked' : ''}
                   />
-                  ${option.label}${option.count ? ` (${option.count})` : ''}
+                  ${this.escapeHtml(option.label)}${option.count ? ` (${option.count})` : ''}
                 </label>
               `,
                   )
@@ -970,14 +971,14 @@ class AdvancedFilteringSortingComponent {
                 type="number" 
                 class="filter-value-input range-min" 
                 placeholder="Min"
-                value="${values[0] || ''}"
+                value="${this.escapeHtml(values[0] || '')}"
               />
               <span class="range-separator">to</span>
               <input 
                 type="number" 
                 class="filter-value-input range-max" 
                 placeholder="Max"
-                value="${values[1] || ''}"
+                value="${this.escapeHtml(values[1] || '')}"
               />
             </div>
           `;
@@ -987,7 +988,7 @@ class AdvancedFilteringSortingComponent {
             type="number" 
             class="filter-value-input" 
             placeholder="Enter number"
-            value="${condition.value || ''}"
+            value="${this.escapeHtml(condition.value || '')}"
           />
         `;
 
@@ -999,13 +1000,13 @@ class AdvancedFilteringSortingComponent {
               <input 
                 type="date" 
                 class="filter-value-input range-min" 
-                value="${values[0] || ''}"
+                value="${this.escapeHtml(values[0] || '')}"
               />
               <span class="range-separator">to</span>
               <input 
                 type="date" 
                 class="filter-value-input range-max" 
-                value="${values[1] || ''}"
+                value="${this.escapeHtml(values[1] || '')}"
               />
             </div>
           `;
@@ -1016,7 +1017,7 @@ class AdvancedFilteringSortingComponent {
               type="number" 
               class="filter-value-input" 
               placeholder="Number of days"
-              value="${condition.value || ''}"
+              value="${this.escapeHtml(condition.value || '')}"
               min="1"
             />
           `;
@@ -1025,7 +1026,7 @@ class AdvancedFilteringSortingComponent {
           <input 
             type="date" 
             class="filter-value-input" 
-            value="${condition.value || ''}"
+            value="${this.escapeHtml(condition.value || '')}"
           />
         `;
 
@@ -1038,7 +1039,7 @@ class AdvancedFilteringSortingComponent {
             type="text" 
             class="filter-value-input" 
             placeholder="Enter value"
-            value="${condition.value || ''}"
+            value="${this.escapeHtml(condition.value || '')}"
           />
         `;
     }
@@ -1255,9 +1256,7 @@ class AdvancedFilteringSortingComponent {
    * Escape HTML to prevent XSS
    */
   private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return SecurityConfig.sanitizeForTemplate(text);
   }
 
   /**

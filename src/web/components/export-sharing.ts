@@ -1,5 +1,5 @@
 /**
- * Export & Sharing Features Component
+ * Export and Sharing Component
  * Phase 7 Stage 4: Advanced UI Features & UX
  */
 

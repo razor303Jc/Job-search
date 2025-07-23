@@ -1,3 +1,4 @@
+import { SecurityConfig } from "../utils/security-config.js";
 /**
  * Job Comparison Tool Component
  * Phase 7 Stage 4: Advanced UI Features & UX
@@ -377,7 +378,7 @@ class JobComparisonTool {
         <div class="job-details-section">
           <div class="detail-item">
             <span class="detail-label">📍 Location</span>
-            <span class="detail-value">${job.location}${job.remote ? ' (Remote)' : ''}</span>
+            <span class="detail-value">${SecurityConfig.sanitizeForTemplate(job.location)}${job.remote ? ' (Remote)' : ''}</span>
           </div>
           
           <div class="detail-item">
@@ -399,7 +400,7 @@ class JobComparisonTool {
 
           <div class="detail-item">
             <span class="detail-label">⏰ Type</span>
-            <span class="detail-value">${job.employmentType}</span>
+            <span class="detail-value">${SecurityConfig.sanitizeForTemplate(job.employmentType)}</span>
           </div>
 
           <div class="detail-item">
@@ -420,7 +421,7 @@ class JobComparisonTool {
               ${job.skills
                 .map((skill) => {
                   const hasSkill = this.userSkills.includes(skill);
-                  return `<span class="skill-tag ${hasSkill ? '' : 'missing'}">${skill}</span>`;
+                  return `<span class="skill-tag ${hasSkill ? '' : 'missing'}">${SecurityConfig.sanitizeForTemplate(skill)}</span>`;
                 })
                 .join('')}
             </div>
@@ -431,7 +432,7 @@ class JobComparisonTool {
           <div class="detail-item">
             <span class="detail-label">🎁 Benefits</span>
             <div class="detail-value">
-              ${job.benefits.slice(0, 3).join(', ')}
+              ${job.benefits.slice(0, 3).map(benefit => SecurityConfig.sanitizeForTemplate(benefit)).join(', ')}
               ${job.benefits.length > 3 ? `... +${job.benefits.length - 3} more` : ''}
             </div>
           </div>
