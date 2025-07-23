@@ -64,8 +64,8 @@ class PerformanceMonitor {
 // Mock database operations for performance testing
 class MockDatabase {
   private data: Map<string, any[]> = new Map();
-  private connectionPool: number = 0;
-  private maxConnections: number = 10;
+  private connectionPool = 0;
+  private maxConnections = 10;
 
   async connect(): Promise<void> {
     if (this.connectionPool >= this.maxConnections) {
@@ -82,24 +82,26 @@ class MockDatabase {
     await this.delay(Math.random() * 5);
   }
 
-  async query(sql: string, params?: any[]): Promise<any[]> {
+  async query(sql: string, _params?: any[]): Promise<any[]> {
     await this.delay(Math.random() * 20 + 5); // Simulate query time
 
     // Mock different query types
     if (sql.includes('SELECT')) {
       return this.generateMockRows(100);
-    } else if (sql.includes('INSERT')) {
+    }
+    if (sql.includes('INSERT')) {
       return [{ insertId: Math.floor(Math.random() * 1000) }];
-    } else if (sql.includes('UPDATE')) {
+    }
+    if (sql.includes('UPDATE')) {
       return [{ affectedRows: Math.floor(Math.random() * 10) }];
     }
     return [];
   }
 
-  async bulkInsert(tableName: string, records: any[]): Promise<void> {
+  async bulkInsert(_tableName: string, records: any[]): Promise<void> {
     const batchSize = 1000;
     const batches = Math.ceil(records.length / batchSize);
-    
+
     for (let i = 0; i < batches; i++) {
       const batch = records.slice(i * batchSize, (i + 1) * batchSize);
       await this.delay(batch.length * 0.1); // Simulate bulk insert time
@@ -131,10 +133,10 @@ class MockDatabase {
 
 // Mock HTTP client for API performance testing
 class MockHttpClient {
-  private requestCount: number = 0;
-  private responseTime: number = 100;
+  private requestCount = 0;
+  private responseTime = 100;
 
-  async get(url: string, options?: any): Promise<{ status: number; data: any; time: number }> {
+  async get(url: string, _options?: any): Promise<{ status: number; data: any; time: number }> {
     const startTime = performance.now();
     this.requestCount++;
 
@@ -142,7 +144,7 @@ class MockHttpClient {
     await this.delay(this.responseTime + Math.random() * 50);
 
     const endTime = performance.now();
-    
+
     return {
       status: 200,
       data: { url, timestamp: Date.now() },
@@ -150,7 +152,11 @@ class MockHttpClient {
     };
   }
 
-  async post(url: string, data: any, options?: any): Promise<{ status: number; data: any; time: number }> {
+  async post(
+    _url: string,
+    data: any,
+    _options?: any,
+  ): Promise<{ status: number; data: any; time: number }> {
     const startTime = performance.now();
     this.requestCount++;
 
@@ -185,14 +191,14 @@ class MockHttpClient {
 // Mock job processing system
 class MockJobProcessor {
   private queue: any[] = [];
-  private processing: boolean = false;
-  private processed: number = 0;
+  private processing = false;
+  private processed = 0;
 
   async addJob(job: any): Promise<void> {
     this.queue.push({ ...job, addedAt: Date.now() });
   }
 
-  async processJobs(concurrency: number = 1): Promise<void> {
+  async processJobs(concurrency = 1): Promise<void> {
     if (this.processing) {
       return;
     }
@@ -213,7 +219,7 @@ class MockJobProcessor {
     }
   }
 
-  private async processJob(job: any): Promise<void> {
+  private async processJob(_job: any): Promise<void> {
     // Simulate job processing time
     const processingTime = Math.random() * 100 + 50;
     await new Promise((resolve) => setTimeout(resolve, processingTime));
@@ -251,20 +257,20 @@ describe('Performance and Load Testing', () => {
   describe('Performance Monitoring', () => {
     it('should measure operation duration', () => {
       performanceMonitor.startTimer('test-operation');
-      
+
       // Simulate some work
       const start = Date.now();
       while (Date.now() - start < 10) {
         // Busy wait for 10ms
       }
-      
+
       const duration = performanceMonitor.endTimer('test-operation');
       expect(duration).toBeGreaterThanOrEqual(9); // Allow for some variance
     });
 
     it('should calculate average performance metrics', () => {
       const operations = 10;
-      
+
       for (let i = 0; i < operations; i++) {
         performanceMonitor.startTimer('batch-operation');
         // Simulate different processing times
@@ -284,7 +290,7 @@ describe('Performance and Load Testing', () => {
 
     it('should handle concurrent timer operations', () => {
       const timers = ['timer1', 'timer2', 'timer3'];
-      
+
       timers.forEach((timer) => {
         performanceMonitor.startTimer(timer);
       });
@@ -337,9 +343,9 @@ describe('Performance and Load Testing', () => {
 
     it('should perform bulk operations efficiently', async () => {
       await mockDatabase.connect();
-      
+
       performanceMonitor.startTimer('bulk-insert');
-      
+
       const records = Array.from({ length: 5000 }, (_, i) => ({
         id: i + 1,
         title: `Job ${i + 1}`,
@@ -347,31 +353,31 @@ describe('Performance and Load Testing', () => {
       }));
 
       await mockDatabase.bulkInsert('jobs', records);
-      
+
       const bulkTime = performanceMonitor.endTimer('bulk-insert');
-      
+
       // Bulk insert should be efficient (less than 1ms per record)
       expect(bulkTime).toBeLessThan(records.length * 1);
-      
+
       await mockDatabase.disconnect();
     });
 
     it('should handle concurrent database queries', async () => {
       await mockDatabase.connect();
-      
+
       performanceMonitor.startTimer('concurrent-queries');
 
-      const queries = Array.from({ length: 20 }, (_, i) => 
-        mockDatabase.query(`SELECT * FROM jobs WHERE id = ?`, [i + 1])
+      const queries = Array.from({ length: 20 }, (_, i) =>
+        mockDatabase.query('SELECT * FROM jobs WHERE id = ?', [i + 1]),
       );
 
       const results = await Promise.all(queries);
-      
+
       const queryTime = performanceMonitor.endTimer('concurrent-queries');
-      
+
       expect(results.length).toBe(20);
       expect(queryTime).toBeLessThan(2000); // Should complete within 2 seconds
-      
+
       await mockDatabase.disconnect();
     });
   });
@@ -381,7 +387,7 @@ describe('Performance and Load Testing', () => {
       performanceMonitor.startTimer('http-request');
 
       const response = await mockHttpClient.get('https://api.example.com/jobs');
-      
+
       const requestTime = performanceMonitor.endTimer('http-request');
 
       expect(response.status).toBe(200);
@@ -392,11 +398,11 @@ describe('Performance and Load Testing', () => {
       performanceMonitor.startTimer('concurrent-http');
 
       const requests = Array.from({ length: 10 }, (_, i) =>
-        mockHttpClient.get(`https://api.example.com/jobs/${i + 1}`)
+        mockHttpClient.get(`https://api.example.com/jobs/${i + 1}`),
       );
 
       const responses = await Promise.all(requests);
-      
+
       const totalTime = performanceMonitor.endTimer('concurrent-http');
 
       expect(responses.length).toBe(10);
@@ -419,7 +425,7 @@ describe('Performance and Load Testing', () => {
         performanceMonitor.startTimer(scenario.name);
 
         const response = await mockHttpClient.get('https://api.example.com/test');
-        
+
         const duration = performanceMonitor.endTimer(scenario.name);
 
         expect(response.status).toBe(200);
@@ -432,7 +438,7 @@ describe('Performance and Load Testing', () => {
   describe('Job Processing Performance', () => {
     it('should process jobs efficiently', async () => {
       const jobCount = 100;
-      
+
       // Add jobs to queue
       performanceMonitor.startTimer('job-addition');
       for (let i = 0; i < jobCount; i++) {
@@ -458,7 +464,7 @@ describe('Performance and Load Testing', () => {
 
     it('should scale with concurrent processing', async () => {
       const jobCount = 50;
-      
+
       // Add jobs
       for (let i = 0; i < jobCount; i++) {
         await mockJobProcessor.addJob({ id: i + 1, data: `Job ${i + 1}` });
@@ -470,7 +476,7 @@ describe('Performance and Load Testing', () => {
 
       for (const concurrency of concurrencyLevels) {
         mockJobProcessor.reset();
-        
+
         // Re-add jobs
         for (let i = 0; i < jobCount; i++) {
           await mockJobProcessor.addJob({ id: i + 1, data: `Job ${i + 1}` });
@@ -535,14 +541,17 @@ describe('Performance and Load Testing', () => {
       }));
 
       // Perform operations on large dataset
-      const aggregated = dataset.reduce((acc, item) => {
-        if (!acc[item.category]) {
-          acc[item.category] = { count: 0, sum: 0 };
-        }
-        acc[item.category].count++;
-        acc[item.category].sum += item.value;
-        return acc;
-      }, {} as Record<number, { count: number; sum: number }>);
+      const aggregated = dataset.reduce(
+        (acc, item) => {
+          if (!acc[item.category]) {
+            acc[item.category] = { count: 0, sum: 0 };
+          }
+          acc[item.category].count++;
+          acc[item.category].sum += item.value;
+          return acc;
+        },
+        {} as Record<number, { count: number; sum: number }>,
+      );
 
       const processingTime = performanceMonitor.endTimer('large-dataset');
 
@@ -559,13 +568,13 @@ describe('Performance and Load Testing', () => {
       // Simulate CPU-intensive work
       for (let i = 0; i < 5; i++) {
         performanceMonitor.startTimer(`cpu-work-${i}`);
-        
+
         // CPU-intensive calculation
-        let result = 0;
+        let _result = 0;
         for (let j = 0; j < 1000000; j++) {
-          result += Math.sqrt(j);
+          _result += Math.sqrt(j);
         }
-        
+
         const duration = performanceMonitor.endTimer(`cpu-work-${i}`);
         measurements.push(duration);
       }
@@ -582,23 +591,23 @@ describe('Performance and Load Testing', () => {
       // Simulate resource-constrained environment
       const maxConcurrentOperations = 3;
       const semaphore = new Array(maxConcurrentOperations).fill(true);
-      
+
       async function limitedOperation(id: number): Promise<number> {
         // Wait for available resource
         while (semaphore.every((slot) => !slot)) {
           await new Promise((resolve) => setTimeout(resolve, 10));
         }
-        
+
         // Acquire resource
         const slotIndex = semaphore.findIndex((slot) => slot);
         semaphore[slotIndex] = false;
-        
+
         try {
           performanceMonitor.startTimer(`limited-op-${id}`);
-          
+
           // Simulate work
           await new Promise((resolve) => setTimeout(resolve, 50));
-          
+
           return performanceMonitor.endTimer(`limited-op-${id}`);
         } finally {
           // Release resource
@@ -619,7 +628,7 @@ describe('Performance and Load Testing', () => {
       // Baseline performance
       const baselineOperations = 100;
       performanceMonitor.startTimer('baseline');
-      
+
       for (let i = 0; i < baselineOperations; i++) {
         // Simulate consistent operation
         const start = Date.now();
@@ -627,28 +636,30 @@ describe('Performance and Load Testing', () => {
           // 1ms of work
         }
       }
-      
+
       const baselineTime = performanceMonitor.endTimer('baseline');
       const baselinePerOperation = baselineTime / baselineOperations;
 
       // Current performance
       performanceMonitor.startTimer('current');
-      
+
       for (let i = 0; i < baselineOperations; i++) {
         const start = Date.now();
         while (Date.now() - start < 1.2) {
           // Slightly slower operation (20% regression)
         }
       }
-      
+
       const currentTime = performanceMonitor.endTimer('current');
       const currentPerOperation = currentTime / baselineOperations;
 
       const regressionRatio = currentPerOperation / baselinePerOperation;
-      
+
       // Detect significant regression (>15% slower)
       if (regressionRatio > 1.15) {
-        console.warn(`Performance regression detected: ${((regressionRatio - 1) * 100).toFixed(1)}% slower`);
+        console.warn(
+          `Performance regression detected: ${((regressionRatio - 1) * 100).toFixed(1)}% slower`,
+        );
       }
 
       expect(regressionRatio).toBeGreaterThan(1.0);

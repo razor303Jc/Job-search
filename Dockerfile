@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM node:20.15-slim AS builder
+FROM node:24.4-slim AS builder
 
 # Install build dependencies for native modules
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
@@ -20,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20.15-slim AS production
+FROM node:24.4-slim AS production
 
 # Install security updates, curl for health checks, and build tools for native modules
 RUN apt-get update && apt-get install -y curl python3 make g++ && rm -rf /var/lib/apt/lists/*

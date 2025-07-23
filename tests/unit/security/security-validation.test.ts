@@ -15,15 +15,14 @@ class SecurityValidator {
     /on\w+\s*=/i,
     /data:text\/html/i,
     /vbscript:/i,
+    /\.\.\/|\.\.\\/g, // Path traversal
   ];
 
   private static readonly SQL_INJECTION_PATTERNS = [
     /(\'|\;|\-\-|\/\*|\*\/|xp_|sp_|0x|union|select|insert|delete|update|drop|create|alter|exec|execute)/i,
   ];
 
-  private static readonly COMMAND_INJECTION_PATTERNS = [
-    /(\||&|;|`|\$\(|\${|<|>)/g,
-  ];
+  private static readonly COMMAND_INJECTION_PATTERNS = [/(\||&|;|`|\$\(|\${|<|>)/g];
 
   static sanitizeInput(input: string): string {
     if (typeof input !== 'string') {
@@ -56,7 +55,7 @@ class SecurityValidator {
     }
 
     // Check for dangerous patterns
-    for (const pattern of this.DANGEROUS_PATTERNS) {
+    for (const pattern of SecurityValidator.DANGEROUS_PATTERNS) {
       if (pattern.test(input)) {
         return false;
       }
@@ -64,7 +63,7 @@ class SecurityValidator {
 
     // Check for SQL injection
     if (type !== 'url') {
-      for (const pattern of this.SQL_INJECTION_PATTERNS) {
+      for (const pattern of SecurityValidator.SQL_INJECTION_PATTERNS) {
         if (pattern.test(input)) {
           return false;
         }
@@ -73,7 +72,7 @@ class SecurityValidator {
 
     // Check for command injection
     if (type === 'filename') {
-      for (const pattern of this.COMMAND_INJECTION_PATTERNS) {
+      for (const pattern of SecurityValidator.COMMAND_INJECTION_PATTERNS) {
         if (pattern.test(input)) {
           return false;
         }
@@ -83,11 +82,11 @@ class SecurityValidator {
     // Type-specific validation
     switch (type) {
       case 'url':
-        return this.validateUrl(input);
+        return SecurityValidator.validateUrl(input);
       case 'keywords':
-        return this.validateKeywords(input);
+        return SecurityValidator.validateKeywords(input);
       case 'filename':
-        return this.validateFilename(input);
+        return SecurityValidator.validateFilename(input);
       case 'general':
         return input.length > 0 && input.length < 10000;
       default:
@@ -117,7 +116,7 @@ class SecurityValidator {
     // Mock rate limiting check
     const now = Date.now();
     const key = `rate_limit_${clientId}`;
-    
+
     // In a real implementation, this would use Redis or similar
     if (!global.rateLimitStore) {
       global.rateLimitStore = new Map();
@@ -125,7 +124,7 @@ class SecurityValidator {
 
     const requests = global.rateLimitStore.get(key) || [];
     const validRequests = requests.filter((time: number) => now - time < windowMs);
-    
+
     if (validRequests.length >= maxRequests) {
       return false;
     }
@@ -142,7 +141,7 @@ class AuthenticationSystem {
   private static readonly SESSION_TIMEOUT = 3600000; // 1 hour
 
   static validateApiKey(apiKey: string): boolean {
-    return typeof apiKey === 'string' && this.VALID_API_KEYS.has(apiKey);
+    return typeof apiKey === 'string' && AuthenticationSystem.VALID_API_KEYS.has(apiKey);
   }
 
   static generateSessionToken(): string {
@@ -159,8 +158,8 @@ class AuthenticationSystem {
       return false;
     }
 
-    const timestamp = parseInt(match[1], 10);
-    return Date.now() - timestamp < this.SESSION_TIMEOUT;
+    const timestamp = Number.parseInt(match[1], 10);
+    return Date.now() - timestamp < AuthenticationSystem.SESSION_TIMEOUT;
   }
 
   static hashPassword(password: string): string {
@@ -169,7 +168,7 @@ class AuthenticationSystem {
   }
 
   static verifyPassword(password: string, hash: string): boolean {
-    return this.hashPassword(password) === hash;
+    return AuthenticationSystem.hashPassword(password) === hash;
   }
 }
 
@@ -217,7 +216,9 @@ describe('Security and Input Validation', () => {
     it('should handle non-string input', () => {
       expect(() => SecurityValidator.sanitizeInput(123 as any)).toThrow('Input must be a string');
       expect(() => SecurityValidator.sanitizeInput(null as any)).toThrow('Input must be a string');
-      expect(() => SecurityValidator.sanitizeInput(undefined as any)).toThrow('Input must be a string');
+      expect(() => SecurityValidator.sanitizeInput(undefined as any)).toThrow(
+        'Input must be a string',
+      );
     });
   });
 
@@ -274,12 +275,7 @@ describe('Security and Input Validation', () => {
     });
 
     it('should validate filename input', () => {
-      const validFilenames = [
-        'report.json',
-        'jobs_2024.csv',
-        'data-export.pdf',
-        'results.txt',
-      ];
+      const validFilenames = ['report.json', 'jobs_2024.csv', 'data-export.pdf', 'results.txt'];
 
       const invalidFilenames = [
         '../../../etc/passwd',
@@ -502,7 +498,9 @@ describe('Security and Input Validation', () => {
           try {
             const url = new URL(origin);
             // Check if it's a dangerous protocol
-            expect(['javascript:', 'data:', 'file:'].some(proto => url.protocol === proto)).toBe(true);
+            expect(['javascript:', 'data:', 'file:'].some((proto) => url.protocol === proto)).toBe(
+              true,
+            );
           } catch {
             // URL constructor rejects it - that's good too
             expect(true).toBe(true);
@@ -561,7 +559,7 @@ describe('Security and Input Validation', () => {
   describe('Error Handling Security', () => {
     it('should not expose sensitive information in error messages', () => {
       const sensitiveError = new Error('Database connection failed: password=secret123');
-      
+
       // Mock error sanitization
       const sanitizeErrorMessage = (error: Error): string => {
         return error.message
@@ -583,11 +581,7 @@ describe('Security and Input Validation', () => {
       ];
 
       invalidInputs.forEach((input) => {
-        expect(() => {
-          if (!SecurityValidator.validateInput(input, 'general')) {
-            throw new Error('Invalid input detected');
-          }
-        }).toThrow('Invalid input detected');
+        expect(SecurityValidator.validateInput(input, 'general')).toBe(false);
       });
     });
   });

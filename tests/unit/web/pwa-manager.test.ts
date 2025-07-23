@@ -332,6 +332,7 @@ describe('PWA Manager Functionality', () => {
 
     it('should gracefully degrade without service worker support', () => {
       const mockNavigatorNoSW = { ...mockNavigator };
+      // eslint-disable-next-line biome/performance/noDelete
       delete (mockNavigatorNoSW as any).serviceWorker;
 
       const initPWA = (nav: any) => {
