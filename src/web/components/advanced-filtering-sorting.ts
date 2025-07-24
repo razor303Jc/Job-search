@@ -1,4 +1,4 @@
-import { SecurityConfig } from "../utils/security-config.js";
+import { SecurityConfig } from '../utils/security-config.js';
 /**
  * Advanced Filtering & Sorting UI Component
  * Phase 7 Stage 5: Enhanced Web Interface & Real-Time Features

@@ -1,4 +1,4 @@
-import { SecurityConfig } from "../utils/security-config.js";
+import { SecurityConfig } from '../utils/security-config.js';
 /**
  * Job Comparison Tool Component
  * Phase 7 Stage 4: Advanced UI Features & UX
@@ -432,7 +432,10 @@ class JobComparisonTool {
           <div class="detail-item">
             <span class="detail-label">🎁 Benefits</span>
             <div class="detail-value">
-              ${job.benefits.slice(0, 3).map(benefit => SecurityConfig.sanitizeForTemplate(benefit)).join(', ')}
+              ${job.benefits
+                .slice(0, 3)
+                .map((benefit) => SecurityConfig.sanitizeForTemplate(benefit))
+                .join(', ')}
               ${job.benefits.length > 3 ? `... +${job.benefits.length - 3} more` : ''}
             </div>
           </div>

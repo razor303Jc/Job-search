@@ -3,8 +3,8 @@
  * Validates that all user input is properly sanitized
  */
 
-import { SecurityUtils } from '../../src/web/utils/security-utils.js';
 import { SecurityConfig } from '../../src/web/utils/security-config.js';
+import { SecurityUtils } from '../../src/web/utils/security-utils.js';
 
 describe('XSS Prevention', () => {
   describe('Template Sanitization', () => {
@@ -44,9 +44,9 @@ describe('XSS Prevention', () => {
     test('should use SecurityUtils for DOM updates', () => {
       const mockElement = document.createElement('div');
       const maliciousHTML = '<img src=x onerror=alert(1)>';
-      
+
       SecurityUtils.setSecureHTML(mockElement, maliciousHTML);
-      
+
       // Should not contain dangerous attributes
       expect(mockElement.innerHTML).not.toContain('onerror');
       expect(mockElement.innerHTML).not.toContain('alert(1)');

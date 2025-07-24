@@ -16,8 +16,8 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['list'],
-    ['html', { outputFolder: 'playwright-report' }],
-    ['junit', { outputFile: 'test-results/results.xml' }]
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['html', { open: 'never', outputFolder: 'test-results/html' }]
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -27,11 +27,8 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     
-    /* Take screenshot only on failures */
+    /* Take screenshot on failure */
     screenshot: 'only-on-failure',
-    
-    /* Record video only on failures */
-    video: 'retain-on-failure',
   },
 
   /* Configure projects for major browsers */
@@ -46,20 +43,31 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'] },
     },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    /* Only use WebKit if dependencies are available */
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
 
     /* Test against mobile viewports. */
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
     },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
+    // {
+    //   name: 'Mobile Safari',
+    //   use: { ...devices['iPhone 12'] },
+    // },
+
+    /* Test against branded browsers. */
+    // {
+    //   name: 'Microsoft Edge',
+    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
+    // },
+    // {
+    //   name: 'Google Chrome',
+    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    // },
   ],
 
   /* Run your local dev server before starting the tests */
@@ -67,6 +75,6 @@ export default defineConfig({
     command: 'npm run web',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 30000,
   },
 });
