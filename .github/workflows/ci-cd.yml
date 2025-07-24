@@ -48,6 +48,9 @@ jobs:
       - name: Run security tests
         run: npm run test:security
 
+      - name: Run Snyk dependency scan
+        run: npm run test:snyk
+
       - name: Run performance tests (quick)
         run: npm run test:performance:quick
 
@@ -103,6 +106,9 @@ jobs:
           # Verify server is running
           curl -f http://localhost:3000/health || curl -f http://localhost:3001/health || exit 1
 
+      - name: Run Comprehensive Security Scan
+        run: npm run test:security:scan
+
       - name: Run Performance Tests (Standard)
         run: npm run test:performance:standard
 
@@ -124,6 +130,13 @@ jobs:
         with:
           name: performance-reports-${{ github.sha }}
           path: tests/performance/reports/
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports-${{ github.sha }}
+          path: tests/security/reports/
 
       - name: Upload test coverage
         uses: actions/upload-artifact@v4
