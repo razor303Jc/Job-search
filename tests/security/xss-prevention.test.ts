@@ -3,7 +3,7 @@
  * Validates that all user input is properly sanitized
  */
 
-import { describe, test, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { SecurityConfig } from '../../src/web/utils/security-config.js';
 import { SecurityUtils } from '../../src/web/utils/security-utils.js';
 
@@ -46,13 +46,13 @@ describe('XSS Prevention', () => {
       // Mock minimal DOM environment for Node.js testing
       const mockElement = {
         textContent: '',
-        appendChild: vi.fn()
+        appendChild: vi.fn(),
       };
 
       const mockTempElement = {
         innerHTML: '',
         firstChild: { nodeName: 'SPAN' }, // Start with a child node
-        appendChild: vi.fn()
+        appendChild: vi.fn(),
       };
 
       // After first appendChild call, simulate removing the child
@@ -61,19 +61,19 @@ describe('XSS Prevention', () => {
         get: () => {
           callCount++;
           return callCount === 1 ? { nodeName: 'SPAN' } : null; // Return null after first access
-        }
+        },
       });
 
       const mockDocument = {
-        createElement: vi.fn().mockReturnValue(mockTempElement)
+        createElement: vi.fn().mockReturnValue(mockTempElement),
       };
 
       // Mock global document object
       Object.defineProperty(global, 'document', {
         value: mockDocument,
-        writable: true
+        writable: true,
       });
-      
+
       const maliciousHTML = '<img src=x onerror=alert(1)>';
 
       // Test that SecurityUtils properly sanitizes content
@@ -81,10 +81,10 @@ describe('XSS Prevention', () => {
 
       // Verify document.createElement was called
       expect(mockDocument.createElement).toHaveBeenCalledWith('div');
-      
+
       // Verify element.textContent was cleared
       expect(mockElement.textContent).toBe('');
-      
+
       // Verify appendChild was called at least once
       expect(mockElement.appendChild).toHaveBeenCalled();
 

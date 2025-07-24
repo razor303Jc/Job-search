@@ -21,35 +21,35 @@ const LOAD_TEST_CONFIG = {
       steadyStateTime: 180000, // 3 minutes
       rampDownTime: 60000, // 1 minute
       maxConcurrency: 50,
-      targetRPS: 100
+      targetRPS: 100,
     },
     spike: {
       normalLoad: 10,
       spikeLoad: 100,
       spikeDuration: 30000, // 30 seconds
       normalDuration: 60000, // 1 minute
-      cycles: 3
+      cycles: 3,
     },
     endurance: {
       duration: 1800000, // 30 minutes
       concurrency: 20,
-      targetRPS: 50
+      targetRPS: 50,
     },
     gradual: {
       startConcurrency: 1,
       maxConcurrency: 100,
       stepSize: 5,
       stepDuration: 30000, // 30 seconds per step
-      sustainDuration: 60000 // 1 minute at max load
-    }
+      sustainDuration: 60000, // 1 minute at max load
+    },
   },
   endpoints: [
     { path: '/', weight: 40, name: 'Homepage' },
     { path: '/health', weight: 20, name: 'Health Check' },
     { path: '/api/v1/jobs', weight: 25, name: 'Jobs API' },
     { path: '/api/v1/jobs/stats', weight: 10, name: 'Stats API' },
-    { path: '/enhanced-dashboard.html', weight: 5, name: 'Dashboard' }
-  ]
+    { path: '/enhanced-dashboard.html', weight: 5, name: 'Dashboard' },
+  ],
 };
 
 class LoadTester extends PerformanceBenchmark {
@@ -66,14 +66,14 @@ class LoadTester extends PerformanceBenchmark {
   getRandomEndpoint() {
     const totalWeight = LOAD_TEST_CONFIG.endpoints.reduce((sum, ep) => sum + ep.weight, 0);
     let random = Math.random() * totalWeight;
-    
+
     for (const endpoint of LOAD_TEST_CONFIG.endpoints) {
       random -= endpoint.weight;
       if (random <= 0) {
         return `${LOAD_TEST_CONFIG.baseUrl}${endpoint.path}`;
       }
     }
-    
+
     return `${LOAD_TEST_CONFIG.baseUrl}/`;
   }
 
@@ -81,66 +81,48 @@ class LoadTester extends PerformanceBenchmark {
    * Run sustained load test
    */
   async runSustainedLoadTest() {
-    console.log('\n🔄 Running Sustained Load Test');
-    console.log('===============================');
-    console.log(`Duration: ${LOAD_TEST_CONFIG.scenarios.sustained.duration / 1000}s`);
-    console.log(`Max Concurrency: ${LOAD_TEST_CONFIG.scenarios.sustained.maxConcurrency}`);
-    console.log(`Target RPS: ${LOAD_TEST_CONFIG.scenarios.sustained.targetRPS}`);
-
     const config = LOAD_TEST_CONFIG.scenarios.sustained;
     this.currentTest = 'sustained';
-    
+
     // Start resource monitoring
     this.resourceMonitor = new ResourceMonitor({
       interval: 2000, // 2 seconds
-      duration: config.duration + 10000 // Extra time for cleanup
+      duration: config.duration + 10000, // Extra time for cleanup
     });
-    
+
     await this.resourceMonitor.startMonitoring();
 
     // Reset metrics
     this.resetMetrics();
     const startTime = Date.now();
     const phaseResults = [];
-    
-    // Phase 1: Ramp Up
-    console.log('\n📈 Phase 1: Ramp Up');
     const rampUpResult = await this.runRampUpPhase(config.rampUpTime, config.maxConcurrency);
     phaseResults.push({ phase: 'rampUp', ...rampUpResult });
-    
-    // Phase 2: Steady State
-    console.log('\n⚖️  Phase 2: Steady State');
-    const steadyResult = await this.runSteadyStatePhase(config.steadyStateTime, config.maxConcurrency);
+    const steadyResult = await this.runSteadyStatePhase(
+      config.steadyStateTime,
+      config.maxConcurrency,
+    );
     phaseResults.push({ phase: 'steadyState', ...steadyResult });
-    
-    // Phase 3: Ramp Down
-    console.log('\n📉 Phase 3: Ramp Down');
     const rampDownResult = await this.runRampDownPhase(config.rampDownTime, config.maxConcurrency);
     phaseResults.push({ phase: 'rampDown', ...rampDownResult });
 
     const totalDuration = Date.now() - startTime;
-    
+
     // Stop monitoring
     this.resourceMonitor.stopMonitoring();
-    
+
     const overallStats = this.calculateStats();
-    
+
     const result = {
       testType: 'sustained',
       totalDuration: totalDuration / 1000,
       phases: phaseResults,
       overallStats,
       resourceUsage: this.resourceMonitor.getSummary(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     this.loadTestResults.push(result);
-    
-    console.log('\n✅ Sustained Load Test Completed');
-    console.log(`   Total Duration: ${Math.round(totalDuration / 1000)}s`);
-    console.log(`   Total Requests: ${this.metrics.requests}`);
-    console.log(`   Average RPS: ${Math.round(this.metrics.responses / (totalDuration / 1000) * 100) / 100}`);
-    console.log(`   Error Rate: ${Math.round((this.metrics.errors + this.metrics.timeouts) / this.metrics.requests * 100 * 100) / 100}%`);
 
     return result;
   }
@@ -149,71 +131,56 @@ class LoadTester extends PerformanceBenchmark {
    * Run spike load test
    */
   async runSpikeLoadTest() {
-    console.log('\n⚡ Running Spike Load Test');
-    console.log('==========================');
-    
     const config = LOAD_TEST_CONFIG.scenarios.spike;
     this.currentTest = 'spike';
-    
+
     // Start resource monitoring
     this.resourceMonitor = new ResourceMonitor({
       interval: 1000, // 1 second for spike test
-      duration: (config.normalDuration + config.spikeDuration) * config.cycles + 10000
+      duration: (config.normalDuration + config.spikeDuration) * config.cycles + 10000,
     });
-    
+
     await this.resourceMonitor.startMonitoring();
-    
+
     const spikeCycles = [];
-    
+
     for (let cycle = 0; cycle < config.cycles; cycle++) {
-      console.log(`\n🔥 Spike Cycle ${cycle + 1}/${config.cycles}`);
-      
-      // Normal load phase
-      console.log(`   Normal Load: ${config.normalLoad} concurrent users`);
       this.resetMetrics();
-      
-      const normalPhaseStart = Date.now();
+
+      const _normalPhaseStart = Date.now();
       await this.runConcurrentLoad(config.normalLoad, config.normalDuration);
       const normalStats = this.calculateStats();
-      
-      // Spike phase
-      console.log(`   🚀 SPIKE: ${config.spikeLoad} concurrent users`);
       this.resetMetrics();
-      
-      const spikePhaseStart = Date.now();
+
+      const _spikePhaseStart = Date.now();
       await this.runConcurrentLoad(config.spikeLoad, config.spikeDuration);
       const spikeStats = this.calculateStats();
-      
+
       spikeCycles.push({
         cycle: cycle + 1,
         normalPhase: {
           duration: config.normalDuration / 1000,
           concurrency: config.normalLoad,
-          ...normalStats
+          ...normalStats,
         },
         spikePhase: {
           duration: config.spikeDuration / 1000,
           concurrency: config.spikeLoad,
-          ...spikeStats
-        }
+          ...spikeStats,
+        },
       });
-      
-      console.log(`     Normal: ${normalStats.throughput} RPS, ${normalStats.errorRate}% errors`);
-      console.log(`     Spike: ${spikeStats.throughput} RPS, ${spikeStats.errorRate}% errors`);
     }
 
     this.resourceMonitor.stopMonitoring();
-    
+
     const result = {
       testType: 'spike',
       cycles: spikeCycles,
       resourceUsage: this.resourceMonitor.getSummary(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     this.loadTestResults.push(result);
-    
-    console.log('\n✅ Spike Load Test Completed');
     return result;
   }
 
@@ -221,58 +188,48 @@ class LoadTester extends PerformanceBenchmark {
    * Run endurance test
    */
   async runEnduranceTest() {
-    console.log('\n💪 Running Endurance Test');
-    console.log('=========================');
-    console.log(`Duration: ${LOAD_TEST_CONFIG.scenarios.endurance.duration / 60000} minutes`);
-    console.log(`Concurrency: ${LOAD_TEST_CONFIG.scenarios.endurance.concurrency}`);
-
     const config = LOAD_TEST_CONFIG.scenarios.endurance;
     this.currentTest = 'endurance';
-    
+
     // Start resource monitoring with longer intervals
     this.resourceMonitor = new ResourceMonitor({
       interval: 5000, // 5 seconds
-      duration: config.duration + 30000 // Extra time
+      duration: config.duration + 30000, // Extra time
     });
-    
+
     await this.resourceMonitor.startMonitoring();
-    
+
     this.resetMetrics();
     const startTime = Date.now();
     const intervalStats = [];
-    
+
     // Run endurance test with periodic stats collection
     const statsInterval = 60000; // Collect stats every minute
     let lastStatsTime = startTime;
-    
-    console.log('   Starting endurance run...');
-    console.log('   Collecting stats every 60 seconds');
-    
+
     const endurancePromise = this.runConcurrentLoad(config.concurrency, config.duration);
-    
+
     // Collect interval stats
     const statsCollector = setInterval(() => {
       const currentTime = Date.now();
       const intervalDuration = (currentTime - lastStatsTime) / 1000;
       const stats = this.calculateStats();
-      
+
       intervalStats.push({
         timestamp: new Date().toISOString(),
         elapsedMinutes: Math.round((currentTime - startTime) / 60000),
         intervalDuration,
-        ...stats
+        ...stats,
       });
-      
-      console.log(`   ${Math.round((currentTime - startTime) / 60000)}min: ${stats.throughput} RPS, ${stats.errorRate}% errors`);
       lastStatsTime = currentTime;
     }, statsInterval);
-    
+
     await endurancePromise;
     clearInterval(statsCollector);
-    
+
     const finalStats = this.calculateStats();
     this.resourceMonitor.stopMonitoring();
-    
+
     const result = {
       testType: 'endurance',
       duration: config.duration / 1000,
@@ -280,16 +237,10 @@ class LoadTester extends PerformanceBenchmark {
       intervalStats,
       finalStats,
       resourceUsage: this.resourceMonitor.getSummary(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     this.loadTestResults.push(result);
-    
-    console.log('\n✅ Endurance Test Completed');
-    console.log(`   Total Duration: ${Math.round(config.duration / 60000)} minutes`);
-    console.log(`   Total Requests: ${finalStats.requests || this.metrics.requests}`);
-    console.log(`   Average RPS: ${finalStats.throughput}`);
-    console.log(`   Final Error Rate: ${finalStats.errorRate}%`);
 
     return result;
   }
@@ -298,76 +249,57 @@ class LoadTester extends PerformanceBenchmark {
    * Run gradual load increase test
    */
   async runGradualLoadTest() {
-    console.log('\n📊 Running Gradual Load Increase Test');
-    console.log('=====================================');
-
     const config = LOAD_TEST_CONFIG.scenarios.gradual;
     this.currentTest = 'gradual';
-    
+
     const steps = Math.ceil((config.maxConcurrency - config.startConcurrency) / config.stepSize);
     const totalDuration = steps * config.stepDuration + config.sustainDuration;
-    
-    console.log(`Steps: ${config.startConcurrency} → ${config.maxConcurrency} (${steps} steps)`);
-    console.log(`Step Duration: ${config.stepDuration / 1000}s`);
-    console.log(`Total Duration: ${totalDuration / 1000}s`);
 
     // Start resource monitoring
     this.resourceMonitor = new ResourceMonitor({
       interval: 2000,
-      duration: totalDuration + 30000
+      duration: totalDuration + 30000,
     });
-    
+
     await this.resourceMonitor.startMonitoring();
-    
+
     const stepResults = [];
     let currentConcurrency = config.startConcurrency;
-    
+
     // Gradual increase steps
     for (let step = 0; step < steps; step++) {
-      console.log(`\n📈 Step ${step + 1}/${steps}: ${currentConcurrency} concurrent users`);
-      
       this.resetMetrics();
       await this.runConcurrentLoad(currentConcurrency, config.stepDuration);
       const stepStats = this.calculateStats();
-      
+
       stepResults.push({
         step: step + 1,
         concurrency: currentConcurrency,
         duration: config.stepDuration / 1000,
-        ...stepStats
+        ...stepStats,
       });
-      
-      console.log(`     RPS: ${stepStats.throughput}, Errors: ${stepStats.errorRate}%`);
-      
+
       currentConcurrency = Math.min(currentConcurrency + config.stepSize, config.maxConcurrency);
     }
-    
-    // Sustain at maximum load
-    console.log(`\n🎯 Sustaining at maximum load: ${config.maxConcurrency} users`);
     this.resetMetrics();
     await this.runConcurrentLoad(config.maxConcurrency, config.sustainDuration);
     const sustainStats = this.calculateStats();
-    
+
     this.resourceMonitor.stopMonitoring();
-    
+
     const result = {
       testType: 'gradual',
       steps: stepResults,
       sustainPhase: {
         concurrency: config.maxConcurrency,
         duration: config.sustainDuration / 1000,
-        ...sustainStats
+        ...sustainStats,
       },
       resourceUsage: this.resourceMonitor.getSummary(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     this.loadTestResults.push(result);
-    
-    console.log('\n✅ Gradual Load Test Completed');
-    console.log(`   Max Concurrency Achieved: ${config.maxConcurrency}`);
-    console.log(`   Peak RPS: ${sustainStats.throughput}`);
-    console.log(`   Peak Error Rate: ${sustainStats.errorRate}%`);
 
     return result;
   }
@@ -382,9 +314,9 @@ class LoadTester extends PerformanceBenchmark {
       errors: 0,
       timeouts: 0,
       totalResponseTime: 0,
-      minResponseTime: Infinity,
+      minResponseTime: Number.POSITIVE_INFINITY,
       maxResponseTime: 0,
-      responseTimes: []
+      responseTimes: [],
     };
     this.startTime = Date.now();
   }
@@ -395,18 +327,18 @@ class LoadTester extends PerformanceBenchmark {
   async runConcurrentLoad(concurrency, duration) {
     const endTime = Date.now() + duration;
     const activeRequests = new Set();
-    
+
     const makeRequest = async () => {
       const url = this.getRandomEndpoint();
       const requestPromise = this.performRequest(url);
       activeRequests.add(requestPromise);
-      
+
       try {
         await requestPromise;
       } finally {
         activeRequests.delete(requestPromise);
       }
-      
+
       // Continue if test is still running
       if (Date.now() < endTime) {
         setTimeout(makeRequest, Math.random() * 100); // Random delay 0-100ms
@@ -419,8 +351,8 @@ class LoadTester extends PerformanceBenchmark {
     }
 
     // Wait for duration
-    await new Promise(resolve => setTimeout(resolve, duration));
-    
+    await new Promise((resolve) => setTimeout(resolve, duration));
+
     // Wait for remaining requests
     await Promise.all(Array.from(activeRequests));
   }
@@ -432,15 +364,13 @@ class LoadTester extends PerformanceBenchmark {
     const steps = 10;
     const stepDuration = duration / steps;
     const concurrencyStep = maxConcurrency / steps;
-    
+
     for (let step = 0; step < steps; step++) {
       const currentConcurrency = Math.round((step + 1) * concurrencyStep);
       await this.runConcurrentLoad(currentConcurrency, stepDuration);
-      
+
       process.stdout.write(`\r   Ramping up: ${currentConcurrency}/${maxConcurrency} users`);
     }
-    
-    console.log(''); // New line
     return this.calculateStats();
   }
 
@@ -459,15 +389,13 @@ class LoadTester extends PerformanceBenchmark {
     const steps = 5;
     const stepDuration = duration / steps;
     const concurrencyStep = maxConcurrency / steps;
-    
+
     for (let step = 0; step < steps; step++) {
       const currentConcurrency = Math.round(maxConcurrency - (step + 1) * concurrencyStep);
       await this.runConcurrentLoad(Math.max(currentConcurrency, 1), stepDuration);
-      
+
       process.stdout.write(`\r   Ramping down: ${currentConcurrency}/${maxConcurrency} users`);
     }
-    
-    console.log(''); // New line
     return this.calculateStats();
   }
 
@@ -481,34 +409,27 @@ class LoadTester extends PerformanceBenchmark {
       environment: {
         nodeVersion: process.version,
         platform: process.platform,
-        arch: process.arch
+        arch: process.arch,
       },
       testResults: this.loadTestResults,
-      summary: this.calculateLoadTestSummary()
+      summary: this.calculateLoadTestSummary(),
     };
 
     // Save JSON report
     const reportPath = path.join(__dirname, 'reports', `load-test-report-${Date.now()}.json`);
-    
+
     // Ensure reports directory exists
     const reportsDir = path.dirname(reportPath);
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true });
     }
-    
+
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 
     // Generate HTML report
     const htmlReport = this.generateLoadTestHtmlReport(report);
     const htmlReportPath = path.join(__dirname, 'reports', `load-test-report-${Date.now()}.html`);
     fs.writeFileSync(htmlReportPath, htmlReport);
-
-    console.log('\n📊 LOAD TEST SUMMARY');
-    console.log('====================');
-    console.log(`Tests Completed: ${this.loadTestResults.length}`);
-    console.log(`Reports Generated:`);
-    console.log(`  JSON: ${reportPath}`);
-    console.log(`  HTML: ${htmlReportPath}`);
 
     return report;
   }
@@ -518,18 +439,18 @@ class LoadTester extends PerformanceBenchmark {
 
     const summary = {
       totalTests: this.loadTestResults.length,
-      testTypes: [...new Set(this.loadTestResults.map(r => r.testType))],
-      overallStats: {}
+      testTypes: [...new Set(this.loadTestResults.map((r) => r.testType))],
+      overallStats: {},
     };
 
     // Calculate aggregated stats
-    this.loadTestResults.forEach(result => {
+    this.loadTestResults.forEach((result) => {
       if (!summary.overallStats[result.testType]) {
         summary.overallStats[result.testType] = {
           count: 0,
           totalRequests: 0,
           avgThroughput: 0,
-          avgErrorRate: 0
+          avgErrorRate: 0,
         };
       }
 
@@ -548,10 +469,10 @@ class LoadTester extends PerformanceBenchmark {
     });
 
     // Average the stats
-    Object.keys(summary.overallStats).forEach(testType => {
+    Object.keys(summary.overallStats).forEach((testType) => {
       const stats = summary.overallStats[testType];
-      stats.avgThroughput = Math.round(stats.avgThroughput / stats.count * 100) / 100;
-      stats.avgErrorRate = Math.round(stats.avgErrorRate / stats.count * 100) / 100;
+      stats.avgThroughput = Math.round((stats.avgThroughput / stats.count) * 100) / 100;
+      stats.avgErrorRate = Math.round((stats.avgErrorRate / stats.count) * 100) / 100;
     });
 
     return summary;
@@ -595,7 +516,9 @@ class LoadTester extends PerformanceBenchmark {
             <p>Tests Completed: ${report.testResults.length}</p>
         </div>
         
-        ${report.testResults.map(result => `
+        ${report.testResults
+          .map(
+            (result) => `
         <div class="test-result">
             <div class="test-header">
                 ${this.getTestTypeIcon(result.testType)} ${this.getTestTypeName(result.testType)} Test
@@ -604,7 +527,9 @@ class LoadTester extends PerformanceBenchmark {
                 ${this.generateTestResultHtml(result)}
             </div>
         </div>
-        `).join('')}
+        `,
+          )
+          .join('')}
         
         <div class="test-result">
             <div class="test-header">📊 Overall Summary</div>
@@ -622,7 +547,7 @@ class LoadTester extends PerformanceBenchmark {
       sustained: '🔄',
       spike: '⚡',
       endurance: '💪',
-      gradual: '📊'
+      gradual: '📊',
     };
     return icons[type] || '🧪';
   }
@@ -632,7 +557,7 @@ class LoadTester extends PerformanceBenchmark {
       sustained: 'Sustained Load',
       spike: 'Spike Load',
       endurance: 'Endurance',
-      gradual: 'Gradual Load Increase'
+      gradual: 'Gradual Load Increase',
     };
     return names[type] || type;
   }
@@ -666,11 +591,15 @@ class LoadTester extends PerformanceBenchmark {
       html += `
       <div class="phase-results">
           <h4>Test Phases</h4>
-          ${result.phases.map(phase => `
+          ${result.phases
+            .map(
+              (phase) => `
           <div class="phase">
               <strong>${phase.phase}</strong>: ${phase.throughput} req/s, ${phase.errorRate}% errors
           </div>
-          `).join('')}
+          `,
+            )
+            .join('')}
       </div>`;
     }
 
@@ -696,8 +625,9 @@ class LoadTester extends PerformanceBenchmark {
     html += `<p><strong>Test Types:</strong> ${summary.testTypes.join(', ')}</p>`;
 
     if (summary.overallStats) {
-      html += '<table><thead><tr><th>Test Type</th><th>Tests</th><th>Total Requests</th><th>Avg Throughput</th><th>Avg Error Rate</th></tr></thead><tbody>';
-      
+      html +=
+        '<table><thead><tr><th>Test Type</th><th>Tests</th><th>Total Requests</th><th>Avg Throughput</th><th>Avg Error Rate</th></tr></thead><tbody>';
+
       Object.entries(summary.overallStats).forEach(([testType, stats]) => {
         html += `
         <tr>
@@ -708,7 +638,7 @@ class LoadTester extends PerformanceBenchmark {
             <td class="${stats.avgErrorRate < 1 ? 'good' : stats.avgErrorRate < 5 ? 'warning' : 'bad'}">${stats.avgErrorRate}%</td>
         </tr>`;
       });
-      
+
       html += '</tbody></table>';
     }
 
@@ -719,21 +649,16 @@ class LoadTester extends PerformanceBenchmark {
    * Run complete load testing suite
    */
   async runAllLoadTests() {
-    console.log('🚀 Starting Complete Load Testing Suite');
-    console.log('=======================================');
-
     try {
       // Run all load test types
       await this.runSustainedLoadTest();
       await this.runSpikeLoadTest();
       await this.runGradualLoadTest();
-      
+
       // Skip endurance test by default (too long for quick testing)
       // await this.runEnduranceTest();
 
       const report = this.generateLoadTestReport();
-      
-      console.log('\n🎉 All load tests completed successfully!');
       return report;
     } catch (error) {
       console.error('\n💥 Load testing failed:', error);
@@ -748,8 +673,9 @@ export { LoadTester };
 // Run load tests if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const loadTester = new LoadTester();
-  
-  loadTester.runAllLoadTests()
+
+  loadTester
+    .runAllLoadTests()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));
 }

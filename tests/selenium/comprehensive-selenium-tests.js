@@ -25,7 +25,7 @@ const CONFIG = {
 };
 
 // Ensure directories exist
-[CONFIG.screenshotDir, CONFIG.reportDir].forEach(dir => {
+[CONFIG.screenshotDir, CONFIG.reportDir].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -42,8 +42,6 @@ class ComprehensiveSeleniumTests {
    * Setup browser drivers
    */
   async setupDrivers() {
-    console.log('🚀 Setting up browser drivers...');
-    
     for (const browser of CONFIG.browsers) {
       try {
         let driver;
@@ -60,27 +58,20 @@ class ComprehensiveSeleniumTests {
             '--disable-gpu',
             '--window-size=1920,1080',
             '--disable-web-security',
-            '--allow-running-insecure-content'
+            '--allow-running-insecure-content',
           );
-          driver = await new Builder()
-            .forBrowser('chrome')
-            .setChromeOptions(options)
-            .build();
+          driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
         } else if (browser === 'firefox') {
           options = new firefox.Options();
           if (CONFIG.headless) {
             options.addArguments('--headless');
           }
           options.addArguments('--width=1920', '--height=1080');
-          driver = await new Builder()
-            .forBrowser('firefox')
-            .setFirefoxOptions(options)
-            .build();
+          driver = await new Builder().forBrowser('firefox').setFirefoxOptions(options).build();
         }
 
         if (driver) {
           this.drivers.set(browser, driver);
-          console.log(`✅ ${browser} driver initialized`);
         }
       } catch (error) {
         console.error(`❌ Failed to setup ${browser} driver:`, error.message);
@@ -96,8 +87,6 @@ class ComprehensiveSeleniumTests {
    * Run all tests
    */
   async runAllTests() {
-    console.log('🧪 Starting comprehensive Selenium test suite...');
-    
     try {
       await this.setupDrivers();
 
@@ -110,12 +99,10 @@ class ComprehensiveSeleniumTests {
       ];
 
       for (const suite of testSuites) {
-        console.log(`\n📋 Running ${suite.name}...`);
         await this.runTestSuite(suite);
       }
 
       await this.generateReport();
-      
     } finally {
       await this.cleanup();
     }
@@ -138,17 +125,15 @@ class ComprehensiveSeleniumTests {
   async runSingleTest(test, browser, driver, suiteName) {
     const testId = `${suiteName}_${test.name}_${browser}`;
     const startTime = Date.now();
-    
+
     try {
-      console.log(`  🔄 Running: ${test.name} [${browser}]`);
-      
       // Navigate to base URL
       await driver.get(CONFIG.baseUrl);
       await driver.wait(until.titleContains('Job'), CONFIG.timeout);
-      
+
       // Run the actual test
       await test.execute(driver);
-      
+
       const duration = Date.now() - startTime;
       const result = {
         testId,
@@ -159,14 +144,12 @@ class ComprehensiveSeleniumTests {
         duration,
         timestamp: new Date().toISOString(),
       };
-      
+
       this.testResults.push(result);
-      console.log(`  ✅ PASSED: ${test.name} [${browser}] (${duration}ms)`);
-      
     } catch (error) {
       const duration = Date.now() - startTime;
       const screenshotPath = await this.takeScreenshot(driver, testId);
-      
+
       const result = {
         testId,
         suiteName,
@@ -178,9 +161,8 @@ class ComprehensiveSeleniumTests {
         screenshot: screenshotPath,
         timestamp: new Date().toISOString(),
       };
-      
+
       this.testResults.push(result);
-      console.log(`  ❌ FAILED: ${test.name} [${browser}] - ${error.message}`);
     }
   }
 
@@ -192,7 +174,7 @@ class ComprehensiveSeleniumTests {
       const screenshot = await driver.takeScreenshot();
       const filename = `${testId}_${Date.now()}.png`;
       const filepath = path.join(CONFIG.screenshotDir, filename);
-      
+
       fs.writeFileSync(filepath, screenshot, 'base64');
       return filepath;
     } catch (error) {
@@ -216,42 +198,47 @@ class ComprehensiveSeleniumTests {
 
           // Check for essential elements
           await driver.wait(until.elementLocated(By.tagName('body')), 5000);
-          
+
           // Look for navigation or header elements
-          const navElements = await driver.findElements(By.css('nav, header, .navigation, .header'));
+          const navElements = await driver.findElements(
+            By.css('nav, header, .navigation, .header'),
+          );
           if (navElements.length === 0) {
             console.warn('No navigation elements found');
           }
-        }
+        },
       },
-      
+
       {
         name: 'health_endpoint',
         execute: async (driver) => {
           await driver.get(`${CONFIG.baseUrl}/health`);
           const pageSource = await driver.getPageSource();
-          
+
           if (pageSource.includes('healthy') || pageSource.includes('ok')) {
-            console.log('Health endpoint responding correctly');
           } else {
             throw new Error('Health endpoint not responding correctly');
           }
-        }
+        },
       },
 
       {
         name: 'basic_navigation',
         execute: async (driver) => {
           // Test basic navigation elements
-          const links = await driver.findElements(By.css('a'));
-          console.log(`Found ${links.length} links on the page`);
-          
+          const _links = await driver.findElements(By.css('a'));
+
           // Test if we can find common navigation elements
           const commonSelectors = [
-            'nav', 'header', '.navigation', '.nav-bar', 
-            '.menu', '#navigation', '#header'
+            'nav',
+            'header',
+            '.navigation',
+            '.nav-bar',
+            '.menu',
+            '#navigation',
+            '#header',
           ];
-          
+
           let foundNav = false;
           for (const selector of commonSelectors) {
             const elements = await driver.findElements(By.css(selector));
@@ -260,11 +247,11 @@ class ComprehensiveSeleniumTests {
               break;
             }
           }
-          
+
           if (!foundNav) {
             console.warn('No standard navigation elements found - may be a SPA');
           }
-        }
+        },
       },
 
       {
@@ -273,23 +260,21 @@ class ComprehensiveSeleniumTests {
           // Test desktop view
           await driver.manage().window().setRect({ width: 1920, height: 1080 });
           await driver.sleep(1000);
-          
+
           const desktopBody = await driver.findElement(By.tagName('body'));
-          const desktopWidth = await desktopBody.getRect();
-          
+          const _desktopWidth = await desktopBody.getRect();
+
           // Test mobile view
           await driver.manage().window().setRect({ width: 375, height: 667 });
           await driver.sleep(1000);
-          
+
           const mobileBody = await driver.findElement(By.tagName('body'));
-          const mobileWidth = await mobileBody.getRect();
-          
-          console.log(`Layout test: Desktop width ${desktopWidth.width}, Mobile width ${mobileWidth.width}`);
-          
+          const _mobileWidth = await mobileBody.getRect();
+
           // Reset to desktop
           await driver.manage().window().setRect({ width: 1920, height: 1080 });
-        }
-      }
+        },
+      },
     ];
   }
 
@@ -308,9 +293,9 @@ class ComprehensiveSeleniumTests {
             'input[name*="search" i]',
             '#search',
             '.search-input',
-            'input[type="text"]'
+            'input[type="text"]',
           ];
-          
+
           let searchInput = null;
           for (const selector of searchSelectors) {
             const elements = await driver.findElements(By.css(selector));
@@ -319,16 +304,15 @@ class ComprehensiveSeleniumTests {
               break;
             }
           }
-          
+
           if (searchInput) {
             await searchInput.sendKeys('developer');
             await searchInput.sendKeys(Key.ENTER);
             await driver.sleep(2000);
-            console.log('Search functionality test completed');
           } else {
             console.warn('No search input found - search feature may not be implemented yet');
           }
-        }
+        },
       },
 
       {
@@ -336,24 +320,29 @@ class ComprehensiveSeleniumTests {
         execute: async (driver) => {
           // Look for filter elements
           const filterSelectors = [
-            '.filter', '.filters', '[data-testid*="filter"]',
-            'select', '.dropdown', '.filter-option'
+            '.filter',
+            '.filters',
+            '[data-testid*="filter"]',
+            'select',
+            '.dropdown',
+            '.filter-option',
           ];
-          
+
           let foundFilters = false;
           for (const selector of filterSelectors) {
             const elements = await driver.findElements(By.css(selector));
             if (elements.length > 0) {
               foundFilters = true;
-              console.log(`Found ${elements.length} filter elements with selector: ${selector}`);
               break;
             }
           }
-          
+
           if (!foundFilters) {
-            console.warn('No filter elements found - advanced filtering may not be implemented yet');
+            console.warn(
+              'No filter elements found - advanced filtering may not be implemented yet',
+            );
           }
-        }
+        },
       },
 
       {
@@ -361,25 +350,29 @@ class ComprehensiveSeleniumTests {
         execute: async (driver) => {
           // Look for job listing elements
           const jobSelectors = [
-            '.job', '.job-item', '.job-listing', '.job-card',
-            '[data-testid*="job"]', '.listing', '.result'
+            '.job',
+            '.job-item',
+            '.job-listing',
+            '.job-card',
+            '[data-testid*="job"]',
+            '.listing',
+            '.result',
           ];
-          
+
           let foundJobs = false;
           for (const selector of jobSelectors) {
             const elements = await driver.findElements(By.css(selector));
             if (elements.length > 0) {
               foundJobs = true;
-              console.log(`Found ${elements.length} job listing elements`);
               break;
             }
           }
-          
+
           if (!foundJobs) {
             console.warn('No job listing elements found - may need to trigger data loading');
           }
-        }
-      }
+        },
+      },
     ];
   }
 
@@ -395,29 +388,26 @@ class ComprehensiveSeleniumTests {
           await driver.get(CONFIG.baseUrl);
           await driver.wait(until.elementLocated(By.tagName('body')), 10000);
           const loadTime = Date.now() - startTime;
-          
-          console.log(`Page load time: ${loadTime}ms`);
-          
+
           if (loadTime > 10000) {
             throw new Error(`Page load time too slow: ${loadTime}ms`);
           }
-        }
+        },
       },
 
       {
         name: 'javascript_errors',
         execute: async (driver) => {
           const logs = await driver.manage().logs().get('browser');
-          const errors = logs.filter(log => log.level.name === 'SEVERE');
-          
+          const errors = logs.filter((log) => log.level.name === 'SEVERE');
+
           if (errors.length > 0) {
             console.warn(`Found ${errors.length} JavaScript errors:`, errors);
             // Don't fail for JS errors unless they're critical
           } else {
-            console.log('No JavaScript errors detected');
           }
-        }
-      }
+        },
+      },
     ];
   }
 
@@ -430,26 +420,26 @@ class ComprehensiveSeleniumTests {
         name: 'xss_protection',
         execute: async (driver) => {
           // Test for basic XSS protection
-          const searchInputs = await driver.findElements(By.css('input[type="text"], input[type="search"]'));
-          
+          const searchInputs = await driver.findElements(
+            By.css('input[type="text"], input[type="search"]'),
+          );
+
           if (searchInputs.length > 0) {
             const xssPayload = '<script>alert("xss")</script>';
             await searchInputs[0].sendKeys(xssPayload);
             await driver.sleep(1000);
-            
+
             // Check if script was executed (it shouldn't be)
-            const alerts = await driver.findElements(By.css('script'));
+            const _alerts = await driver.findElements(By.css('script'));
             const pageSource = await driver.getPageSource();
-            
+
             if (pageSource.includes('alert("xss")') && !pageSource.includes('&lt;script&gt;')) {
               throw new Error('Potential XSS vulnerability detected');
             }
-            
-            console.log('XSS protection test passed');
           } else {
             console.warn('No input fields found for XSS testing');
           }
-        }
+        },
       },
 
       {
@@ -457,10 +447,11 @@ class ComprehensiveSeleniumTests {
         execute: async (driver) => {
           // This test would ideally check HTTP headers, but Selenium can't directly access them
           // We'll check for security-related meta tags instead
-          const securityMetas = await driver.findElements(By.css('meta[http-equiv], meta[name*="security"]'));
-          console.log(`Found ${securityMetas.length} security-related meta tags`);
-        }
-      }
+          const _securityMetas = await driver.findElements(
+            By.css('meta[http-equiv], meta[name*="security"]'),
+          );
+        },
+      },
     ];
   }
 
@@ -475,43 +466,46 @@ class ComprehensiveSeleniumTests {
           // Test mobile viewport
           await driver.manage().window().setRect({ width: 375, height: 667 });
           await driver.sleep(1000);
-          
+
           // Check if page adapts to mobile
-          const viewport = await driver.executeScript('return {width: window.innerWidth, height: window.innerHeight}');
-          console.log(`Mobile viewport: ${viewport.width}x${viewport.height}`);
-          
+          const _viewport = await driver.executeScript(
+            'return {width: window.innerWidth, height: window.innerHeight}',
+          );
+
           // Look for mobile-specific elements
-          const mobileElements = await driver.findElements(By.css('.mobile, .mobile-nav, .hamburger'));
+          const mobileElements = await driver.findElements(
+            By.css('.mobile, .mobile-nav, .hamburger'),
+          );
           if (mobileElements.length > 0) {
-            console.log(`Found ${mobileElements.length} mobile-specific elements`);
           }
-          
+
           // Reset viewport
           await driver.manage().window().setRect({ width: 1920, height: 1080 });
-        }
+        },
       },
 
       {
         name: 'touch_friendly_elements',
         execute: async (driver) => {
           await driver.manage().window().setRect({ width: 375, height: 667 });
-          
+
           // Check button and link sizes for touch friendliness
-          const buttons = await driver.findElements(By.css('button, a, input[type="button"], input[type="submit"]'));
-          
-          for (const button of buttons.slice(0, 5)) { // Check first 5 elements
+          const buttons = await driver.findElements(
+            By.css('button, a, input[type="button"], input[type="submit"]'),
+          );
+
+          for (const button of buttons.slice(0, 5)) {
+            // Check first 5 elements
             const size = await button.getRect();
             if (size.height < 44 || size.width < 44) {
               console.warn(`Small touch target found: ${size.width}x${size.height}px`);
             }
           }
-          
-          console.log(`Checked ${Math.min(buttons.length, 5)} touch targets`);
-          
+
           // Reset viewport
           await driver.manage().window().setRect({ width: 1920, height: 1080 });
-        }
-      }
+        },
+      },
     ];
   }
 
@@ -521,11 +515,11 @@ class ComprehensiveSeleniumTests {
   async generateReport() {
     const endTime = Date.now();
     const totalDuration = endTime - this.startTime;
-    
-    const passed = this.testResults.filter(r => r.status === 'PASSED').length;
-    const failed = this.testResults.filter(r => r.status === 'FAILED').length;
+
+    const passed = this.testResults.filter((r) => r.status === 'PASSED').length;
+    const failed = this.testResults.filter((r) => r.status === 'FAILED').length;
     const total = this.testResults.length;
-    
+
     const report = {
       summary: {
         total,
@@ -538,34 +532,21 @@ class ComprehensiveSeleniumTests {
       configuration: CONFIG,
       results: this.testResults,
     };
-    
+
     // Write JSON report
     const reportPath = path.join(CONFIG.reportDir, `selenium-test-report-${Date.now()}.json`);
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-    
+
     // Write HTML report
     const htmlReport = this.generateHtmlReport(report);
     const htmlReportPath = path.join(CONFIG.reportDir, `selenium-test-report-${Date.now()}.html`);
     fs.writeFileSync(htmlReportPath, htmlReport);
-    
-    console.log('\n📊 TEST RESULTS SUMMARY');
-    console.log('========================');
-    console.log(`Total Tests: ${total}`);
-    console.log(`Passed: ${passed} ✅`);
-    console.log(`Failed: ${failed} ❌`);
-    console.log(`Success Rate: ${report.summary.successRate}`);
-    console.log(`Total Duration: ${totalDuration}ms`);
-    console.log(`Report saved to: ${reportPath}`);
-    console.log(`HTML Report: ${htmlReportPath}`);
-    
+
     if (failed > 0) {
-      console.log('\n❌ FAILED TESTS:');
       this.testResults
-        .filter(r => r.status === 'FAILED')
-        .forEach(r => {
-          console.log(`  - ${r.testName} [${r.browser}]: ${r.error}`);
+        .filter((r) => r.status === 'FAILED')
+        .forEach((r) => {
           if (r.screenshot) {
-            console.log(`    Screenshot: ${r.screenshot}`);
           }
         });
     }
@@ -644,7 +625,9 @@ class ComprehensiveSeleniumTests {
                 </tr>
             </thead>
             <tbody>
-                ${report.results.map(result => `
+                ${report.results
+                  .map(
+                    (result) => `
                     <tr>
                         <td>${result.suiteName}</td>
                         <td>${result.testName}</td>
@@ -653,7 +636,9 @@ class ComprehensiveSeleniumTests {
                         <td>${result.duration}ms</td>
                         <td class="error">${result.error || '-'}</td>
                     </tr>
-                `).join('')}
+                `,
+                  )
+                  .join('')}
             </tbody>
         </table>
     </div>
@@ -665,17 +650,14 @@ class ComprehensiveSeleniumTests {
    * Cleanup resources
    */
   async cleanup() {
-    console.log('\n🧹 Cleaning up browser drivers...');
-    
     for (const [browser, driver] of this.drivers) {
       try {
         await driver.quit();
-        console.log(`✅ ${browser} driver closed`);
       } catch (error) {
         console.error(`❌ Error closing ${browser} driver:`, error.message);
       }
     }
-    
+
     this.drivers.clear();
   }
 }
@@ -686,10 +668,10 @@ export { ComprehensiveSeleniumTests };
 // Run tests if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const tests = new ComprehensiveSeleniumTests();
-  
-  tests.runAllTests()
+
+  tests
+    .runAllTests()
     .then(() => {
-      console.log('\n🎉 All tests completed!');
       process.exit(0);
     })
     .catch((error) => {

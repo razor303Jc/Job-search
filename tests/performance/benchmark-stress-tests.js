@@ -18,17 +18,17 @@ const BENCHMARK_CONFIG = {
     light: 100,
     medium: 500,
     heavy: 1000,
-    stress: 2000
+    stress: 2000,
   },
   concurrent: {
     light: 5,
     medium: 10,
     heavy: 25,
-    stress: 50
+    stress: 50,
   },
   timeout: 30000,
   reportDir: path.join(__dirname, 'reports'),
-  warmupRequests: 10
+  warmupRequests: 10,
 };
 
 // Ensure report directory exists
@@ -46,9 +46,9 @@ class PerformanceBenchmark {
       errors: 0,
       timeouts: 0,
       totalResponseTime: 0,
-      minResponseTime: Infinity,
+      minResponseTime: Number.POSITIVE_INFINITY,
       maxResponseTime: 0,
-      responseTimes: []
+      responseTimes: [],
     };
   }
 
@@ -57,13 +57,13 @@ class PerformanceBenchmark {
    */
   async performRequest(url, options = {}) {
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(url, {
         method: options.method || 'GET',
         headers: options.headers || {},
         body: options.body,
-        signal: AbortSignal.timeout(BENCHMARK_CONFIG.timeout)
+        signal: AbortSignal.timeout(BENCHMARK_CONFIG.timeout),
       });
 
       const endTime = performance.now();
@@ -73,7 +73,7 @@ class PerformanceBenchmark {
       this.metrics.responses++;
       this.metrics.totalResponseTime += responseTime;
       this.metrics.responseTimes.push(responseTime);
-      
+
       if (responseTime < this.metrics.minResponseTime) {
         this.metrics.minResponseTime = responseTime;
       }
@@ -85,8 +85,8 @@ class PerformanceBenchmark {
         success: true,
         status: response.status,
         responseTime,
-        size: parseInt(response.headers.get('content-length') || '0'),
-        url
+        size: Number.parseInt(response.headers.get('content-length') || '0'),
+        url,
       };
     } catch (error) {
       const endTime = performance.now();
@@ -103,7 +103,7 @@ class PerformanceBenchmark {
         success: false,
         error: error.message,
         responseTime,
-        url
+        url,
       };
     }
   }
@@ -114,26 +114,22 @@ class PerformanceBenchmark {
   async runConcurrentRequests(url, concurrency, totalRequests) {
     const results = [];
     const batches = Math.ceil(totalRequests / concurrency);
-    
-    console.log(`🚀 Running ${totalRequests} requests with ${concurrency} concurrent connections`);
-    
+
     for (let batch = 0; batch < batches; batch++) {
-      const batchSize = Math.min(concurrency, totalRequests - (batch * concurrency));
+      const batchSize = Math.min(concurrency, totalRequests - batch * concurrency);
       const promises = [];
-      
+
       for (let i = 0; i < batchSize; i++) {
         promises.push(this.performRequest(url));
       }
-      
+
       const batchResults = await Promise.all(promises);
       results.push(...batchResults);
-      
+
       // Progress indicator
-      const progress = Math.round(((batch + 1) * concurrency / totalRequests) * 100);
+      const progress = Math.round((((batch + 1) * concurrency) / totalRequests) * 100);
       process.stdout.write(`\r  Progress: ${Math.min(progress, 100)}%`);
     }
-    
-    console.log(''); // New line after progress
     return results;
   }
 
@@ -141,15 +137,11 @@ class PerformanceBenchmark {
    * Warmup requests to stabilize server
    */
   async warmup() {
-    console.log('🔥 Warming up server...');
-    
     for (let i = 0; i < BENCHMARK_CONFIG.warmupRequests; i++) {
       await this.performRequest(BENCHMARK_CONFIG.baseUrl);
       process.stdout.write(`\r  Warmup: ${i + 1}/${BENCHMARK_CONFIG.warmupRequests}`);
     }
-    
-    console.log(''); // New line
-    
+
     // Reset metrics after warmup
     this.metrics = {
       requests: 0,
@@ -157,9 +149,9 @@ class PerformanceBenchmark {
       errors: 0,
       timeouts: 0,
       totalResponseTime: 0,
-      minResponseTime: Infinity,
+      minResponseTime: Number.POSITIVE_INFINITY,
       maxResponseTime: 0,
-      responseTimes: []
+      responseTimes: [],
     };
   }
 
@@ -169,7 +161,7 @@ class PerformanceBenchmark {
   calculateStats() {
     const responseTimes = this.metrics.responseTimes.sort((a, b) => a - b);
     const totalRequests = this.metrics.requests;
-    
+
     if (responseTimes.length === 0) {
       return {
         avgResponseTime: 0,
@@ -178,27 +170,28 @@ class PerformanceBenchmark {
         p99ResponseTime: 0,
         throughput: 0,
         errorRate: 100,
-        successRate: 0
+        successRate: 0,
       };
     }
 
     const avgResponseTime = this.metrics.totalResponseTime / responseTimes.length;
     const medianIndex = Math.floor(responseTimes.length / 2);
-    const medianResponseTime = responseTimes.length % 2 === 0
-      ? (responseTimes[medianIndex - 1] + responseTimes[medianIndex]) / 2
-      : responseTimes[medianIndex];
-    
+    const medianResponseTime =
+      responseTimes.length % 2 === 0
+        ? (responseTimes[medianIndex - 1] + responseTimes[medianIndex]) / 2
+        : responseTimes[medianIndex];
+
     const p95Index = Math.floor(responseTimes.length * 0.95);
     const p99Index = Math.floor(responseTimes.length * 0.99);
-    
+
     const p95ResponseTime = responseTimes[p95Index] || 0;
     const p99ResponseTime = responseTimes[p99Index] || 0;
-    
+
     const testDuration = (Date.now() - this.startTime) / 1000;
     const throughput = this.metrics.responses / testDuration;
-    
-    const errorRate = (this.metrics.errors + this.metrics.timeouts) / totalRequests * 100;
-    const successRate = this.metrics.responses / totalRequests * 100;
+
+    const errorRate = ((this.metrics.errors + this.metrics.timeouts) / totalRequests) * 100;
+    const successRate = (this.metrics.responses / totalRequests) * 100;
 
     return {
       avgResponseTime: Math.round(avgResponseTime * 100) / 100,
@@ -210,7 +203,7 @@ class PerformanceBenchmark {
       throughput: Math.round(throughput * 100) / 100,
       errorRate: Math.round(errorRate * 100) / 100,
       successRate: Math.round(successRate * 100) / 100,
-      testDuration: Math.round(testDuration * 100) / 100
+      testDuration: Math.round(testDuration * 100) / 100,
     };
   }
 
@@ -218,35 +211,32 @@ class PerformanceBenchmark {
    * Run benchmark test suite
    */
   async runBenchmarks() {
-    console.log('📊 Starting Performance Benchmark Suite');
-    console.log('========================================');
-    
     const testCases = [
       {
         name: 'Homepage Load Test',
         url: `${BENCHMARK_CONFIG.baseUrl}/`,
-        load: 'light'
+        load: 'light',
       },
       {
         name: 'Health Endpoint Test',
         url: `${BENCHMARK_CONFIG.baseUrl}/health`,
-        load: 'medium'
+        load: 'medium',
       },
       {
         name: 'API Jobs Endpoint Test',
         url: `${BENCHMARK_CONFIG.baseUrl}/api/v1/jobs`,
-        load: 'medium'
+        load: 'medium',
       },
       {
         name: 'API Jobs Stats Test',
         url: `${BENCHMARK_CONFIG.baseUrl}/api/v1/jobs/stats`,
-        load: 'light'
+        load: 'light',
       },
       {
         name: 'Enhanced Dashboard Test',
         url: `${BENCHMARK_CONFIG.baseUrl}/enhanced-dashboard.html`,
-        load: 'heavy'
-      }
+        load: 'heavy',
+      },
     ];
 
     const benchmarkResults = [];
@@ -255,10 +245,6 @@ class PerformanceBenchmark {
     await this.warmup();
 
     for (const testCase of testCases) {
-      console.log(`\n🧪 Running: ${testCase.name}`);
-      console.log(`   URL: ${testCase.url}`);
-      console.log(`   Load Level: ${testCase.load}`);
-      
       // Reset metrics for this test
       this.metrics = {
         requests: 0,
@@ -266,19 +252,19 @@ class PerformanceBenchmark {
         errors: 0,
         timeouts: 0,
         totalResponseTime: 0,
-        minResponseTime: Infinity,
+        minResponseTime: Number.POSITIVE_INFINITY,
         maxResponseTime: 0,
-        responseTimes: []
+        responseTimes: [],
       };
-      
+
       this.startTime = Date.now();
-      
+
       const iterations = BENCHMARK_CONFIG.iterations[testCase.load];
       const concurrency = BENCHMARK_CONFIG.concurrent[testCase.load];
-      
-      const results = await this.runConcurrentRequests(testCase.url, concurrency, iterations);
+
+      const _results = await this.runConcurrentRequests(testCase.url, concurrency, iterations);
       const stats = this.calculateStats();
-      
+
       const testResult = {
         testName: testCase.name,
         url: testCase.url,
@@ -286,18 +272,12 @@ class PerformanceBenchmark {
         iterations,
         concurrency,
         ...stats,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       benchmarkResults.push(testResult);
-      
-      // Display results
-      console.log(`   ✅ Completed: ${stats.successRate}% success rate`);
-      console.log(`   ⚡ Avg Response: ${stats.avgResponseTime}ms`);
-      console.log(`   🎯 Throughput: ${stats.throughput} req/s`);
-      
+
       if (stats.errorRate > 0) {
-        console.log(`   ❌ Error Rate: ${stats.errorRate}%`);
       }
     }
 
@@ -308,23 +288,20 @@ class PerformanceBenchmark {
    * Run stress tests
    */
   async runStressTests() {
-    console.log('\n💥 Starting Stress Test Suite');
-    console.log('==============================');
-    
     const stressTests = [
       {
         name: 'High Concurrency Stress Test',
         url: `${BENCHMARK_CONFIG.baseUrl}/`,
         concurrency: 100,
         duration: 30000, // 30 seconds
-        rampUp: true
+        rampUp: true,
       },
       {
         name: 'API Endpoint Stress Test',
         url: `${BENCHMARK_CONFIG.baseUrl}/api/v1/jobs`,
         concurrency: 50,
         duration: 60000, // 60 seconds
-        rampUp: true
+        rampUp: true,
       },
       {
         name: 'Mixed Load Stress Test',
@@ -332,21 +309,17 @@ class PerformanceBenchmark {
           `${BENCHMARK_CONFIG.baseUrl}/`,
           `${BENCHMARK_CONFIG.baseUrl}/health`,
           `${BENCHMARK_CONFIG.baseUrl}/api/v1/jobs`,
-          `${BENCHMARK_CONFIG.baseUrl}/api/v1/jobs/stats`
+          `${BENCHMARK_CONFIG.baseUrl}/api/v1/jobs/stats`,
         ],
         concurrency: 75,
         duration: 45000, // 45 seconds
-        rampUp: true
-      }
+        rampUp: true,
+      },
     ];
 
     const stressResults = [];
 
     for (const stressTest of stressTests) {
-      console.log(`\n💪 Running: ${stressTest.name}`);
-      console.log(`   Duration: ${stressTest.duration / 1000}s`);
-      console.log(`   Max Concurrency: ${stressTest.concurrency}`);
-      
       const result = await this.runStressTest(stressTest);
       stressResults.push(result);
     }
@@ -365,39 +338,38 @@ class PerformanceBenchmark {
       errors: 0,
       timeouts: 0,
       totalResponseTime: 0,
-      minResponseTime: Infinity,
+      minResponseTime: Number.POSITIVE_INFINITY,
       maxResponseTime: 0,
-      responseTimes: []
+      responseTimes: [],
     };
-    
+
     this.startTime = Date.now();
     const endTime = this.startTime + config.duration;
     const activeRequests = new Set();
     let currentConcurrency = config.rampUp ? 1 : config.concurrency;
-    
-    console.log(`   🚀 Starting stress test...`);
-    
+
     // Ramp up concurrency if enabled
-    const rampUpInterval = config.rampUp ? setInterval(() => {
-      if (currentConcurrency < config.concurrency) {
-        currentConcurrency = Math.min(currentConcurrency + 5, config.concurrency);
-        console.log(`   📈 Ramping up to ${currentConcurrency} concurrent requests`);
-      }
-    }, 2000) : null;
+    const rampUpInterval = config.rampUp
+      ? setInterval(() => {
+          if (currentConcurrency < config.concurrency) {
+            currentConcurrency = Math.min(currentConcurrency + 5, config.concurrency);
+          }
+        }, 2000)
+      : null;
 
     const makeRequest = async () => {
       const urls = config.urls || [config.url];
       const url = urls[Math.floor(Math.random() * urls.length)];
-      
+
       const requestPromise = this.performRequest(url);
       activeRequests.add(requestPromise);
-      
+
       try {
         await requestPromise;
       } finally {
         activeRequests.delete(requestPromise);
       }
-      
+
       // Continue making requests if test is still running
       if (Date.now() < endTime) {
         setTimeout(makeRequest, 10); // Small delay to prevent overwhelming
@@ -411,30 +383,21 @@ class PerformanceBenchmark {
     }
 
     // Wait for test duration
-    await new Promise(resolve => setTimeout(resolve, config.duration));
-    
+    await new Promise((resolve) => setTimeout(resolve, config.duration));
+
     if (rampUpInterval) {
       clearInterval(rampUpInterval);
     }
-    
-    // Wait for remaining requests to complete
-    console.log(`   ⏳ Waiting for ${activeRequests.size} remaining requests...`);
     await Promise.all(Array.from(activeRequests));
-    
+
     const stats = this.calculateStats();
-    
-    console.log(`   ✅ Stress test completed`);
-    console.log(`   📊 Total Requests: ${this.metrics.requests}`);
-    console.log(`   ⚡ Avg Response: ${stats.avgResponseTime}ms`);
-    console.log(`   🎯 Throughput: ${stats.throughput} req/s`);
-    console.log(`   ❌ Error Rate: ${stats.errorRate}%`);
 
     return {
       testName: config.name,
       duration: config.duration,
       maxConcurrency: config.concurrency,
       ...stats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -449,79 +412,72 @@ class PerformanceBenchmark {
         nodeVersion: process.version,
         platform: process.platform,
         arch: process.arch,
-        memory: process.memoryUsage()
+        memory: process.memoryUsage(),
       },
       benchmark: {
         summary: this.calculateBenchmarkSummary(benchmarkResults),
-        results: benchmarkResults
+        results: benchmarkResults,
       },
       stress: {
         summary: this.calculateStressSummary(stressResults),
-        results: stressResults
-      }
+        results: stressResults,
+      },
     };
 
     // Save JSON report
-    const reportPath = path.join(BENCHMARK_CONFIG.reportDir, `performance-report-${Date.now()}.json`);
+    const reportPath = path.join(
+      BENCHMARK_CONFIG.reportDir,
+      `performance-report-${Date.now()}.json`,
+    );
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 
     // Generate HTML report
     const htmlReport = this.generateHtmlReport(report);
-    const htmlReportPath = path.join(BENCHMARK_CONFIG.reportDir, `performance-report-${Date.now()}.html`);
+    const htmlReportPath = path.join(
+      BENCHMARK_CONFIG.reportDir,
+      `performance-report-${Date.now()}.html`,
+    );
     fs.writeFileSync(htmlReportPath, htmlReport);
 
-    console.log('\n📊 PERFORMANCE BENCHMARK SUMMARY');
-    console.log('=================================');
-    
     if (benchmarkResults.length > 0) {
-      const avgThroughput = benchmarkResults.reduce((sum, r) => sum + r.throughput, 0) / benchmarkResults.length;
-      const avgResponseTime = benchmarkResults.reduce((sum, r) => sum + r.avgResponseTime, 0) / benchmarkResults.length;
-      const overallSuccessRate = benchmarkResults.reduce((sum, r) => sum + r.successRate, 0) / benchmarkResults.length;
-      
-      console.log(`📈 Overall Throughput: ${Math.round(avgThroughput * 100) / 100} req/s`);
-      console.log(`⚡ Average Response Time: ${Math.round(avgResponseTime * 100) / 100}ms`);
-      console.log(`✅ Overall Success Rate: ${Math.round(overallSuccessRate * 100) / 100}%`);
+      const _avgThroughput =
+        benchmarkResults.reduce((sum, r) => sum + r.throughput, 0) / benchmarkResults.length;
+      const _avgResponseTime =
+        benchmarkResults.reduce((sum, r) => sum + r.avgResponseTime, 0) / benchmarkResults.length;
+      const _overallSuccessRate =
+        benchmarkResults.reduce((sum, r) => sum + r.successRate, 0) / benchmarkResults.length;
     }
 
     if (stressResults.length > 0) {
-      console.log('\n💥 STRESS TEST SUMMARY');
-      console.log('======================');
-      
-      const maxThroughput = Math.max(...stressResults.map(r => r.throughput));
-      const avgErrorRate = stressResults.reduce((sum, r) => sum + r.errorRate, 0) / stressResults.length;
-      
-      console.log(`🚀 Peak Throughput: ${Math.round(maxThroughput * 100) / 100} req/s`);
-      console.log(`❌ Average Error Rate: ${Math.round(avgErrorRate * 100) / 100}%`);
+      const _maxThroughput = Math.max(...stressResults.map((r) => r.throughput));
+      const _avgErrorRate =
+        stressResults.reduce((sum, r) => sum + r.errorRate, 0) / stressResults.length;
     }
-
-    console.log(`\n📄 Reports saved:`);
-    console.log(`   JSON: ${reportPath}`);
-    console.log(`   HTML: ${htmlReportPath}`);
 
     return report;
   }
 
   calculateBenchmarkSummary(results) {
     if (results.length === 0) return {};
-    
+
     return {
       totalTests: results.length,
       averageThroughput: results.reduce((sum, r) => sum + r.throughput, 0) / results.length,
       averageResponseTime: results.reduce((sum, r) => sum + r.avgResponseTime, 0) / results.length,
       overallSuccessRate: results.reduce((sum, r) => sum + r.successRate, 0) / results.length,
-      totalRequests: results.reduce((sum, r) => sum + r.iterations, 0)
+      totalRequests: results.reduce((sum, r) => sum + r.iterations, 0),
     };
   }
 
   calculateStressSummary(results) {
     if (results.length === 0) return {};
-    
+
     return {
       totalTests: results.length,
-      peakThroughput: Math.max(...results.map(r => r.throughput)),
+      peakThroughput: Math.max(...results.map((r) => r.throughput)),
       averageErrorRate: results.reduce((sum, r) => sum + r.errorRate, 0) / results.length,
       totalDuration: results.reduce((sum, r) => sum + r.testDuration, 0),
-      totalRequests: results.reduce((sum, r) => sum + (r.requests || 0), 0)
+      totalRequests: results.reduce((sum, r) => sum + (r.requests || 0), 0),
     };
   }
 
@@ -559,7 +515,9 @@ class PerformanceBenchmark {
             <p>Generated on ${new Date(report.timestamp).toLocaleString()}</p>
         </div>
         
-        ${report.benchmark.results.length > 0 ? `
+        ${
+          report.benchmark.results.length > 0
+            ? `
         <div class="test-section">
             <h2>📊 Benchmark Test Results</h2>
             <div class="summary">
@@ -595,7 +553,9 @@ class PerformanceBenchmark {
                     </tr>
                 </thead>
                 <tbody>
-                    ${report.benchmark.results.map(result => `
+                    ${report.benchmark.results
+                      .map(
+                        (result) => `
                         <tr>
                             <td>${result.testName}</td>
                             <td><span style="background: ${result.loadLevel === 'light' ? '#E8F5E8' : result.loadLevel === 'medium' ? '#FFF3E0' : '#FFEBEE'}; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${result.loadLevel}</span></td>
@@ -606,13 +566,19 @@ class PerformanceBenchmark {
                             <td><span class="${result.successRate > 95 ? 'good' : result.successRate > 90 ? 'warning' : 'bad'}">${result.successRate}%</span></td>
                             <td><span class="${result.errorRate < 1 ? 'good' : result.errorRate < 5 ? 'warning' : 'bad'}">${result.errorRate}%</span></td>
                         </tr>
-                    `).join('')}
+                    `,
+                      )
+                      .join('')}
                 </tbody>
             </table>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
         
-        ${report.stress.results.length > 0 ? `
+        ${
+          report.stress.results.length > 0
+            ? `
         <div class="test-section">
             <h2>💥 Stress Test Results</h2>
             <div class="summary">
@@ -647,7 +613,9 @@ class PerformanceBenchmark {
                     </tr>
                 </thead>
                 <tbody>
-                    ${report.stress.results.map(result => `
+                    ${report.stress.results
+                      .map(
+                        (result) => `
                         <tr>
                             <td>${result.testName}</td>
                             <td>${result.duration / 1000}</td>
@@ -657,11 +625,15 @@ class PerformanceBenchmark {
                             <td>${result.avgResponseTime}</td>
                             <td><span class="${result.errorRate < 1 ? 'good' : result.errorRate < 5 ? 'warning' : 'bad'}">${result.errorRate}%</span></td>
                         </tr>
-                    `).join('')}
+                    `,
+                      )
+                      .join('')}
                 </tbody>
             </table>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
         
         <div class="test-section">
             <h2>🔧 Test Configuration</h2>
@@ -685,24 +657,19 @@ export { PerformanceBenchmark };
 // Run benchmarks if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const benchmark = new PerformanceBenchmark();
-  
+
   async function runAllTests() {
     try {
-      console.log('🚀 Starting Job Dorker Performance & Stress Testing Suite');
-      console.log('======================================================');
-      
       const benchmarkResults = await benchmark.runBenchmarks();
       const stressResults = await benchmark.runStressTests();
-      
-      const report = benchmark.generateReport(benchmarkResults, stressResults);
-      
-      console.log('\n🎉 All performance tests completed successfully!');
+
+      const _report = benchmark.generateReport(benchmarkResults, stressResults);
       process.exit(0);
     } catch (error) {
       console.error('\n💥 Performance testing failed:', error);
       process.exit(1);
     }
   }
-  
+
   runAllTests();
 }

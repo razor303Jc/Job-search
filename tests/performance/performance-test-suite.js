@@ -19,28 +19,28 @@ const SUITE_CONFIG = {
     quick: {
       description: 'Quick performance validation',
       includes: ['benchmark', 'basic-stress'],
-      duration: '5-10 minutes'
+      duration: '5-10 minutes',
     },
     standard: {
       description: 'Standard performance testing',
       includes: ['benchmark', 'stress', 'load'],
-      duration: '15-25 minutes'
+      duration: '15-25 minutes',
     },
     comprehensive: {
       description: 'Full performance analysis',
       includes: ['benchmark', 'stress', 'load', 'endurance'],
-      duration: '45-75 minutes'
-    }
+      duration: '45-75 minutes',
+    },
   },
   healthCheck: {
     timeout: 5000,
-    retries: 3
+    retries: 3,
   },
   reporting: {
     generateCombined: true,
     includeResourceMetrics: true,
-    exportFormats: ['json', 'html', 'csv']
-  }
+    exportFormats: ['json', 'html', 'csv'],
+  },
 };
 
 class PerformanceTestSuite {
@@ -53,12 +53,12 @@ class PerformanceTestSuite {
       load: null,
       endurance: null,
       healthChecks: [],
-      resourceMetrics: []
+      resourceMetrics: [],
     };
     this.startTime = null;
     this.endTime = null;
     this.errors = [];
-    
+
     // Create reports directory
     this.reportsDir = path.join(__dirname, 'reports');
     if (!fs.existsSync(this.reportsDir)) {
@@ -70,12 +70,10 @@ class PerformanceTestSuite {
    * Pre-flight health check
    */
   async performHealthCheck() {
-    console.log('🏥 Performing pre-flight health check...');
-    
     const healthEndpoints = [
       { url: `${this.config.baseUrl}/`, name: 'Homepage' },
       { url: `${this.config.baseUrl}/health`, name: 'Health Endpoint' },
-      { url: `${this.config.baseUrl}/api/v1/jobs`, name: 'Jobs API' }
+      { url: `${this.config.baseUrl}/api/v1/jobs`, name: 'Jobs API' },
     ];
 
     const healthResults = [];
@@ -87,11 +85,11 @@ class PerformanceTestSuite {
 
       while (attempts < this.config.healthCheck.retries && !success) {
         attempts++;
-        
+
         try {
           const startTime = Date.now();
           const response = await fetch(endpoint.url, {
-            signal: AbortSignal.timeout(this.config.healthCheck.timeout)
+            signal: AbortSignal.timeout(this.config.healthCheck.timeout),
           });
           const responseTime = Date.now() - startTime;
 
@@ -103,17 +101,15 @@ class PerformanceTestSuite {
               status: 'healthy',
               responseTime,
               statusCode: response.status,
-              attempt: attempts
+              attempt: attempts,
             });
-            console.log(`   ✅ ${endpoint.name}: ${response.status} (${responseTime}ms)`);
           } else {
             throw new Error(`HTTP ${response.status}`);
           }
         } catch (error) {
           lastError = error.message;
           if (attempts < this.config.healthCheck.retries) {
-            console.log(`   ⚠️  ${endpoint.name}: ${error.message} (attempt ${attempts}/${this.config.healthCheck.retries})`);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between retries
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s between retries
           }
         }
       }
@@ -124,23 +120,21 @@ class PerformanceTestSuite {
           url: endpoint.url,
           status: 'unhealthy',
           error: lastError,
-          attempts
+          attempts,
         });
-        console.log(`   ❌ ${endpoint.name}: Failed after ${attempts} attempts - ${lastError}`);
       }
     }
 
     this.results.healthChecks = healthResults;
-    
-    const healthyEndpoints = healthResults.filter(r => r.status === 'healthy').length;
+
+    const healthyEndpoints = healthResults.filter((r) => r.status === 'healthy').length;
     const totalEndpoints = healthResults.length;
-    
+
     if (healthyEndpoints === 0) {
       throw new Error('❌ Health check failed: No endpoints are accessible');
-    } else if (healthyEndpoints < totalEndpoints) {
-      console.log(`⚠️  Warning: ${totalEndpoints - healthyEndpoints}/${totalEndpoints} endpoints are unhealthy`);
+    }
+    if (healthyEndpoints < totalEndpoints) {
     } else {
-      console.log(`✅ Health check passed: All ${totalEndpoints} endpoints are healthy`);
     }
 
     return healthResults;
@@ -150,20 +144,15 @@ class PerformanceTestSuite {
    * Run benchmark tests
    */
   async runBenchmarkTests() {
-    console.log('\n📊 Running Performance Benchmark Tests');
-    console.log('======================================');
-
     try {
       const benchmark = new PerformanceBenchmark();
       const benchmarkResults = await benchmark.runBenchmarks();
-      
+
       this.results.benchmark = {
         results: benchmarkResults,
         summary: benchmark.calculateBenchmarkSummary(benchmarkResults),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
-      console.log('✅ Benchmark tests completed successfully');
       return this.results.benchmark;
     } catch (error) {
       console.error('❌ Benchmark tests failed:', error.message);
@@ -176,20 +165,15 @@ class PerformanceTestSuite {
    * Run stress tests
    */
   async runStressTests() {
-    console.log('\n💥 Running Stress Tests');
-    console.log('=======================');
-
     try {
       const benchmark = new PerformanceBenchmark();
       const stressResults = await benchmark.runStressTests();
-      
+
       this.results.stress = {
         results: stressResults,
         summary: benchmark.calculateStressSummary(stressResults),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
-      console.log('✅ Stress tests completed successfully');
       return this.results.stress;
     } catch (error) {
       console.error('❌ Stress tests failed:', error.message);
@@ -202,20 +186,15 @@ class PerformanceTestSuite {
    * Run load tests
    */
   async runLoadTests() {
-    console.log('\n🚀 Running Load Tests');
-    console.log('=====================');
-
     try {
       const loadTester = new LoadTester();
       const loadResults = await loadTester.runAllLoadTests();
-      
+
       this.results.load = {
         results: loadResults.testResults,
         summary: loadResults.summary,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
-      console.log('✅ Load tests completed successfully');
       return this.results.load;
     } catch (error) {
       console.error('❌ Load tests failed:', error.message);
@@ -228,19 +207,14 @@ class PerformanceTestSuite {
    * Run endurance tests (only in comprehensive mode)
    */
   async runEnduranceTests() {
-    console.log('\n💪 Running Endurance Tests');
-    console.log('==========================');
-
     try {
       const loadTester = new LoadTester();
       const enduranceResult = await loadTester.runEnduranceTest();
-      
+
       this.results.endurance = {
         result: enduranceResult,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
-      console.log('✅ Endurance tests completed successfully');
       return this.results.endurance;
     } catch (error) {
       console.error('❌ Endurance tests failed:', error.message);
@@ -260,19 +234,19 @@ class PerformanceTestSuite {
         startTime: this.startTime,
         endTime: this.endTime,
         duration: this.endTime ? Math.round((this.endTime - this.startTime) / 1000) : null,
-        configuration: this.config
+        configuration: this.config,
       },
       environment: {
         nodeVersion: process.version,
         platform: process.platform,
         arch: process.arch,
         memory: process.memoryUsage(),
-        baseUrl: this.config.baseUrl
+        baseUrl: this.config.baseUrl,
       },
       healthChecks: this.results.healthChecks,
       testResults: this.results,
       errors: this.errors,
-      summary: this.calculateOverallSummary()
+      summary: this.calculateOverallSummary(),
     };
 
     // Save JSON report
@@ -290,72 +264,66 @@ class PerformanceTestSuite {
     const csvReportPath = path.join(this.reportsDir, `performance-suite-${timestamp}.csv`);
     fs.writeFileSync(csvReportPath, csvReport);
 
-    console.log('\n📊 PERFORMANCE SUITE SUMMARY');
-    console.log('============================');
-    console.log(`Suite Level: ${this.suiteLevel}`);
-    console.log(`Total Duration: ${report.metadata.duration}s`);
-    console.log(`Tests Completed: ${Object.keys(this.results).filter(k => this.results[k] !== null).length}`);
-    console.log(`Errors: ${this.errors.length}`);
-    
     if (report.summary.overallPerformance) {
-      console.log(`Overall Performance Rating: ${report.summary.overallPerformance.rating}`);
-      console.log(`Peak Throughput: ${report.summary.overallPerformance.peakThroughput} req/s`);
-      console.log(`Average Error Rate: ${report.summary.overallPerformance.avgErrorRate}%`);
     }
-
-    console.log(`\n📄 Reports Generated:`);
-    console.log(`   JSON: ${jsonReportPath}`);
-    console.log(`   HTML: ${htmlReportPath}`);
-    console.log(`   CSV:  ${csvReportPath}`);
 
     return report;
   }
 
   calculateOverallSummary() {
     const summary = {
-      testsRun: Object.keys(this.results).filter(k => this.results[k] !== null),
+      testsRun: Object.keys(this.results).filter((k) => this.results[k] !== null),
       totalErrors: this.errors.length,
-      healthStatus: this.results.healthChecks.every(h => h.status === 'healthy') ? 'healthy' : 'degraded'
+      healthStatus: this.results.healthChecks.every((h) => h.status === 'healthy')
+        ? 'healthy'
+        : 'degraded',
     };
 
     // Calculate overall performance metrics
     const performanceMetrics = [];
 
     if (this.results.benchmark?.results) {
-      performanceMetrics.push(...this.results.benchmark.results.map(r => ({
-        type: 'benchmark',
-        throughput: r.throughput,
-        errorRate: r.errorRate,
-        avgResponseTime: r.avgResponseTime
-      })));
+      performanceMetrics.push(
+        ...this.results.benchmark.results.map((r) => ({
+          type: 'benchmark',
+          throughput: r.throughput,
+          errorRate: r.errorRate,
+          avgResponseTime: r.avgResponseTime,
+        })),
+      );
     }
 
     if (this.results.stress?.results) {
-      performanceMetrics.push(...this.results.stress.results.map(r => ({
-        type: 'stress',
-        throughput: r.throughput,
-        errorRate: r.errorRate,
-        avgResponseTime: r.avgResponseTime
-      })));
+      performanceMetrics.push(
+        ...this.results.stress.results.map((r) => ({
+          type: 'stress',
+          throughput: r.throughput,
+          errorRate: r.errorRate,
+          avgResponseTime: r.avgResponseTime,
+        })),
+      );
     }
 
     if (this.results.load?.results) {
-      this.results.load.results.forEach(result => {
+      this.results.load.results.forEach((result) => {
         if (result.overallStats) {
           performanceMetrics.push({
             type: 'load',
             throughput: result.overallStats.throughput,
             errorRate: result.overallStats.errorRate,
-            avgResponseTime: result.overallStats.avgResponseTime
+            avgResponseTime: result.overallStats.avgResponseTime,
           });
         }
       });
     }
 
     if (performanceMetrics.length > 0) {
-      const peakThroughput = Math.max(...performanceMetrics.map(m => m.throughput));
-      const avgErrorRate = performanceMetrics.reduce((sum, m) => sum + m.errorRate, 0) / performanceMetrics.length;
-      const avgResponseTime = performanceMetrics.reduce((sum, m) => sum + m.avgResponseTime, 0) / performanceMetrics.length;
+      const peakThroughput = Math.max(...performanceMetrics.map((m) => m.throughput));
+      const avgErrorRate =
+        performanceMetrics.reduce((sum, m) => sum + m.errorRate, 0) / performanceMetrics.length;
+      const avgResponseTime =
+        performanceMetrics.reduce((sum, m) => sum + m.avgResponseTime, 0) /
+        performanceMetrics.length;
 
       // Performance rating
       let rating = 'excellent';
@@ -368,7 +336,7 @@ class PerformanceTestSuite {
         peakThroughput: Math.round(peakThroughput * 100) / 100,
         avgErrorRate: Math.round(avgErrorRate * 100) / 100,
         avgResponseTime: Math.round(avgResponseTime * 100) / 100,
-        totalTests: performanceMetrics.length
+        totalTests: performanceMetrics.length,
       };
     }
 
@@ -434,14 +402,16 @@ class PerformanceTestSuite {
             <div class="overview-card">
                 <h3>Health Status</h3>
                 <div class="value ${report.summary.healthStatus === 'healthy' ? 'excellent' : 'poor'}">${report.summary.healthStatus.toUpperCase()}</div>
-                <div>${report.healthChecks.filter(h => h.status === 'healthy').length}/${report.healthChecks.length} endpoints</div>
+                <div>${report.healthChecks.filter((h) => h.status === 'healthy').length}/${report.healthChecks.length} endpoints</div>
             </div>
             <div class="overview-card">
                 <h3>Tests Completed</h3>
                 <div class="value">${report.summary.testsRun.length}</div>
                 <div>${report.summary.testsRun.join(', ')}</div>
             </div>
-            ${report.summary.overallPerformance ? `
+            ${
+              report.summary.overallPerformance
+                ? `
             <div class="overview-card">
                 <h3>Performance Rating</h3>
                 <div class="value ${report.summary.overallPerformance.rating}">${report.summary.overallPerformance.rating.toUpperCase()}</div>
@@ -452,7 +422,9 @@ class PerformanceTestSuite {
                 <div class="value ${report.summary.overallPerformance.avgErrorRate < 1 ? 'excellent' : report.summary.overallPerformance.avgErrorRate < 5 ? 'good' : 'poor'}">${report.summary.overallPerformance.avgErrorRate}%</div>
                 <div>Average across all tests</div>
             </div>
-            ` : ''}
+            `
+                : ''
+            }
         </div>
 
         <div class="section">
@@ -460,17 +432,24 @@ class PerformanceTestSuite {
                 <h2>🏥 Health Check Results</h2>
             </div>
             <div class="section-content">
-                ${report.healthChecks.map(check => `
+                ${report.healthChecks
+                  .map(
+                    (check) => `
                 <div class="health-check ${check.status}">
                     <strong>${check.endpoint}</strong>: ${check.status}
                     ${check.responseTime ? ` (${check.responseTime}ms)` : ''}
                     ${check.error ? ` - ${check.error}` : ''}
                 </div>
-                `).join('')}
+                `,
+                  )
+                  .join('')}
             </div>
         </div>
 
-        ${Object.entries(report.testResults).filter(([key, value]) => value !== null).map(([testType, result]) => `
+        ${Object.entries(report.testResults)
+          .filter(([_key, value]) => value !== null)
+          .map(
+            ([testType, result]) => `
         <div class="section">
             <div class="section-header">
                 <h2>${this.getTestTypeIcon(testType)} ${this.getTestTypeTitle(testType)} Results</h2>
@@ -479,24 +458,34 @@ class PerformanceTestSuite {
                 ${this.generateTestSectionHtml(testType, result)}
             </div>
         </div>
-        `).join('')}
+        `,
+          )
+          .join('')}
 
-        ${report.errors.length > 0 ? `
+        ${
+          report.errors.length > 0
+            ? `
         <div class="section">
             <div class="section-header">
                 <h2>❌ Errors Encountered</h2>
             </div>
             <div class="section-content">
                 <div class="error-list">
-                    ${report.errors.map(error => `
+                    ${report.errors
+                      .map(
+                        (error) => `
                     <div class="error-item">
                         <strong>${error.test}:</strong> ${error.error}
                     </div>
-                    `).join('')}
+                    `,
+                      )
+                      .join('')}
                 </div>
             </div>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="section">
             <div class="section-header">
@@ -508,7 +497,7 @@ class PerformanceTestSuite {
                     <tr><td><strong>Node.js Version</strong></td><td>${report.environment.nodeVersion}</td></tr>
                     <tr><td><strong>Platform</strong></td><td>${report.environment.platform} (${report.environment.arch})</td></tr>
                     <tr><td><strong>Suite Level</strong></td><td>${report.metadata.suiteLevel}</td></tr>
-                    <tr><td><strong>Test Duration</strong></td><td>${report.metadata.duration ? report.metadata.duration + 's' : 'N/A'}</td></tr>
+                    <tr><td><strong>Test Duration</strong></td><td>${report.metadata.duration ? `${report.metadata.duration}s` : 'N/A'}</td></tr>
                 </table>
             </div>
         </div>
@@ -522,7 +511,7 @@ class PerformanceTestSuite {
       benchmark: '📊',
       stress: '💥',
       load: '🚀',
-      endurance: '💪'
+      endurance: '💪',
     };
     return icons[type] || '🧪';
   }
@@ -532,89 +521,97 @@ class PerformanceTestSuite {
       benchmark: 'Performance Benchmark',
       stress: 'Stress Testing',
       load: 'Load Testing',
-      endurance: 'Endurance Testing'
+      endurance: 'Endurance Testing',
     };
     return titles[type] || type;
   }
 
-  generateTestSectionHtml(testType, result) {
+  generateTestSectionHtml(_testType, result) {
     // This is a simplified version - you can expand based on the specific result structure
     if (result.summary) {
       return `
       <div class="test-metrics">
-          ${Object.entries(result.summary).map(([key, value]) => `
+          ${Object.entries(result.summary)
+            .map(
+              ([key, value]) => `
           <div class="metric">
               <div class="label">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
               <div class="value">${typeof value === 'number' ? Math.round(value * 100) / 100 : value}</div>
           </div>
-          `).join('')}
+          `,
+            )
+            .join('')}
       </div>`;
     }
-    
+
     return '<p>Test completed successfully. See JSON report for detailed results.</p>';
   }
 
   generateCsvReport(report) {
     const rows = [
-      ['Test Type', 'Status', 'Throughput (req/s)', 'Avg Response Time (ms)', 'Error Rate (%)', 'Timestamp']
+      [
+        'Test Type',
+        'Status',
+        'Throughput (req/s)',
+        'Avg Response Time (ms)',
+        'Error Rate (%)',
+        'Timestamp',
+      ],
     ];
 
     // Add benchmark results
     if (report.testResults.benchmark?.results) {
-      report.testResults.benchmark.results.forEach(result => {
+      report.testResults.benchmark.results.forEach((result) => {
         rows.push([
           'Benchmark',
           result.successRate > 95 ? 'PASS' : 'FAIL',
           result.throughput,
           result.avgResponseTime,
           result.errorRate,
-          result.timestamp
+          result.timestamp,
         ]);
       });
     }
 
     // Add stress results
     if (report.testResults.stress?.results) {
-      report.testResults.stress.results.forEach(result => {
+      report.testResults.stress.results.forEach((result) => {
         rows.push([
           'Stress',
           result.successRate > 90 ? 'PASS' : 'FAIL',
           result.throughput,
           result.avgResponseTime,
           result.errorRate,
-          result.timestamp
+          result.timestamp,
         ]);
       });
     }
 
     // Convert to CSV
-    return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    return rows.map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
   }
 
   /**
    * Run complete test suite based on level
    */
   async runTestSuite() {
-    console.log(`🚀 Starting ${this.suiteLevel.toUpperCase()} Performance Test Suite`);
-    console.log('='.repeat(50 + this.suiteLevel.length));
-    
     this.startTime = Date.now();
-    
+
     try {
       // Pre-flight health check
       await this.performHealthCheck();
-      
+
       const suiteConfig = this.config.testSuites[this.suiteLevel];
-      console.log(`\n📋 Test Plan: ${suiteConfig.description}`);
-      console.log(`   Estimated Duration: ${suiteConfig.duration}`);
-      console.log(`   Included Tests: ${suiteConfig.includes.join(', ')}`);
 
       // Run tests based on suite level
       if (suiteConfig.includes.includes('benchmark')) {
         await this.runBenchmarkTests();
       }
 
-      if (suiteConfig.includes.includes('stress') || suiteConfig.includes.includes('basic-stress')) {
+      if (
+        suiteConfig.includes.includes('stress') ||
+        suiteConfig.includes.includes('basic-stress')
+      ) {
         await this.runStressTests();
       }
 
@@ -627,22 +624,18 @@ class PerformanceTestSuite {
       }
 
       this.endTime = Date.now();
-      
+
       // Generate comprehensive report
       const report = this.generateComprehensiveReport();
-      
-      console.log('\n🎉 Performance test suite completed successfully!');
-      console.log(`⏱️  Total execution time: ${Math.round((this.endTime - this.startTime) / 1000)}s`);
-      
+
       return report;
-      
     } catch (error) {
       this.endTime = Date.now();
       console.error('\n💥 Performance test suite failed:', error.message);
-      
+
       // Generate report even on failure
-      const report = this.generateComprehensiveReport();
-      
+      const _report = this.generateComprehensiveReport();
+
       throw error;
     }
   }
@@ -655,10 +648,10 @@ export { PerformanceTestSuite };
 if (import.meta.url === `file://${process.argv[1]}`) {
   const suiteLevel = process.argv[2] || 'standard';
   const suite = new PerformanceTestSuite({ suiteLevel });
-  
-  suite.runTestSuite()
+
+  suite
+    .runTestSuite()
     .then(() => {
-      console.log('✅ Test suite execution completed');
       process.exit(0);
     })
     .catch((error) => {

@@ -1,7 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Job Dorker - API Integration Tests', () => {
-  
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -10,11 +9,11 @@ test.describe('Job Dorker - API Integration Tests', () => {
   test('health endpoint responds correctly', async ({ page }) => {
     const response = await page.request.get('/health');
     expect(response.status()).toBe(200);
-    
+
     const healthData = await response.json();
     expect(healthData).toHaveProperty('status');
     expect(['healthy', 'ok']).toContain(healthData.status); // Accept either status
-    
+
     if (healthData.timestamp) {
       const timestamp = new Date(healthData.timestamp);
       expect(timestamp.getTime()).toBeGreaterThan(Date.now() - 60000); // Within last minute
@@ -22,29 +21,18 @@ test.describe('Job Dorker - API Integration Tests', () => {
   });
 
   test('API endpoints return valid JSON', async ({ page }) => {
-    const endpoints = [
-      '/health',
-      '/api/status',
-      '/api/jobs',
-      '/api/scrapers',
-      '/api/stats'
-    ];
-    
+    const endpoints = ['/health', '/api/status', '/api/jobs', '/api/scrapers', '/api/stats'];
+
     for (const endpoint of endpoints) {
       const response = await page.request.get(endpoint);
-      
+
       if (response.status() === 200) {
         try {
           const data = await response.json();
           expect(data).toBeDefined();
-          console.log(`✓ ${endpoint}: Valid JSON response`);
-        } catch (error) {
-          console.log(`✗ ${endpoint}: Invalid JSON response`);
-        }
+        } catch (_error) {}
       } else if (response.status() === 404) {
-        console.log(`⚠ ${endpoint}: Not implemented yet (404)`);
       } else {
-        console.log(`⚠ ${endpoint}: Status ${response.status()}`);
       }
     }
   });
@@ -52,37 +40,32 @@ test.describe('Job Dorker - API Integration Tests', () => {
   test('CORS headers are properly configured', async ({ page }) => {
     const response = await page.request.get('/health');
     const headers = response.headers();
-    
+
     // Check for CORS headers
     if (headers['access-control-allow-origin']) {
       expect(headers['access-control-allow-origin']).toBeTruthy();
-      console.log('✓ CORS headers present');
     } else {
-      console.log('ℹ CORS headers not set (may be intentional for same-origin)');
     }
   });
 
   test('API rate limiting and security headers', async ({ page }) => {
     const response = await page.request.get('/health');
     const headers = response.headers();
-    
+
     // Check for security headers
     const securityHeaders = [
       'x-content-type-options',
       'x-frame-options',
       'x-xss-protection',
-      'content-security-policy'
+      'content-security-policy',
     ];
-    
-    let foundSecurityHeaders = 0;
+
+    let _foundSecurityHeaders = 0;
     for (const header of securityHeaders) {
       if (headers[header]) {
-        foundSecurityHeaders++;
-        console.log(`✓ Security header found: ${header}`);
+        _foundSecurityHeaders++;
       }
     }
-    
-    console.log(`Found ${foundSecurityHeaders}/${securityHeaders.length} security headers`);
   });
 
   test('job scraper API functionality', async ({ page }) => {
@@ -92,59 +75,51 @@ test.describe('Job Dorker - API Integration Tests', () => {
       '/api/jobs/search',
       '/api/scrapers/status',
       '/api/scrapers/start',
-      '/api/scrapers/stop'
+      '/api/scrapers/stop',
     ];
-    
+
     for (const endpoint of jobEndpoints) {
       const response = await page.request.get(endpoint);
-      
+
       if (response.status() === 200) {
         const data = await response.json();
-        
+
         if (endpoint.includes('/jobs')) {
           // Should be array or object with jobs data
           if (Array.isArray(data)) {
-            console.log(`✓ ${endpoint}: Returns job array (${data.length} items)`);
           } else if (data.jobs && Array.isArray(data.jobs)) {
-            console.log(`✓ ${endpoint}: Returns jobs object (${data.jobs.length} items)`);
           } else {
-            console.log(`✓ ${endpoint}: Returns data structure`);
           }
         }
-        
+
         if (endpoint.includes('/scrapers')) {
           if (data.status || data.scrapers) {
-            console.log(`✓ ${endpoint}: Returns scraper information`);
           }
         }
       } else if (response.status() === 404) {
-        console.log(`⚠ ${endpoint}: Not implemented yet`);
       } else {
-        console.log(`⚠ ${endpoint}: Status ${response.status()}`);
       }
     }
   });
 
   test('WebSocket API integration', async ({ page }) => {
-    let wsApiIntegration = false;
-    
-    page.on('websocket', ws => {
-      ws.on('framereceived', event => {
+    let _wsApiIntegration = false;
+
+    page.on('websocket', (ws) => {
+      ws.on('framereceived', (event) => {
         try {
           const payload = event.payload.toString();
           const data = JSON.parse(payload);
           if (data.type === 'api_update' || data.endpoint || data.api) {
-            wsApiIntegration = true;
+            _wsApiIntegration = true;
           }
-        } catch (error) {
+        } catch (_error) {
           // Not JSON, ignore
         }
       });
     });
 
     await page.waitForTimeout(3000);
-    
-    console.log(`WebSocket API integration detected: ${wsApiIntegration}`);
   });
 
   test('error handling for invalid requests', async ({ page }) => {
@@ -154,77 +129,64 @@ test.describe('Job Dorker - API Integration Tests', () => {
       '/api/../../../etc/passwd',
       '/api/jobs?malformed=query[',
     ];
-    
+
     for (const endpoint of invalidEndpoints) {
       const response = await page.request.get(endpoint);
-      
+
       // Should return 400, 404, or other error status (not 200)
       expect(response.status()).toBeGreaterThanOrEqual(400);
-      console.log(`✓ ${endpoint}: Properly returns error ${response.status()}`);
     }
   });
 
   test('API performance and response times', async ({ page }) => {
     const endpoints = ['/health', '/api/status'];
-    
+
     for (const endpoint of endpoints) {
       const startTime = Date.now();
       const response = await page.request.get(endpoint);
       const endTime = Date.now();
-      
+
       const responseTime = endTime - startTime;
-      
+
       if (response.status() === 200) {
         expect(responseTime).toBeLessThan(5000); // Should respond within 5 seconds
-        console.log(`✓ ${endpoint}: Response time ${responseTime}ms`);
       }
     }
   });
 
   test('data validation and schema compliance', async ({ page }) => {
     const response = await page.request.get('/health');
-    
+
     if (response.status() === 200) {
       const data = await response.json();
-      
+
       // Health endpoint should have required fields
       expect(data).toHaveProperty('status');
       expect(typeof data.status).toBe('string');
-      
+
       if (data.timestamp) {
         expect(typeof data.timestamp).toBe('string');
         expect(new Date(data.timestamp)).toBeInstanceOf(Date);
       }
-      
+
       if (data.uptime) {
         expect(typeof data.uptime).toBe('number');
         expect(data.uptime).toBeGreaterThan(0);
       }
-      
-      console.log('✓ Health endpoint schema validation passed');
     }
   });
 
   test('API authentication and authorization', async ({ page }) => {
     // Test if protected endpoints exist and handle auth correctly
-    const protectedEndpoints = [
-      '/api/admin',
-      '/api/users',
-      '/api/config',
-      '/api/settings'
-    ];
-    
+    const protectedEndpoints = ['/api/admin', '/api/users', '/api/config', '/api/settings'];
+
     for (const endpoint of protectedEndpoints) {
       const response = await page.request.get(endpoint);
-      
+
       if (response.status() === 401 || response.status() === 403) {
-        console.log(`✓ ${endpoint}: Properly protected (${response.status()})`);
       } else if (response.status() === 404) {
-        console.log(`ℹ ${endpoint}: Endpoint not implemented`);
       } else {
-        console.log(`⚠ ${endpoint}: Status ${response.status()} (may not be protected)`);
       }
     }
   });
-
 });

@@ -17,7 +17,7 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['json', { outputFile: 'test-results/results.json' }],
-    ['html', { open: 'never', outputFolder: 'test-results/html' }]
+    ['html', { open: 'never', outputFolder: 'test-results/html' }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -26,7 +26,7 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    
+
     /* Take screenshot on failure */
     screenshot: 'only-on-failure',
   },
