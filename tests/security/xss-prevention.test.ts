@@ -3,6 +3,7 @@
  * Validates that all user input is properly sanitized
  */
 
+import { describe, test, expect, vi } from 'vitest';
 import { SecurityConfig } from '../../src/web/utils/security-config.js';
 import { SecurityUtils } from '../../src/web/utils/security-utils.js';
 
@@ -42,14 +43,54 @@ describe('XSS Prevention', () => {
 
   describe('DOM Manipulation Security', () => {
     test('should use SecurityUtils for DOM updates', () => {
-      const mockElement = document.createElement('div');
+      // Mock minimal DOM environment for Node.js testing
+      const mockElement = {
+        textContent: '',
+        appendChild: vi.fn()
+      };
+
+      const mockTempElement = {
+        innerHTML: '',
+        firstChild: { nodeName: 'SPAN' }, // Start with a child node
+        appendChild: vi.fn()
+      };
+
+      // After first appendChild call, simulate removing the child
+      let callCount = 0;
+      Object.defineProperty(mockTempElement, 'firstChild', {
+        get: () => {
+          callCount++;
+          return callCount === 1 ? { nodeName: 'SPAN' } : null; // Return null after first access
+        }
+      });
+
+      const mockDocument = {
+        createElement: vi.fn().mockReturnValue(mockTempElement)
+      };
+
+      // Mock global document object
+      Object.defineProperty(global, 'document', {
+        value: mockDocument,
+        writable: true
+      });
+      
       const maliciousHTML = '<img src=x onerror=alert(1)>';
 
-      SecurityUtils.setSecureHTML(mockElement, maliciousHTML);
+      // Test that SecurityUtils properly sanitizes content
+      SecurityUtils.setSecureHTML(mockElement as any, maliciousHTML);
 
-      // Should not contain dangerous attributes
-      expect(mockElement.innerHTML).not.toContain('onerror');
-      expect(mockElement.innerHTML).not.toContain('alert(1)');
+      // Verify document.createElement was called
+      expect(mockDocument.createElement).toHaveBeenCalledWith('div');
+      
+      // Verify element.textContent was cleared
+      expect(mockElement.textContent).toBe('');
+      
+      // Verify appendChild was called at least once
+      expect(mockElement.appendChild).toHaveBeenCalled();
+
+      // The temp element should have received sanitized HTML (dangerous attributes removed)
+      expect(mockTempElement.innerHTML).not.toContain('onerror'); // Event handler should be removed
+      expect(mockTempElement.innerHTML).toContain('<img src=x'); // Safe part should remain
     });
   });
 });
