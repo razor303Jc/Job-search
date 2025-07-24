@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-22T19:52:53.622Z",
+  "timestamp": "2025-07-24T21:33:33.598Z",
   "summary": {
     "total": 9,
     "passed": 0,
@@ -64,55 +64,55 @@
       "success": false,
       "browser": "chrome",
       "test": "dashboard-loading",
-      "error": "Waiting for title to contain \"Job Search Dashboard\"\nWait timed out after 10105ms"
+      "error": "Waiting for title to contain \"Job Search Dashboard\"\nWait timed out after 10066ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "advanced-job-search",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"job-search-form\"])\nWait timed out after 30016ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "live-scraping-dashboard",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"scraping-controls\"])\nWait timed out after 30008ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "job-alert-system",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"alert-management\"])\nWait timed out after 30052ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "job-comparison-tool",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"job-comparison-container\"])\nWait timed out after 30010ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "export-sharing-features",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"export-section\"])\nWait timed out after 30069ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "websocket-functionality",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"connection-status\"])\nWait timed out after 30033ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "mobile-responsiveness",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"mobile-nav-toggle\"])\nWait timed out after 30012ms"
     },
     {
       "success": false,
       "browser": "chrome",
       "test": "performance-metrics",
-      "error": "no such window: target window already closed\nfrom unknown error: web view not found\n  (Session info: chrome=138.0.7204.157)"
+      "error": "Waiting for element to be located By(css selector, *[id=\"total-jobs-widget\"])\nWait timed out after 30013ms"
     }
   ]
 }

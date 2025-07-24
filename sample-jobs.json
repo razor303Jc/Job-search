@@ -1,0 +1,141 @@
+[
+  {
+    "id": "job-1",
+    "title": "Senior Software Engineer",
+    "company": "TechCorp Inc",
+    "location": "San Francisco, CA",
+    "description": "Join our dynamic team to build scalable web applications using modern technologies. You'll work on challenging problems and collaborate with talented engineers to deliver innovative solutions to millions of users worldwide.",
+    "url": "https://example.com/job/1",
+    "salary": {
+      "min": 120000,
+      "max": 180000,
+      "currency": "USD",
+      "period": "yearly"
+    },
+    "employmentType": "full-time",
+    "remote": false,
+    "postedDate": "2024-01-15T00:00:00Z",
+    "requirements": ["JavaScript", "React", "Node.js", "TypeScript", "AWS", "Docker"],
+    "benefits": ["Health insurance", "401k matching", "Flexible PTO", "Remote work options"],
+    "tags": ["frontend", "backend", "fullstack"],
+    "source": {
+      "site": "company-website",
+      "originalUrl": "https://techcorp.com/careers/senior-engineer",
+      "scrapedAt": "2024-01-16T10:30:00Z"
+    },
+    "metadata": {
+      "confidence": 0.95,
+      "rawData": {}
+    }
+  },
+  {
+    "id": "job-2",
+    "title": "DevOps Engineer",
+    "company": "CloudTech Solutions",
+    "location": "Remote",
+    "description": "We're looking for a DevOps engineer to manage our cloud infrastructure and CI/CD pipelines. You'll be responsible for maintaining high availability systems and automating deployment processes.",
+    "url": "https://example.com/job/2",
+    "salary": {
+      "min": 100000,
+      "max": 140000,
+      "currency": "USD",
+      "period": "yearly"
+    },
+    "employmentType": "full-time",
+    "remote": true,
+    "postedDate": "2024-01-12T00:00:00Z",
+    "requirements": ["AWS", "Kubernetes", "Docker", "Terraform", "Python", "Linux"],
+    "benefits": ["Health insurance", "Stock options", "Professional development fund"],
+    "tags": ["devops", "cloud", "infrastructure"],
+    "source": {
+      "site": "linkedin",
+      "originalUrl": "https://linkedin.com/jobs/view/123456",
+      "scrapedAt": "2024-01-16T10:30:00Z"
+    },
+    "metadata": {
+      "confidence": 0.9,
+      "rawData": {}
+    }
+  },
+  {
+    "id": "job-3",
+    "title": "Frontend Developer",
+    "company": "StartupXYZ",
+    "location": "New York, NY",
+    "description": "Build beautiful and responsive user interfaces for our mobile and web applications. Work closely with designers and product managers to create exceptional user experiences.",
+    "url": "https://example.com/job/3",
+    "salary": {
+      "min": 85000,
+      "max": 115000,
+      "currency": "USD",
+      "period": "yearly"
+    },
+    "employmentType": "full-time",
+    "remote": false,
+    "postedDate": "2024-01-10T00:00:00Z",
+    "requirements": ["React", "JavaScript", "HTML", "CSS", "Git", "Figma"],
+    "benefits": ["Health insurance", "Equity", "Catered lunch", "Gym membership"],
+    "tags": ["frontend", "react", "ui"],
+    "source": {
+      "site": "indeed",
+      "originalUrl": "https://indeed.com/viewjob?jk=abc123",
+      "scrapedAt": "2024-01-16T10:30:00Z"
+    },
+    "metadata": {
+      "confidence": 0.85,
+      "rawData": {}
+    }
+  },
+  {
+    "id": "job-4",
+    "title": "Data Scientist",
+    "company": "DataVision Analytics",
+    "location": "Boston, MA",
+    "description": "Join our data science team to build machine learning models and extract insights from large datasets. You'll work on predictive analytics and help drive business decisions through data-driven insights.",
+    "url": "https://example.com/job/4",
+    "salary": {
+      "min": 110000,
+      "max": 160000,
+      "currency": "USD",
+      "period": "yearly"
+    },
+    "employmentType": "full-time",
+    "remote": false,
+    "postedDate": "2024-01-08T00:00:00Z",
+    "requirements": ["Python", "SQL", "Machine Learning", "Statistics", "Pandas", "Scikit-learn"],
+    "benefits": ["Health insurance", "401k", "Conference budget", "Flexible schedule"],
+    "tags": ["data-science", "ml", "analytics"],
+    "source": {
+      "site": "glassdoor",
+      "originalUrl": "https://glassdoor.com/job/data-scientist-456789",
+      "scrapedAt": "2024-01-16T10:30:00Z"
+    },
+    "metadata": {
+      "confidence": 0.92,
+      "rawData": {}
+    }
+  },
+  {
+    "id": "job-5",
+    "title": "Product Manager",
+    "company": "InnovateTech",
+    "location": "Remote",
+    "description": "Lead product strategy and development for our flagship SaaS platform. Collaborate with engineering, design, and marketing teams to deliver features that delight customers and drive business growth.",
+    "url": "https://example.com/job/5",
+    "employmentType": "full-time",
+    "remote": true,
+    "postedDate": "2024-01-05T00:00:00Z",
+    "requirements": ["Product Management", "Agile", "SQL", "Analytics", "Stakeholder Management"],
+    "benefits": ["Health insurance", "Stock options", "Work from home stipend", "Unlimited PTO"],
+    "tags": ["product", "management", "strategy"],
+    "source": {
+      "site": "company-website",
+      "originalUrl": "https://innovatetech.com/careers/product-manager",
+      "scrapedAt": "2024-01-16T10:30:00Z"
+    },
+    "metadata": {
+      "confidence": 0.88,
+      "rawData": {}
+    }
+  }
+]
