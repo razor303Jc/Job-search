@@ -36,7 +36,17 @@
     "web": "tsx src/web/cli.ts start",
     "web:dev": "tsx watch src/web/cli.ts start --log-level debug",
     "web:prod": "node dist/web/cli.js start",
-    "dev:web": "tsx watch src/web/cli.ts start --host 0.0.0.0 --port 3001 --log-level debug"
+    "dev:web": "tsx watch src/web/cli.ts start --host 0.0.0.0 --port 3001 --log-level debug",
+    "test:performance": "node tests/performance/performance-test-suite.js standard",
+    "test:performance:quick": "node tests/performance/performance-test-suite.js quick",
+    "test:performance:standard": "node tests/performance/performance-test-suite.js standard",
+    "test:performance:comprehensive": "node tests/performance/performance-test-suite.js comprehensive",
+    "test:benchmark": "node tests/performance/benchmark-stress-tests.js",
+    "test:stress": "node tests/performance/benchmark-stress-tests.js",
+    "test:load": "node tests/performance/load-endurance-tests.js",
+    "test:endurance": "node tests/performance/load-endurance-tests.js",
+    "monitor:resources": "node tests/performance/resource-monitor.js",
+    "reports:performance": "python3 -m http.server 8080 --directory tests/performance/reports"
   },
   "keywords": [
     "job-scraper",

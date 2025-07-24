@@ -1,0 +1,35 @@
+{
+  "name": "job-dorker-performance-tests",
+  "version": "1.0.0",
+  "description": "Performance and stress testing suite for Job Dorker application",
+  "main": "performance-test-suite.js",
+  "type": "module",
+  "scripts": {
+    "test:performance": "node performance-test-suite.js standard",
+    "test:performance:quick": "node performance-test-suite.js quick",
+    "test:performance:standard": "node performance-test-suite.js standard",
+    "test:performance:comprehensive": "node performance-test-suite.js comprehensive",
+    "test:benchmark": "node benchmark-stress-tests.js",
+    "test:stress": "node benchmark-stress-tests.js",
+    "test:load": "node load-endurance-tests.js",
+    "test:endurance": "node load-endurance-tests.js",
+    "monitor:resources": "node resource-monitor.js",
+    "reports:open": "python3 -m http.server 8080 --directory reports",
+    "clean:reports": "rm -rf reports/*.json reports/*.html reports/*.csv",
+    "validate:server": "curl -f http://localhost:3000/health || exit 1"
+  },
+  "keywords": [
+    "performance",
+    "stress-testing",
+    "load-testing",
+    "benchmarking",
+    "monitoring"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "Job Dorker Team",
+  "license": "MIT"
+}
