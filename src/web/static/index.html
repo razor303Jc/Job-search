@@ -234,6 +234,75 @@
             <p class="subtitle">Enhanced Real-Time Job Search Dashboard</p>
         </header>
 
+        <!-- Priority 1: Search Functionality -->
+        <div class="search-section">
+            <div class="search-header">
+                <h2>🔍 Quick Job Search</h2>
+                <p>Search for jobs by title, company, skills, or location</p>
+            </div>
+            
+            <div class="search-input-group">
+                <input type="text" id="main-search" placeholder="Search jobs: e.g. 'Software Engineer' or 'Remote Python Developer'" 
+                       class="main-search-input">
+                <button id="search-btn" class="search-button">
+                    <span>🔍</span> Search
+                </button>
+                <button id="advanced-search-btn" class="search-button secondary">
+                    <span>⚙️</span> Advanced
+                </button>
+            </div>
+            
+            <div class="search-suggestions" id="search-suggestions"></div>
+            
+            <!-- Search Results Summary -->
+            <div class="search-results-summary" id="search-results-summary" style="display: none;">
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="search-total-results">0</span>
+                        <span class="stat-label">Results Found</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="search-remote-jobs">0</span>
+                        <span class="stat-label">Remote</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="search-avg-salary">$0</span>
+                        <span class="stat-label">Avg. Salary</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="search-new-today">0</span>
+                        <span class="stat-label">New Today</span>
+                    </div>
+                </div>
+                <div class="search-actions">
+                    <button id="clear-search" class="action-btn secondary">
+                        🗑️ Clear
+                    </button>
+                    <button id="export-search" class="action-btn primary">
+                        📁 Export
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Search Results -->
+            <div class="quick-search-results" id="quick-search-results" style="display: none;">
+                <div class="results-header">
+                    <h3>🎯 Search Results</h3>
+                    <div class="results-count">
+                        Showing <span id="results-showing">0</span> of <span id="results-total">0</span> jobs
+                    </div>
+                </div>
+                <div class="results-list" id="results-list">
+                    <!-- Search results will be populated here -->
+                </div>
+                <div class="results-pagination" id="results-pagination">
+                    <button id="prev-results" class="page-btn" disabled>← Previous</button>
+                    <span class="page-info">Page <span id="current-page">1</span> of <span id="total-pages">1</span></span>
+                    <button id="next-results" class="page-btn" disabled>Next →</button>
+                </div>
+            </div>
+        </div>
+
         <div class="dashboard">
             <!-- WebSocket Status Card -->
             <div class="card">
@@ -533,18 +602,480 @@
             }
         }
 
-        // Initialize dashboard when page loads
+        // Priority 1: Search Functionality Implementation
+        class SearchManager {
+            constructor() {
+                this.searchInput = document.getElementById('main-search');
+                this.searchBtn = document.getElementById('search-btn');
+                this.searchSuggestions = document.getElementById('search-suggestions');
+                this.resultsContainer = document.getElementById('search-quick-results');
+                this.resultsSummary = document.getElementById('search-results-summary');
+                this.totalResults = document.getElementById('search-total-results');
+                this.remoteJobsCount = document.getElementById('search-remote-jobs');
+                this.avgSalary = document.getElementById('search-avg-salary');
+                this.pagination = document.getElementById('search-pagination');
+                
+                this.currentQuery = '';
+                this.currentPage = 1;
+                this.resultsPerPage = 10;
+                this.totalJobsCount = 0;
+                
+                this.initializeSearch();
+            }
+
+            initializeSearch() {
+                // Search button click handler
+                this.searchBtn.addEventListener('click', () => this.performSearch());
+                
+                // Enter key handler for search input
+                this.searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.performSearch();
+                    }
+                });
+                
+                // Real-time search suggestions (debounced)
+                let searchTimeout;
+                this.searchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        this.showSearchSuggestions(e.target.value);
+                    }, 300);
+                });
+                
+                // Pagination handlers
+                document.getElementById('prev-results').addEventListener('click', () => {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                        this.performSearch(false);
+                    }
+                });
+                
+                document.getElementById('next-results').addEventListener('click', () => {
+                    const totalPages = Math.ceil(this.totalJobsCount / this.resultsPerPage);
+                    if (this.currentPage < totalPages) {
+                        this.currentPage++;
+                        this.performSearch(false);
+                    }
+                });
+            }
+
+            async performSearch(resetPage = true) {
+                const query = this.searchInput.value.trim();
+                
+                if (!query) {
+                    this.hideSearchResults();
+                    return;
+                }
+                
+                if (resetPage) {
+                    this.currentPage = 1;
+                }
+                
+                this.currentQuery = query;
+                this.showLoadingState();
+                
+                try {
+                    const offset = (this.currentPage - 1) * this.resultsPerPage;
+                    const response = await fetch('/api/v1/jobs/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: query,
+                            limit: this.resultsPerPage,
+                            offset: offset
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Search failed: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    this.displaySearchResults(data);
+                    dashboard.log(`🔍 Search completed: "${query}" - ${data.results.length} results`, 'success');
+                    
+                } catch (error) {
+                    console.error('Search error:', error);
+                    this.showErrorState(error.message);
+                    dashboard.log(`❌ Search failed: ${error.message}`, 'error');
+                }
+            }
+
+            showLoadingState() {
+                this.searchBtn.disabled = true;
+                this.searchBtn.innerHTML = '<span>⏳</span> Searching...';
+                this.resultsContainer.innerHTML = '<div class="loading-state">🔍 Searching for jobs...</div>';
+                this.resultsSummary.style.display = 'block';
+            }
+
+            displaySearchResults(data) {
+                this.searchBtn.disabled = false;
+                this.searchBtn.innerHTML = '<span>🔍</span> Search';
+                
+                const { results, query, pagination } = data;
+                this.totalJobsCount = pagination.total;
+                
+                // Update results summary
+                this.totalResults.textContent = pagination.total.toLocaleString();
+                
+                // Calculate remote jobs and average salary
+                const remoteJobs = results.filter(job => job.remote || job.location?.toLowerCase().includes('remote')).length;
+                const salaries = results.filter(job => job.salary?.min && job.salary?.max).map(job => (job.salary.min + job.salary.max) / 2);
+                const avgSalary = salaries.length > 0 ? salaries.reduce((a, b) => a + b, 0) / salaries.length : 0;
+                
+                this.remoteJobsCount.textContent = remoteJobs;
+                this.avgSalary.textContent = avgSalary > 0 ? `$${Math.round(avgSalary).toLocaleString()}` : 'N/A';
+                
+                // Display results
+                if (results.length === 0) {
+                    this.resultsContainer.innerHTML = `
+                        <div class="no-results">
+                            <p>🔍 No jobs found for "${query}"</p>
+                            <p>Try different keywords or check the spelling</p>
+                        </div>
+                    `;
+                } else {
+                    this.resultsContainer.innerHTML = results.map(job => this.createJobCard(job)).join('');
+                }
+                
+                // Update pagination
+                this.updatePagination();
+                this.resultsSummary.style.display = 'block';
+            }
+
+            createJobCard(job) {
+                const salaryInfo = job.salary && job.salary.min && job.salary.max 
+                    ? `💰 $${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()}`
+                    : '💰 Salary not specified';
+                
+                const remoteIcon = job.remote || job.location?.toLowerCase().includes('remote') ? '🏠' : '🏢';
+                const locationText = job.location || 'Location not specified';
+                
+                return `
+                    <div class="job-card" data-job-id="${job.id}">
+                        <div class="job-header">
+                            <h4 class="job-title">${job.title}</h4>
+                            <div class="job-company">${job.company}</div>
+                        </div>
+                        <div class="job-meta">
+                            <span class="job-location">${remoteIcon} ${locationText}</span>
+                            <span class="job-salary">${salaryInfo}</span>
+                        </div>
+                        ${job.description ? `<div class="job-description">${job.description.substring(0, 150)}...</div>` : ''}
+                        <div class="job-actions">
+                            <button class="btn-primary" onclick="viewJobDetails('${job.id}')">View Details</button>
+                            <button class="btn-secondary" onclick="saveJob('${job.id}')">Save Job</button>
+                        </div>
+                        <div class="job-timestamp">
+                            Posted: ${new Date(job.createdAt).toLocaleDateString()}
+                        </div>
+                    </div>
+                `;
+            }
+
+            updatePagination() {
+                const totalPages = Math.ceil(this.totalJobsCount / this.resultsPerPage);
+                
+                document.getElementById('current-page').textContent = this.currentPage;
+                document.getElementById('total-pages').textContent = totalPages;
+                
+                document.getElementById('prev-results').disabled = this.currentPage <= 1;
+                document.getElementById('next-results').disabled = this.currentPage >= totalPages;
+                
+                this.pagination.style.display = totalPages > 1 ? 'flex' : 'none';
+            }
+
+            showSearchSuggestions(query) {
+                if (!query || query.length < 2) {
+                    this.searchSuggestions.style.display = 'none';
+                    return;
+                }
+                
+                // Simple search suggestions based on common job titles and keywords
+                const suggestions = [
+                    'Software Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer',
+                    'Data Scientist', 'Product Manager', 'DevOps Engineer', 'UX Designer', 'UI Designer',
+                    'Java Developer', 'Python Developer', 'JavaScript Developer', 'React Developer',
+                    'Node.js Developer', 'Remote Jobs', 'Senior Developer', 'Junior Developer'
+                ].filter(suggestion => 
+                    suggestion.toLowerCase().includes(query.toLowerCase())
+                ).slice(0, 5);
+                
+                if (suggestions.length > 0) {
+                    this.searchSuggestions.innerHTML = suggestions.map(suggestion => 
+                        `<div class="suggestion-item" onclick="searchManager.selectSuggestion('${suggestion}')">${suggestion}</div>`
+                    ).join('');
+                    this.searchSuggestions.style.display = 'block';
+                } else {
+                    this.searchSuggestions.style.display = 'none';
+                }
+            }
+
+            selectSuggestion(suggestion) {
+                this.searchInput.value = suggestion;
+                this.searchSuggestions.style.display = 'none';
+                this.performSearch();
+            }
+
+            hideSearchResults() {
+                this.resultsSummary.style.display = 'none';
+                this.searchSuggestions.style.display = 'none';
+            }
+
+            showErrorState(message) {
+                this.searchBtn.disabled = false;
+                this.searchBtn.innerHTML = '<span>🔍</span> Search';
+                this.resultsContainer.innerHTML = `
+                    <div class="error-state">
+                        <p>❌ Search failed: ${message}</p>
+                        <button onclick="searchManager.performSearch()" class="btn-primary">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Global functions for job actions
+        async function viewJobDetails(jobId) {
+            try {
+                const response = await fetch(`/api/v1/jobs/${jobId}`);
+                const data = await response.json();
+                
+                // Create a modal or redirect to job details page
+                dashboard.log(`👁️ Viewing job: ${data.job.title} at ${data.job.company}`, 'info');
+                
+                // For now, just show an alert with job details
+                alert(`
+Job: ${data.job.title}
+Company: ${data.job.company}
+Location: ${data.job.location || 'Not specified'}
+Remote: ${data.job.remote ? 'Yes' : 'No'}
+Salary: ${data.job.salary ? `$${data.job.salary.min}-${data.job.salary.max}` : 'Not specified'}
+
+Description:
+${data.job.description || 'No description available'}
+                `);
+            } catch (error) {
+                dashboard.log(`❌ Failed to load job details: ${error.message}`, 'error');
+            }
+        }
+
+        async function saveJob(jobId) {
+            // This would integrate with a job saving system
+            dashboard.log(`💾 Job saved: ${jobId}`, 'success');
+            alert('Job saved to your favorites! (Feature coming soon)');
+        }
+
+        // Initialize search manager and dashboard when page loads
         let dashboard;
+        let searchManager;
         document.addEventListener('DOMContentLoaded', () => {
             dashboard = new JobDorkerDashboard();
+            searchManager = new SearchManager();
         });
 
-        // Add CSS animation
+        // Add CSS animation and search styles
         const style = document.createElement('style');
         style.textContent = `
             @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(-10px); }
                 to { opacity: 1; transform: translateY(0); }
+            }
+            
+            /* Search Results Styling */
+            .job-card {
+                background: white;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 12px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                border-left: 4px solid #3182ce;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            
+            .job-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            
+            .job-header {
+                margin-bottom: 8px;
+            }
+            
+            .job-title {
+                margin: 0 0 4px 0;
+                color: #2d3748;
+                font-size: 18px;
+                font-weight: 600;
+            }
+            
+            .job-company {
+                color: #4a5568;
+                font-weight: 500;
+                font-size: 14px;
+            }
+            
+            .job-meta {
+                display: flex;
+                gap: 16px;
+                margin: 8px 0;
+                font-size: 14px;
+                color: #718096;
+            }
+            
+            .job-location, .job-salary {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            
+            .job-description {
+                margin: 12px 0;
+                color: #4a5568;
+                line-height: 1.5;
+                font-size: 14px;
+            }
+            
+            .job-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 12px;
+            }
+            
+            .job-actions button {
+                padding: 6px 12px;
+                border-radius: 4px;
+                border: none;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 500;
+                transition: background-color 0.2s ease;
+            }
+            
+            .btn-primary {
+                background-color: #3182ce;
+                color: white;
+            }
+            
+            .btn-primary:hover {
+                background-color: #2c5aa0;
+            }
+            
+            .btn-secondary {
+                background-color: #e2e8f0;
+                color: #4a5568;
+            }
+            
+            .btn-secondary:hover {
+                background-color: #cbd5e0;
+            }
+            
+            .job-timestamp {
+                margin-top: 8px;
+                font-size: 12px;
+                color: #a0aec0;
+            }
+            
+            /* Search Suggestions */
+            .search-suggestions {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 60px;
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 0 0 8px 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 1000;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            
+            .suggestion-item {
+                padding: 8px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid #f7fafc;
+                transition: background-color 0.2s ease;
+            }
+            
+            .suggestion-item:hover {
+                background-color: #f7fafc;
+            }
+            
+            .suggestion-item:last-child {
+                border-bottom: none;
+            }
+            
+            /* Loading and Error States */
+            .loading-state, .no-results, .error-state {
+                text-align: center;
+                padding: 40px 20px;
+                color: #718096;
+            }
+            
+            .loading-state {
+                background: #f7fafc;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            
+            .no-results {
+                background: #fffbf0;
+                border: 1px solid #f6e05e;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            
+            .error-state {
+                background: #fed7d7;
+                border: 1px solid #fc8181;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            
+            /* Pagination styling improvements */
+            #search-pagination {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                margin-top: 20px;
+                padding: 16px;
+                background: #f7fafc;
+                border-radius: 8px;
+            }
+            
+            .page-btn {
+                padding: 8px 16px;
+                background-color: #3182ce;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: background-color 0.2s ease;
+            }
+            
+            .page-btn:hover:not(:disabled) {
+                background-color: #2c5aa0;
+            }
+            
+            .page-btn:disabled {
+                background-color: #cbd5e0;
+                color: #a0aec0;
+                cursor: not-allowed;
+            }
+            
+            .page-info {
+                font-weight: 500;
+                color: #4a5568;
+            }
+            
+            /* Search input group positioning */
+            .search-input-group {
+                position: relative;
             }
         `;
         document.head.appendChild(style);

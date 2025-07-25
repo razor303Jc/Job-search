@@ -1,5 +1,10 @@
 // Alert Management Component - comprehensive user interface for managing job alerts
-import type { Alert, AlertCriteria, AlertService, AlertStats } from '../../services/alert-service.js';
+import type {
+  Alert,
+  AlertCriteria,
+  AlertService,
+  AlertStats,
+} from '../../services/alert-service.js';
 import type { User } from '../../services/email-service.js';
 
 export class AlertManagementComponent {
