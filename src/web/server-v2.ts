@@ -9,6 +9,8 @@ import websocket from '@fastify/websocket';
 import { type FastifyInstance, fastify } from 'fastify';
 import type { WebSocket } from 'ws';
 import { logger } from '../utils/logger.js';
+import { registerAlertRoutes } from './routes/api/v1/alerts/index.js';
+import { registerAuthRoutes } from './routes/api/v1/auth/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -289,6 +291,12 @@ export class EnhancedWebServer {
         }
       });
     });
+
+    // Register Alert API routes
+    this.server.register(registerAlertRoutes);
+
+    // Register Authentication API routes
+    this.server.register(registerAuthRoutes, { prefix: '/api/v1/auth' });
   }
 
   private handleWebSocketMessage(ws: WebSocket, data: any): void {
