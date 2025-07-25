@@ -1,6 +1,6 @@
 /**
- * Selenium Test Runner Configuration
- * Manages test execution, parallel testing, and reporting
+ * Enhanced Selenium Test Runner Configuration
+ * Manages test execution, parallel testing, reporting, and alerts testing
  */
 
 import { spawn } from 'node:child_process';
@@ -23,9 +23,20 @@ class SeleniumTestRunner {
       screenshotOnFailure: process.env.TEST_SCREENSHOTS !== 'false',
       reportDir: path.join(__dirname, 'reports'),
       screenshotDir: path.join(__dirname, 'screenshots'),
+      
+      // Enhanced test suite options
+      includeAlerts: process.env.INCLUDE_ALERTS !== 'false',
+      alertsOnly: process.env.ALERTS_ONLY === 'true',
+      testSuites: {
+        comprehensive: './comprehensive-selenium-tests.js',
+        alerts: './job-alerts-selenium.test.js',
+        exportSharing: './export-sharing-selenium.test.js',
+        webApp: './web-app-selenium.test.js'
+      }
     };
 
     this.ensureDirectories();
+    this.testResults = [];
   }
 
   /**
@@ -110,10 +121,42 @@ class SeleniumTestRunner {
   }
 
   /**
-   * Run Selenium tests
+   * Run Selenium tests with enhanced alerts support
    */
   async runSeleniumTests() {
-    const testFiles = ['web-app-selenium.test.js', 'export-sharing-selenium.test.js'];
+    console.log('\n🧪 Starting Enhanced Selenium Test Suite...');
+    console.log(`📋 Configuration:`);
+    console.log(`   Base URL: ${this.testConfig.baseUrl}`);
+    console.log(`   Browsers: ${this.testConfig.browsers.join(', ')}`);
+    console.log(`   Headless: ${this.testConfig.headless}`);
+    console.log(`   Include Alerts: ${this.testConfig.includeAlerts}`);
+    console.log(`   Alerts Only: ${this.testConfig.alertsOnly}`);
+
+    // Determine which test suites to run
+    let testFiles = [];
+    
+    if (this.testConfig.alertsOnly) {
+      // Run only alerts-related tests
+      testFiles = [
+        'job-alerts-selenium.test.js',
+        'comprehensive-selenium-tests.js' // Contains alerts tests too
+      ];
+      console.log('\n🔔 Running Alerts & Notifications tests only');
+    } else {
+      // Run comprehensive test suite
+      testFiles = [
+        'comprehensive-selenium-tests.js',
+        'web-app-selenium.test.js',
+        'export-sharing-selenium.test.js'
+      ];
+      
+      if (this.testConfig.includeAlerts) {
+        testFiles.push('job-alerts-selenium.test.js');
+        console.log('\n🚀 Running comprehensive test suite including alerts');
+      } else {
+        console.log('\n🚀 Running comprehensive test suite (alerts excluded)');
+      }
+    }
 
     const results = [];
 
@@ -121,12 +164,20 @@ class SeleniumTestRunner {
       const testPath = path.join(__dirname, testFile);
 
       if (!fs.existsSync(testPath)) {
+        console.warn(`⚠️  Test file not found: ${testFile}`);
         continue;
       }
 
       try {
+        console.log(`\n🔄 Running ${testFile}...`);
         const result = await this.runTestFile(testPath);
         results.push({ file: testFile, ...result });
+        
+        if (result.success) {
+          console.log(`✅ ${testFile} completed successfully`);
+        } else {
+          console.log(`❌ ${testFile} failed`);
+        }
       } catch (error) {
         console.error(`❌ Error running ${testFile}:`, error.message);
         results.push({
@@ -137,6 +188,7 @@ class SeleniumTestRunner {
       }
     }
 
+    this.testResults = results;
     return results;
   }
 

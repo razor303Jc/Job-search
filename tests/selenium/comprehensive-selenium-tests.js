@@ -96,6 +96,7 @@ class ComprehensiveSeleniumTests {
         { name: 'Performance & UX Tests', tests: this.getPerformanceTests() },
         { name: 'Security Tests', tests: this.getSecurityTests() },
         { name: 'Mobile & Responsive Tests', tests: this.getMobileTests() },
+        { name: 'Alerts & Notifications Tests', tests: this.getAlertsTests() },
       ];
 
       for (const suite of testSuites) {
@@ -506,6 +507,423 @@ class ComprehensiveSeleniumTests {
           await driver.manage().window().setRect({ width: 1920, height: 1080 });
         },
       },
+    ];
+  }
+
+  /**
+   * Alerts and Notifications tests
+   */
+  getAlertsTests() {
+    return [
+      {
+        name: 'job_alerts_page_loads',
+        execute: async (driver) => {
+          // Navigate to job alerts page
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.wait(until.titleContains('Job Alerts'), CONFIG.timeout);
+
+          // Check if main alert elements are present
+          const alertElements = [
+            By.css('.create-alert-section'),
+            By.css('.alerts-list-section'),
+            By.css('#createAlertForm'),
+            By.css('.section-title')
+          ];
+
+          for (const selector of alertElements) {
+            const elements = await driver.findElements(selector);
+            if (elements.length === 0) {
+              console.warn(`Alert page element not found: ${selector.value}`);
+            }
+          }
+
+          // Check for alert system initialization
+          const alertSystemScript = await driver.findElements(
+            By.css('script[src*="job-alert-system"]')
+          );
+          if (alertSystemScript.length === 0) {
+            console.warn('Job alert system script not found');
+          }
+        },
+      },
+
+      {
+        name: 'create_alert_form_interaction',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.wait(until.elementLocated(By.css('#createAlertForm')), CONFIG.timeout);
+
+          // Test alert name input
+          const alertNameInput = await driver.findElement(By.css('input[name="alertName"]'));
+          await alertNameInput.clear();
+          await alertNameInput.sendKeys('Test JavaScript Developer Alert');
+
+          // Test keywords input
+          const keywordsInput = await driver.findElement(By.css('#keywords'));
+          await keywordsInput.clear();
+          await keywordsInput.sendKeys('javascript');
+          await keywordsInput.sendKeys(Key.ENTER);
+          
+          // Wait for keyword tag to appear
+          await driver.sleep(1000);
+          const keywordTags = await driver.findElements(By.css('#keywordTags .tag'));
+          if (keywordTags.length === 0) {
+            console.warn('Keyword tags not created properly');
+          }
+
+          // Test location selection
+          const locationSelect = await driver.findElement(By.css('select[name="location"]'));
+          await locationSelect.sendKeys('Remote Only');
+
+          // Test salary range inputs
+          const salaryMinInput = await driver.findElement(By.css('input[name="salaryMin"]'));
+          await salaryMinInput.clear();
+          await salaryMinInput.sendKeys('80000');
+
+          const salaryMaxInput = await driver.findElement(By.css('input[name="salaryMax"]'));
+          await salaryMaxInput.clear();
+          await salaryMaxInput.sendKeys('120000');
+
+          // Test frequency selection
+          const frequencySelect = await driver.findElement(By.css('select[name="frequency"]'));
+          await frequencySelect.sendKeys('Daily digest');
+
+          // Verify form fields are populated
+          const alertNameValue = await alertNameInput.getAttribute('value');
+          const salaryMinValue = await salaryMinInput.getAttribute('value');
+          
+          if (!alertNameValue.includes('Test JavaScript')) {
+            throw new Error('Alert name not set correctly');
+          }
+          if (salaryMinValue !== '80000') {
+            throw new Error('Salary min not set correctly');
+          }
+        },
+      },
+
+      {
+        name: 'alert_preview_functionality',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.wait(until.elementLocated(By.css('#createAlertForm')), CONFIG.timeout);
+
+          // Fill out form with test data
+          const alertNameInput = await driver.findElement(By.css('input[name="alertName"]'));
+          await alertNameInput.clear();
+          await alertNameInput.sendKeys('Preview Test Alert');
+
+          const keywordsInput = await driver.findElement(By.css('#keywords'));
+          await keywordsInput.clear();
+          await keywordsInput.sendKeys('frontend');
+          await keywordsInput.sendKeys(Key.ENTER);
+
+          // Look for preview button
+          const previewButtons = await driver.findElements(
+            By.css('button[onclick*="preview"], .btn-preview, button:contains("Preview")')
+          );
+
+          if (previewButtons.length > 0) {
+            // Click preview button
+            await previewButtons[0].click();
+            await driver.sleep(2000);
+
+            // Check if preview results appear
+            const previewResults = await driver.findElements(
+              By.css('.preview-results, .alert-preview, .job-preview')
+            );
+
+            if (previewResults.length === 0) {
+              console.warn('Alert preview results not displayed');
+            }
+          } else {
+            console.warn('Alert preview functionality not found');
+          }
+        },
+      },
+
+      {
+        name: 'notification_permissions_handling',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          
+          // Check notification status display
+          const notificationStatus = await driver.findElements(
+            By.css('#notificationStatus, .notification-status')
+          );
+
+          if (notificationStatus.length > 0) {
+            const statusText = await notificationStatus[0].getText();
+            
+            // Should show one of the permission states
+            const validStates = ['granted', 'denied', 'default', 'checking'];
+            const hasValidState = validStates.some(state => 
+              statusText.toLowerCase().includes(state)
+            );
+
+            if (!hasValidState) {
+              console.warn(`Unexpected notification status: ${statusText}`);
+            }
+          }
+
+          // Check for notification permission buttons
+          const permissionButtons = await driver.findElements(
+            By.css('button[onclick*="notification"], .enable-notifications, .notification-toggle')
+          );
+
+          if (permissionButtons.length === 0) {
+            console.warn('Notification permission controls not found');
+          }
+        },
+      },
+
+      {
+        name: 'alert_management_interface',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.wait(until.elementLocated(By.css('.alerts-list-section')), CONFIG.timeout);
+
+          // Check for alerts list container
+          const alertsList = await driver.findElement(By.css('#alertsList'));
+          
+          // Check if there's a "no alerts" message or actual alerts
+          const noAlertsMessage = await driver.findElements(By.css('.no-alerts'));
+          const alertItems = await driver.findElements(By.css('.alert-item'));
+
+          if (noAlertsMessage.length === 0 && alertItems.length === 0) {
+            console.warn('Neither alert items nor no-alerts message found');
+          }
+
+          // Check for alert management buttons
+          const managementButtons = await driver.findElements(
+            By.css('.alert-actions button, .btn-edit, .btn-delete, .btn-toggle')
+          );
+
+          // If there are alert items, there should be management buttons
+          if (alertItems.length > 0 && managementButtons.length === 0) {
+            console.warn('Alert items found but no management buttons');
+          }
+
+          // Check for alert status indicators
+          const statusIndicators = await driver.findElements(
+            By.css('.alert-status, .status-active, .status-inactive')
+          );
+
+          if (alertItems.length > 0 && statusIndicators.length === 0) {
+            console.warn('Alert items found but no status indicators');
+          }
+        },
+      },
+
+      {
+        name: 'alert_frequency_options',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.wait(until.elementLocated(By.css('#createAlertForm')), CONFIG.timeout);
+
+          // Find frequency selection
+          const frequencySelect = await driver.findElement(By.css('select[name="frequency"]'));
+          
+          // Get all frequency options
+          const options = await frequencySelect.findElements(By.css('option'));
+          
+          if (options.length < 3) {
+            throw new Error('Insufficient frequency options found');
+          }
+
+          const expectedFrequencies = ['immediate', 'hourly', 'daily', 'weekly'];
+          let foundFrequencies = [];
+
+          for (const option of options) {
+            const value = await option.getAttribute('value');
+            const text = await option.getText();
+            foundFrequencies.push(value || text.toLowerCase());
+          }
+
+          const hasRequiredFrequencies = expectedFrequencies.some(freq =>
+            foundFrequencies.some(found => found.includes(freq))
+          );
+
+          if (!hasRequiredFrequencies) {
+            console.warn(`Expected frequency options not found. Found: ${foundFrequencies.join(', ')}`);
+          }
+        },
+      },
+
+      {
+        name: 'alert_criteria_validation',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.wait(until.elementLocated(By.css('#createAlertForm')), CONFIG.timeout);
+
+          // Try to submit empty form
+          const submitButton = await driver.findElement(
+            By.css('button[type="submit"], .btn:contains("Create Alert")')
+          );
+
+          // Clear any pre-filled data
+          const alertNameInput = await driver.findElement(By.css('input[name="alertName"]'));
+          await alertNameInput.clear();
+
+          // Attempt to submit empty form
+          await submitButton.click();
+          await driver.sleep(1000);
+
+          // Check for validation messages
+          const validationMessages = await driver.findElements(
+            By.css('.error-message, .validation-error, .field-error, :invalid')
+          );
+
+          // HTML5 validation or custom validation should prevent submission
+          const currentUrl = await driver.getCurrentUrl();
+          if (!currentUrl.includes('job-alerts.html')) {
+            throw new Error('Form submitted without proper validation');
+          }
+
+          // Check if required field highlighting works
+          const requiredFields = await driver.findElements(By.css('input[required]'));
+          if (requiredFields.length === 0) {
+            console.warn('No required field validation found');
+          }
+        },
+      },
+
+      {
+        name: 'responsive_alerts_interface',
+        execute: async (driver) => {
+          // Test mobile layout
+          await driver.manage().window().setRect({ width: 375, height: 667 });
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.wait(until.elementLocated(By.css('.container')), CONFIG.timeout);
+
+          // Check if main grid adapts to mobile
+          const mainGrid = await driver.findElements(By.css('.main-grid'));
+          if (mainGrid.length > 0) {
+            const gridStyles = await driver.executeScript(`
+              const grid = document.querySelector('.main-grid');
+              const styles = window.getComputedStyle(grid);
+              return {
+                display: styles.display,
+                gridTemplateColumns: styles.gridTemplateColumns
+              };
+            `);
+
+            // On mobile, should be single column
+            if (gridStyles.gridTemplateColumns && gridStyles.gridTemplateColumns.includes('1fr 1fr')) {
+              console.warn('Grid may not be responsive on mobile');
+            }
+          }
+
+          // Check if form elements are touch-friendly
+          const formInputs = await driver.findElements(By.css('input, select, button'));
+          for (const input of formInputs.slice(0, 3)) {
+            const rect = await input.getRect();
+            if (rect.height < 44) {
+              console.warn(`Small touch target found: ${rect.height}px height`);
+            }
+          }
+
+          // Reset viewport
+          await driver.manage().window().setRect({ width: 1920, height: 1080 });
+        },
+      },
+
+      {
+        name: 'alert_system_integration',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          
+          // Check for connection status indicators
+          const connectionStatus = await driver.findElements(
+            By.css('#alertConnectionStatus, .connection-indicator')
+          );
+
+          if (connectionStatus.length > 0) {
+            const statusText = await connectionStatus[0].getText();
+            
+            // Should show connected or connecting status
+            if (!statusText.toLowerCase().includes('connect')) {
+              console.warn(`Unexpected connection status: ${statusText}`);
+            }
+          }
+
+          // Check for API endpoints availability
+          const totalMatches = await driver.findElements(By.css('#totalMatches'));
+          if (totalMatches.length > 0) {
+            const matchText = await totalMatches[0].getText();
+            
+            // Should be a number
+            if (!/^\d+$/.test(matchText)) {
+              console.warn(`Invalid total matches format: ${matchText}`);
+            }
+          }
+
+          // Test navigation to related pages
+          const navLinks = await driver.findElements(
+            By.css('.nav-link, .nav-links a')
+          );
+
+          if (navLinks.length === 0) {
+            console.warn('Navigation links not found');
+          }
+
+          // Check for alert system JavaScript initialization
+          const alertSystemErrors = await driver.executeScript(`
+            return window.console && window.console.error ? 
+              window.console.error.toString() : 'No errors';
+          `);
+
+          if (alertSystemErrors.includes('alert') || alertSystemErrors.includes('notification')) {
+            console.warn('Potential alert system JavaScript errors detected');
+          }
+        },
+      },
+
+      {
+        name: 'push_notification_service_integration',
+        execute: async (driver) => {
+          await driver.get(`${CONFIG.baseUrl}/job-alerts.html`);
+          await driver.sleep(2000);
+
+          // Check if push notification service is loaded
+          const pushServiceAvailable = await driver.executeScript(`
+            return typeof PushNotificationService !== 'undefined' || 
+                   typeof webPushService !== 'undefined' ||
+                   window.pushNotificationService !== undefined;
+          `);
+
+          if (!pushServiceAvailable) {
+            console.warn('Push notification service not found');
+          }
+
+          // Check for service worker registration
+          const serviceWorkerAvailable = await driver.executeScript(`
+            return 'serviceWorker' in navigator;
+          `);
+
+          if (!serviceWorkerAvailable) {
+            console.warn('Service Worker not supported in test environment');
+          }
+
+          // Check for notification API support
+          const notificationApiAvailable = await driver.executeScript(`
+            return 'Notification' in window;
+          `);
+
+          if (!notificationApiAvailable) {
+            console.warn('Notification API not supported in test environment');
+          }
+
+          // Check if VAPID keys are configured (by looking for subscription attempts)
+          const vapidConfigured = await driver.executeScript(`
+            return document.querySelector('meta[name="vapid-public-key"]') !== null ||
+                   window.vapidPublicKey !== undefined;
+          `);
+
+          if (!vapidConfigured) {
+            console.warn('VAPID keys not configured for push notifications');
+          }
+        },
+      }
     ];
   }
 
