@@ -396,7 +396,7 @@ export class DatabaseAlertService implements AlertService {
           min: 120000,
           max: 160000,
           currency: 'USD',
-          period: 'yearly'
+          period: 'yearly',
         },
         description: 'We are looking for a senior software engineer...',
         url: 'https://example.com/job/1',
@@ -409,11 +409,11 @@ export class DatabaseAlertService implements AlertService {
         source: {
           site: 'example.com',
           originalUrl: 'https://example.com/job/1',
-          scrapedAt: new Date()
+          scrapedAt: new Date(),
         },
         metadata: {
-          confidence: 0.95
-        }
+          confidence: 0.95,
+        },
       },
       {
         id: '2',
@@ -424,7 +424,7 @@ export class DatabaseAlertService implements AlertService {
           min: 90000,
           max: 130000,
           currency: 'USD',
-          period: 'yearly'
+          period: 'yearly',
         },
         description: 'Join our dynamic team as a full stack developer...',
         url: 'https://example.com/job/2',
@@ -437,11 +437,11 @@ export class DatabaseAlertService implements AlertService {
         source: {
           site: 'example.com',
           originalUrl: 'https://example.com/job/2',
-          scrapedAt: new Date()
+          scrapedAt: new Date(),
         },
         metadata: {
-          confidence: 0.90
-        }
+          confidence: 0.9,
+        },
       },
     ];
 
@@ -545,11 +545,11 @@ export class DatabaseAlertService implements AlertService {
     const user: User = {
       id: userId,
       email,
-      name: name || undefined,
+      ...(name && { name }),
       preferences: {
         emailNotifications: true,
         alertFrequency: 'daily',
-        digestFormat: 'summary'
+        digestFormat: 'summary',
       },
     };
 
