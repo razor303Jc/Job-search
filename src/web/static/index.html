@@ -254,6 +254,132 @@
             
             <div class="search-suggestions" id="search-suggestions"></div>
             
+            <!-- Priority 2: Advanced Search Panel -->
+            <div class="advanced-search-panel" id="advanced-search-panel" style="display: none;">
+                <div class="advanced-search-header">
+                    <h3>🔧 Advanced Filters</h3>
+                    <button id="close-advanced" class="close-btn">×</button>
+                </div>
+                
+                <div class="filter-grid">
+                    <!-- Job Type Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">Job Type</label>
+                        <select id="job-type-filter" class="filter-select">
+                            <option value="">All Types</option>
+                            <option value="full-time">Full Time</option>
+                            <option value="part-time">Part Time</option>
+                            <option value="contract">Contract</option>
+                            <option value="freelance">Freelance</option>
+                            <option value="internship">Internship</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Experience Level Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">Experience Level</label>
+                        <select id="experience-filter" class="filter-select">
+                            <option value="">All Levels</option>
+                            <option value="entry">Entry Level</option>
+                            <option value="mid">Mid Level</option>
+                            <option value="senior">Senior Level</option>
+                            <option value="lead">Lead/Principal</option>
+                            <option value="executive">Executive</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Salary Range Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">Salary Range</label>
+                        <div class="salary-range">
+                            <input type="number" id="salary-min" placeholder="Min" class="salary-input">
+                            <span class="salary-separator">to</span>
+                            <input type="number" id="salary-max" placeholder="Max" class="salary-input">
+                            <select id="salary-currency" class="currency-select">
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Remote Work Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">Work Type</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="remote-filter" class="filter-checkbox">
+                                Remote Work
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="hybrid-filter" class="filter-checkbox">
+                                Hybrid Work
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="onsite-filter" class="filter-checkbox">
+                                On-site Only
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Location Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">Location</label>
+                        <input type="text" id="location-filter" placeholder="City, State, Country" class="filter-input">
+                    </div>
+                    
+                    <!-- Company Size Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">Company Size</label>
+                        <select id="company-size-filter" class="filter-select">
+                            <option value="">Any Size</option>
+                            <option value="startup">Startup (1-50)</option>
+                            <option value="small">Small (51-200)</option>
+                            <option value="medium">Medium (201-1000)</option>
+                            <option value="large">Large (1000+)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button id="apply-filters" class="filter-btn primary">Apply Filters</button>
+                    <button id="clear-filters" class="filter-btn secondary">Clear All</button>
+                    <button id="save-search" class="filter-btn tertiary">💾 Save Search</button>
+                </div>
+            </div>
+            
+            <!-- Search Results Sorting and Options -->
+            <div class="search-controls" id="search-controls" style="display: none;">
+                <div class="sort-controls">
+                    <label class="sort-label">Sort by:</label>
+                    <select id="sort-by" class="sort-select">
+                        <option value="relevance">Relevance</option>
+                        <option value="date">Date Posted</option>
+                        <option value="salary">Salary (High to Low)</option>
+                        <option value="salary-asc">Salary (Low to High)</option>
+                        <option value="company">Company Name</option>
+                        <option value="title">Job Title</option>
+                    </select>
+                </div>
+                
+                <div class="view-controls">
+                    <label class="view-label">View:</label>
+                    <button id="view-cards" class="view-btn active" title="Card View">📇</button>
+                    <button id="view-list" class="view-btn" title="List View">📋</button>
+                    <button id="view-compact" class="view-btn" title="Compact View">☰</button>
+                </div>
+                
+                <div class="results-per-page">
+                    <label class="per-page-label">Show:</label>
+                    <select id="results-per-page" class="per-page-select">
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
+                </div>
+            </div>
+            
             <!-- Search Results Summary -->
             <div class="search-results-summary" id="search-results-summary" style="display: none;">
                 <div class="summary-stats">
@@ -602,11 +728,12 @@
             }
         }
 
-        // Priority 1: Search Functionality Implementation
+        // Priority 2: Enhanced Job Listings Display - SearchManager Extension
         class SearchManager {
             constructor() {
                 this.searchInput = document.getElementById('main-search');
                 this.searchBtn = document.getElementById('search-btn');
+                this.advancedBtn = document.getElementById('advanced-search-btn');
                 this.searchSuggestions = document.getElementById('search-suggestions');
                 this.resultsContainer = document.getElementById('search-quick-results');
                 this.resultsSummary = document.getElementById('search-results-summary');
@@ -615,19 +742,28 @@
                 this.avgSalary = document.getElementById('search-avg-salary');
                 this.pagination = document.getElementById('search-pagination');
                 
+                // Priority 2: Advanced search elements
+                this.advancedPanel = document.getElementById('advanced-search-panel');
+                this.searchControls = document.getElementById('search-controls');
+                this.sortBy = document.getElementById('sort-by');
+                this.resultsPerPageSelect = document.getElementById('results-per-page');
+                
                 this.currentQuery = '';
                 this.currentPage = 1;
                 this.resultsPerPage = 10;
                 this.totalJobsCount = 0;
+                this.currentSort = 'relevance';
+                this.currentView = 'cards';
+                this.activeFilters = {};
+                this.savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
                 
                 this.initializeSearch();
+                this.initializeAdvancedSearch();
             }
 
             initializeSearch() {
-                // Search button click handler
+                // Basic search functionality (existing)
                 this.searchBtn.addEventListener('click', () => this.performSearch());
-                
-                // Enter key handler for search input
                 this.searchInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
                         this.performSearch();
@@ -660,10 +796,212 @@
                 });
             }
 
+            // Priority 2: Advanced Search Initialization
+            initializeAdvancedSearch() {
+                // Advanced search panel toggle
+                this.advancedBtn.addEventListener('click', () => {
+                    this.toggleAdvancedPanel();
+                });
+                
+                document.getElementById('close-advanced').addEventListener('click', () => {
+                    this.hideAdvancedPanel();
+                });
+                
+                // Filter application
+                document.getElementById('apply-filters').addEventListener('click', () => {
+                    this.applyFilters();
+                });
+                
+                document.getElementById('clear-filters').addEventListener('click', () => {
+                    this.clearAllFilters();
+                });
+                
+                // Save search functionality
+                document.getElementById('save-search').addEventListener('click', () => {
+                    this.saveCurrentSearch();
+                });
+                
+                // Sort and view controls
+                this.sortBy.addEventListener('change', (e) => {
+                    this.currentSort = e.target.value;
+                    this.performSearch(false);
+                });
+                
+                this.resultsPerPageSelect.addEventListener('change', (e) => {
+                    this.resultsPerPage = parseInt(e.target.value);
+                    this.currentPage = 1;
+                    this.performSearch(false);
+                });
+                
+                // View mode buttons
+                document.getElementById('view-cards').addEventListener('click', () => this.setViewMode('cards'));
+                document.getElementById('view-list').addEventListener('click', () => this.setViewMode('list'));
+                document.getElementById('view-compact').addEventListener('click', () => this.setViewMode('compact'));
+                
+                // Clear search action
+                document.getElementById('clear-search').addEventListener('click', () => {
+                    this.clearSearch();
+                });
+                
+                // Export search results
+                document.getElementById('export-search').addEventListener('click', () => {
+                    this.exportResults();
+                });
+            }
+
+            toggleAdvancedPanel() {
+                const isVisible = this.advancedPanel.style.display !== 'none';
+                if (isVisible) {
+                    this.hideAdvancedPanel();
+                } else {
+                    this.showAdvancedPanel();
+                }
+            }
+
+            showAdvancedPanel() {
+                this.advancedPanel.style.display = 'block';
+                this.advancedBtn.classList.add('active');
+                this.advancedPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            hideAdvancedPanel() {
+                this.advancedPanel.style.display = 'none';
+                this.advancedBtn.classList.remove('active');
+            }
+
+            applyFilters() {
+                // Collect all filter values
+                this.activeFilters = {
+                    jobType: document.getElementById('job-type-filter').value,
+                    experience: document.getElementById('experience-filter').value,
+                    salaryMin: document.getElementById('salary-min').value,
+                    salaryMax: document.getElementById('salary-max').value,
+                    salaryCurrency: document.getElementById('salary-currency').value,
+                    remote: document.getElementById('remote-filter').checked,
+                    hybrid: document.getElementById('hybrid-filter').checked,
+                    onsite: document.getElementById('onsite-filter').checked,
+                    location: document.getElementById('location-filter').value,
+                    companySize: document.getElementById('company-size-filter').value
+                };
+                
+                // Reset to first page and perform filtered search
+                this.currentPage = 1;
+                this.performSearch(true);
+                this.hideAdvancedPanel();
+                
+                dashboard.log(`🔧 Applied ${Object.keys(this.activeFilters).filter(key => this.activeFilters[key]).length} filters`, 'info');
+            }
+
+            clearAllFilters() {
+                // Reset all filter inputs
+                document.getElementById('job-type-filter').value = '';
+                document.getElementById('experience-filter').value = '';
+                document.getElementById('salary-min').value = '';
+                document.getElementById('salary-max').value = '';
+                document.getElementById('salary-currency').value = 'USD';
+                document.getElementById('remote-filter').checked = false;
+                document.getElementById('hybrid-filter').checked = false;
+                document.getElementById('onsite-filter').checked = false;
+                document.getElementById('location-filter').value = '';
+                document.getElementById('company-size-filter').value = '';
+                
+                this.activeFilters = {};
+                this.currentPage = 1;
+                this.performSearch(true);
+                
+                dashboard.log('🗑️ All filters cleared', 'info');
+            }
+
+            setViewMode(mode) {
+                // Update view mode buttons
+                document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`view-${mode}`).classList.add('active');
+                
+                this.currentView = mode;
+                
+                // Re-render results with new view mode
+                if (this.lastSearchResults) {
+                    this.displaySearchResults(this.lastSearchResults);
+                }
+                
+                dashboard.log(`👁️ Changed view to ${mode}`, 'info');
+            }
+
+            saveCurrentSearch() {
+                const searchName = prompt('Enter a name for this search:');
+                if (!searchName) return;
+                
+                const searchData = {
+                    id: Date.now(),
+                    name: searchName,
+                    query: this.currentQuery,
+                    filters: { ...this.activeFilters },
+                    sort: this.currentSort,
+                    created: new Date().toISOString()
+                };
+                
+                this.savedSearches.push(searchData);
+                localStorage.setItem('savedSearches', JSON.stringify(this.savedSearches));
+                
+                dashboard.log(`💾 Saved search: "${searchName}"`, 'success');
+                alert(`Search "${searchName}" has been saved!`);
+            }
+
+            clearSearch() {
+                this.searchInput.value = '';
+                this.currentQuery = '';
+                this.activeFilters = {};
+                this.hideSearchResults();
+                this.clearAllFilters();
+                
+                dashboard.log('🗑️ Search cleared', 'info');
+            }
+
+            async exportResults() {
+                if (!this.lastSearchResults || !this.lastSearchResults.results.length) {
+                    alert('No search results to export');
+                    return;
+                }
+                
+                try {
+                    const csvData = this.convertResultsToCSV(this.lastSearchResults.results);
+                    const blob = new Blob([csvData], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `job-search-results-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    dashboard.log(`📁 Exported ${this.lastSearchResults.results.length} results to CSV`, 'success');
+                } catch (error) {
+                    dashboard.log(`❌ Export failed: ${error.message}`, 'error');
+                }
+            }
+
+            convertResultsToCSV(results) {
+                const headers = ['Title', 'Company', 'Location', 'Salary', 'Remote', 'Description', 'Posted Date', 'URL'];
+                const rows = results.map(job => [
+                    `"${job.title || ''}"`,
+                    `"${job.company || ''}"`,
+                    `"${job.location || ''}"`,
+                    `"${job.salary ? `$${job.salary.min}-${job.salary.max}` : ''}"`,
+                    job.remote ? 'Yes' : 'No',
+                    `"${(job.description || '').substring(0, 200).replace(/"/g, '""')}"`,
+                    job.createdAt ? new Date(job.createdAt).toLocaleDateString() : '',
+                    `"${job.url || ''}"`
+                ]);
+                
+                return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+            }
+
             async performSearch(resetPage = true) {
                 const query = this.searchInput.value.trim();
                 
-                if (!query) {
+                if (!query && Object.keys(this.activeFilters).length === 0) {
                     this.hideSearchResults();
                     return;
                 }
@@ -677,16 +1015,27 @@
                 
                 try {
                     const offset = (this.currentPage - 1) * this.resultsPerPage;
+                    
+                    // Priority 2: Enhanced search payload with filters and sorting
+                    const searchPayload = {
+                        query: query,
+                        limit: this.resultsPerPage,
+                        offset: offset,
+                        sort: this.currentSort,
+                        filters: {
+                            ...this.activeFilters,
+                            // Convert checkbox filters to proper format
+                            workType: this.getWorkTypeFilter(),
+                            salaryRange: this.getSalaryRangeFilter()
+                        }
+                    };
+                    
                     const response = await fetch('/api/v1/jobs/search', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({
-                            query: query,
-                            limit: this.resultsPerPage,
-                            offset: offset
-                        })
+                        body: JSON.stringify(searchPayload)
                     });
                     
                     if (!response.ok) {
@@ -694,14 +1043,47 @@
                     }
                     
                     const data = await response.json();
+                    this.lastSearchResults = data;
                     this.displaySearchResults(data);
-                    dashboard.log(`🔍 Search completed: "${query}" - ${data.results.length} results`, 'success');
+                    
+                    // Show search controls after first search
+                    this.searchControls.style.display = 'flex';
+                    
+                    const filterCount = Object.keys(this.activeFilters).filter(key => this.activeFilters[key]).length;
+                    const logMessage = filterCount > 0 
+                        ? `🔍 Search: "${query}" with ${filterCount} filters - ${data.results.length} results`
+                        : `🔍 Search: "${query}" - ${data.results.length} results`;
+                    
+                    dashboard.log(logMessage, 'success');
                     
                 } catch (error) {
                     console.error('Search error:', error);
                     this.showErrorState(error.message);
                     dashboard.log(`❌ Search failed: ${error.message}`, 'error');
                 }
+            }
+
+            getWorkTypeFilter() {
+                const workTypes = [];
+                if (this.activeFilters.remote) workTypes.push('remote');
+                if (this.activeFilters.hybrid) workTypes.push('hybrid');
+                if (this.activeFilters.onsite) workTypes.push('onsite');
+                return workTypes.length > 0 ? workTypes : null;
+            }
+
+            getSalaryRangeFilter() {
+                const min = this.activeFilters.salaryMin;
+                const max = this.activeFilters.salaryMax;
+                const currency = this.activeFilters.salaryCurrency || 'USD';
+                
+                if (min || max) {
+                    return {
+                        min: min ? parseInt(min) : null,
+                        max: max ? parseInt(max) : null,
+                        currency: currency
+                    };
+                }
+                return null;
             }
 
             showLoadingState() {
@@ -718,32 +1100,175 @@
                 const { results, query, pagination } = data;
                 this.totalJobsCount = pagination.total;
                 
-                // Update results summary
+                // Update results summary with enhanced statistics
                 this.totalResults.textContent = pagination.total.toLocaleString();
                 
-                // Calculate remote jobs and average salary
-                const remoteJobs = results.filter(job => job.remote || job.location?.toLowerCase().includes('remote')).length;
-                const salaries = results.filter(job => job.salary?.min && job.salary?.max).map(job => (job.salary.min + job.salary.max) / 2);
-                const avgSalary = salaries.length > 0 ? salaries.reduce((a, b) => a + b, 0) / salaries.length : 0;
+                // Calculate enhanced statistics
+                const remoteJobs = results.filter(job => 
+                    job.remote || job.location?.toLowerCase().includes('remote')).length;
+                const salaries = results.filter(job => job.salary?.min && job.salary?.max)
+                    .map(job => (job.salary.min + job.salary.max) / 2);
+                const avgSalary = salaries.length > 0 ? 
+                    salaries.reduce((a, b) => a + b, 0) / salaries.length : 0;
+                
+                // Calculate new jobs today
+                const today = new Date().toDateString();
+                const newToday = results.filter(job => 
+                    new Date(job.createdAt).toDateString() === today).length;
                 
                 this.remoteJobsCount.textContent = remoteJobs;
                 this.avgSalary.textContent = avgSalary > 0 ? `$${Math.round(avgSalary).toLocaleString()}` : 'N/A';
+                document.getElementById('search-new-today').textContent = newToday;
                 
-                // Display results
+                // Display results based on current view mode
                 if (results.length === 0) {
-                    this.resultsContainer.innerHTML = `
-                        <div class="no-results">
-                            <p>🔍 No jobs found for "${query}"</p>
-                            <p>Try different keywords or check the spelling</p>
-                        </div>
-                    `;
+                    this.resultsContainer.innerHTML = this.createNoResultsView(query);
                 } else {
-                    this.resultsContainer.innerHTML = results.map(job => this.createJobCard(job)).join('');
+                    this.resultsContainer.innerHTML = this.renderResultsForView(results);
                 }
                 
-                // Update pagination
+                // Update pagination and show results
                 this.updatePagination();
                 this.resultsSummary.style.display = 'block';
+                this.resultsContainer.style.display = 'block';
+                
+                // Update results count display
+                const startIndex = (this.currentPage - 1) * this.resultsPerPage + 1;
+                const endIndex = Math.min(startIndex + results.length - 1, this.totalJobsCount);
+                document.getElementById('results-showing').textContent = `${startIndex}-${endIndex}`;
+                document.getElementById('results-total').textContent = this.totalJobsCount.toLocaleString();
+            }
+
+            renderResultsForView(results) {
+                switch (this.currentView) {
+                    case 'list':
+                        return results.map(job => this.createJobListItem(job)).join('');
+                    case 'compact':
+                        return results.map(job => this.createJobCompactItem(job)).join('');
+                    case 'cards':
+                    default:
+                        return results.map(job => this.createJobCard(job)).join('');
+                }
+            }
+
+            createJobCard(job) {
+                const salaryInfo = job.salary && job.salary.min && job.salary.max 
+                    ? `� $${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()}`
+                    : '💰 Salary not specified';
+                
+                const remoteIcon = job.remote || job.location?.toLowerCase().includes('remote') ? '🏠' : '🏢';
+                const locationText = job.location || 'Location not specified';
+                const experienceLevel = this.getExperienceLevel(job.title);
+                const jobType = job.employmentType || 'Full-time';
+                
+                return `
+                    <div class="job-card enhanced-card" data-job-id="${job.id}">
+                        <div class="job-header">
+                            <h4 class="job-title">${job.title}</h4>
+                            <div class="job-company">
+                                ${job.company}
+                                <span class="job-type-badge">${jobType}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="job-meta">
+                            <span class="job-location">${remoteIcon} ${locationText}</span>
+                            <span class="job-salary">${salaryInfo}</span>
+                            ${experienceLevel ? `<span class="experience-level">📊 ${experienceLevel}</span>` : ''}
+                        </div>
+                        
+                        ${job.skills ? `
+                            <div class="job-skills">
+                                ${job.skills.slice(0, 5).map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                                ${job.skills.length > 5 ? `<span class="skill-more">+${job.skills.length - 5} more</span>` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        ${job.description ? `<div class="job-description">${job.description.substring(0, 200)}...</div>` : ''}
+                        
+                        <div class="job-actions">
+                            <button class="btn-primary" onclick="viewJobDetails('${job.id}')">View Details</button>
+                            <button class="btn-secondary" onclick="saveJob('${job.id}')">💾 Save</button>
+                            <button class="btn-tertiary" onclick="shareJob('${job.id}')">📤 Share</button>
+                        </div>
+                        
+                        <div class="job-footer">
+                            <span class="job-timestamp">Posted: ${new Date(job.createdAt).toLocaleDateString()}</span>
+                            <span class="job-source">via ${job.source || 'Direct'}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            createJobListItem(job) {
+                const salaryText = job.salary && job.salary.min && job.salary.max 
+                    ? `$${job.salary.min.toLocaleString()}-${job.salary.max.toLocaleString()}`
+                    : 'Not specified';
+                
+                return `
+                    <div class="job-list-item" data-job-id="${job.id}">
+                        <div class="job-list-main">
+                            <h4 class="job-list-title">${job.title}</h4>
+                            <div class="job-list-company">${job.company}</div>
+                            <div class="job-list-meta">
+                                <span>${job.location || 'Remote'}</span> • 
+                                <span>${salaryText}</span> • 
+                                <span>${new Date(job.createdAt).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        <div class="job-list-actions">
+                            <button class="btn-primary btn-small" onclick="viewJobDetails('${job.id}')">View</button>
+                            <button class="btn-secondary btn-small" onclick="saveJob('${job.id}')">Save</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            createJobCompactItem(job) {
+                return `
+                    <div class="job-compact-item" data-job-id="${job.id}" onclick="viewJobDetails('${job.id}')">
+                        <span class="compact-title">${job.title}</span>
+                        <span class="compact-company">${job.company}</span>
+                        <span class="compact-location">${job.location || 'Remote'}</span>
+                        <span class="compact-salary">${job.salary ? `$${job.salary.min}k-${job.salary.max}k` : 'N/A'}</span>
+                        <span class="compact-date">${new Date(job.createdAt).toLocaleDateString()}</span>
+                    </div>
+                `;
+            }
+
+            createNoResultsView(query) {
+                const hasFilters = Object.keys(this.activeFilters).some(key => this.activeFilters[key]);
+                
+                return `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h3>No jobs found</h3>
+                        <p>No jobs match your search "${query}"${hasFilters ? ' with current filters' : ''}</p>
+                        <div class="no-results-suggestions">
+                            <h4>Try:</h4>
+                            <ul>
+                                <li>Different keywords or job titles</li>
+                                <li>Removing some filters</li>
+                                <li>Checking spelling</li>
+                                <li>Using more general terms</li>
+                            </ul>
+                        </div>
+                        ${hasFilters ? `
+                            <button class="btn-primary" onclick="searchManager.clearAllFilters()">
+                                Clear All Filters
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            getExperienceLevel(jobTitle) {
+                const title = jobTitle.toLowerCase();
+                if (title.includes('senior') || title.includes('sr.') || title.includes('lead')) return 'Senior';
+                if (title.includes('junior') || title.includes('jr.') || title.includes('entry')) return 'Entry';
+                if (title.includes('mid') || title.includes('intermediate')) return 'Mid-level';
+                if (title.includes('principal') || title.includes('staff') || title.includes('architect')) return 'Principal';
+                return null;
             }
 
             createJobCard(job) {
@@ -837,25 +1362,37 @@
             }
         }
 
-        // Global functions for job actions
+        // Global functions for job actions - Priority 2 Enhanced
         async function viewJobDetails(jobId) {
             try {
                 const response = await fetch(`/api/v1/jobs/${jobId}`);
                 const data = await response.json();
                 
-                // Create a modal or redirect to job details page
-                dashboard.log(`👁️ Viewing job: ${data.job.title} at ${data.job.company}`, 'info');
+                // Enhanced job details modal (for now using alert, future: modal)
+                const job = data.job;
+                const skillsList = job.skills ? job.skills.join(', ') : 'Not specified';
+                const salaryInfo = job.salary ? `$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()} ${job.salary.currency || 'USD'}` : 'Not specified';
                 
-                // For now, just show an alert with job details
+                dashboard.log(`👁️ Viewing job: ${job.title} at ${job.company}`, 'info');
+                
                 alert(`
-Job: ${data.job.title}
-Company: ${data.job.company}
-Location: ${data.job.location || 'Not specified'}
-Remote: ${data.job.remote ? 'Yes' : 'No'}
-Salary: ${data.job.salary ? `$${data.job.salary.min}-${data.job.salary.max}` : 'Not specified'}
+🔍 JOB DETAILS
+
+Title: ${job.title}
+Company: ${job.company}
+Location: ${job.location || 'Not specified'}
+Remote: ${job.remote ? 'Yes' : 'No'}
+Employment Type: ${job.employmentType || 'Full-time'}
+Salary: ${salaryInfo}
+Experience Level: ${searchManager.getExperienceLevel(job.title) || 'Not specified'}
+
+Skills Required: ${skillsList}
 
 Description:
-${data.job.description || 'No description available'}
+${job.description || 'No description available'}
+
+Posted: ${new Date(job.createdAt).toLocaleDateString()}
+Source: ${job.source || 'Direct'}
                 `);
             } catch (error) {
                 dashboard.log(`❌ Failed to load job details: ${error.message}`, 'error');
@@ -863,9 +1400,64 @@ ${data.job.description || 'No description available'}
         }
 
         async function saveJob(jobId) {
-            // This would integrate with a job saving system
-            dashboard.log(`💾 Job saved: ${jobId}`, 'success');
-            alert('Job saved to your favorites! (Feature coming soon)');
+            try {
+                // This would integrate with a job saving system
+                let savedJobs = JSON.parse(localStorage.getItem('savedJobs') || '[]');
+                
+                if (savedJobs.includes(jobId)) {
+                    dashboard.log(`💾 Job already saved: ${jobId}`, 'info');
+                    alert('Job is already in your saved list!');
+                    return;
+                }
+                
+                savedJobs.push(jobId);
+                localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
+                
+                dashboard.log(`💾 Job saved: ${jobId}`, 'success');
+                
+                // Update UI to show saved state
+                const jobCard = document.querySelector(`[data-job-id="${jobId}"]`);
+                if (jobCard) {
+                    const saveBtn = jobCard.querySelector('button[onclick*="saveJob"]');
+                    if (saveBtn) {
+                        saveBtn.innerHTML = '✅ Saved';
+                        saveBtn.classList.add('saved');
+                        saveBtn.disabled = true;
+                    }
+                }
+                
+                alert('Job saved to your favorites!');
+            } catch (error) {
+                dashboard.log(`❌ Failed to save job: ${error.message}`, 'error');
+            }
+        }
+
+        async function shareJob(jobId) {
+            try {
+                const response = await fetch(`/api/v1/jobs/${jobId}`);
+                const data = await response.json();
+                const job = data.job;
+                
+                const shareText = `Check out this job: ${job.title} at ${job.company}\n${job.location || 'Remote'}\n\nFound via Job Search Pro`;
+                
+                if (navigator.share) {
+                    // Use Web Share API if available
+                    await navigator.share({
+                        title: `${job.title} at ${job.company}`,
+                        text: shareText,
+                        url: window.location.href
+                    });
+                    dashboard.log(`📤 Job shared: ${job.title}`, 'success');
+                } else {
+                    // Fallback: copy to clipboard
+                    await navigator.clipboard.writeText(shareText);
+                    dashboard.log(`📤 Job details copied to clipboard: ${job.title}`, 'success');
+                    alert('Job details copied to clipboard!');
+                }
+            } catch (error) {
+                dashboard.log(`❌ Failed to share job: ${error.message}`, 'error');
+                alert('Could not share job. Please try again.');
+            }
         }
 
         // Initialize search manager and dashboard when page loads
@@ -876,7 +1468,7 @@ ${data.job.description || 'No description available'}
             searchManager = new SearchManager();
         });
 
-        // Add CSS animation and search styles
+        // Add CSS animation and Priority 2 enhanced search styles
         const style = document.createElement('style');
         style.textContent = `
             @keyframes fadeIn {
@@ -884,198 +1476,465 @@ ${data.job.description || 'No description available'}
                 to { opacity: 1; transform: translateY(0); }
             }
             
-            /* Search Results Styling */
-            .job-card {
+            @keyframes slideDown {
+                from { opacity: 0; transform: translateY(-20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            /* Priority 2: Advanced Search Panel Styling */
+            .advanced-search-panel {
                 background: white;
-                border-radius: 8px;
-                padding: 16px;
-                margin-bottom: 12px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                border-left: 4px solid #3182ce;
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                border-radius: 12px;
+                padding: 24px;
+                margin: 16px 0;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                border: 1px solid #e2e8f0;
+                animation: slideDown 0.3s ease;
             }
             
-            .job-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            .advanced-search-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 12px;
+                border-bottom: 2px solid #f7fafc;
             }
             
-            .job-header {
-                margin-bottom: 8px;
-            }
-            
-            .job-title {
-                margin: 0 0 4px 0;
+            .advanced-search-header h3 {
+                margin: 0;
                 color: #2d3748;
                 font-size: 18px;
-                font-weight: 600;
             }
             
-            .job-company {
-                color: #4a5568;
-                font-weight: 500;
-                font-size: 14px;
+            .close-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                color: #a0aec0;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
+                transition: all 0.2s ease;
             }
             
-            .job-meta {
+            .close-btn:hover {
+                color: #e53e3e;
+                background: #fed7d7;
+            }
+            
+            .filter-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin-bottom: 24px;
+            }
+            
+            .filter-group {
                 display: flex;
-                gap: 16px;
-                margin: 8px 0;
-                font-size: 14px;
-                color: #718096;
+                flex-direction: column;
+                gap: 8px;
             }
             
-            .job-location, .job-salary {
+            .filter-label {
+                font-weight: 600;
+                color: #4a5568;
+                font-size: 14px;
+            }
+            
+            .filter-select, .filter-input {
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 14px;
+                transition: border-color 0.2s ease;
+            }
+            
+            .filter-select:focus, .filter-input:focus {
+                outline: none;
+                border-color: #3182ce;
+                box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+            }
+            
+            .salary-range {
                 display: flex;
                 align-items: center;
-                gap: 4px;
+                gap: 8px;
             }
             
-            .job-description {
-                margin: 12px 0;
-                color: #4a5568;
-                line-height: 1.5;
+            .salary-input {
+                flex: 1;
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
                 font-size: 14px;
             }
             
-            .job-actions {
-                display: flex;
-                gap: 8px;
-                margin-top: 12px;
-            }
-            
-            .job-actions button {
-                padding: 6px 12px;
-                border-radius: 4px;
-                border: none;
-                cursor: pointer;
-                font-size: 12px;
+            .salary-separator {
+                color: #718096;
                 font-weight: 500;
-                transition: background-color 0.2s ease;
             }
             
-            .btn-primary {
+            .currency-select {
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 14px;
+                min-width: 80px;
+            }
+            
+            .checkbox-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .checkbox-label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                color: #4a5568;
+                cursor: pointer;
+            }
+            
+            .filter-checkbox {
+                width: 16px;
+                height: 16px;
+                margin: 0;
+            }
+            
+            .filter-actions {
+                display: flex;
+                gap: 12px;
+                justify-content: flex-end;
+                border-top: 1px solid #f7fafc;
+                padding-top: 20px;
+            }
+            
+            .filter-btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 6px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 14px;
+            }
+            
+            .filter-btn.primary {
                 background-color: #3182ce;
                 color: white;
             }
             
-            .btn-primary:hover {
+            .filter-btn.primary:hover {
                 background-color: #2c5aa0;
             }
             
-            .btn-secondary {
+            .filter-btn.secondary {
                 background-color: #e2e8f0;
                 color: #4a5568;
             }
             
-            .btn-secondary:hover {
+            .filter-btn.secondary:hover {
                 background-color: #cbd5e0;
             }
             
-            .job-timestamp {
-                margin-top: 8px;
+            .filter-btn.tertiary {
+                background-color: #68d391;
+                color: white;
+            }
+            
+            .filter-btn.tertiary:hover {
+                background-color: #48bb78;
+            }
+            
+            /* Search Controls Styling */
+            .search-controls {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: white;
+                padding: 16px;
+                border-radius: 8px;
+                margin: 16px 0;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                border: 1px solid #e2e8f0;
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+            
+            .sort-controls, .view-controls, .results-per-page {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .sort-label, .view-label, .per-page-label {
+                font-weight: 500;
+                color: #4a5568;
+                font-size: 14px;
+            }
+            
+            .sort-select, .per-page-select {
+                padding: 6px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+            
+            .view-btn {
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                background: white;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 16px;
+            }
+            
+            .view-btn:hover {
+                background: #f7fafc;
+            }
+            
+            .view-btn.active {
+                background: #3182ce;
+                color: white;
+                border-color: #3182ce;
+            }
+            
+            /* Enhanced Job Card Styling */
+            .enhanced-card {
+                background: white;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 16px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                border: 1px solid #e2e8f0;
+                border-left: 4px solid #3182ce;
+                transition: all 0.3s ease;
+                position: relative;
+            }
+            
+            .enhanced-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+                border-left-color: #2c5aa0;
+            }
+            
+            .job-type-badge {
+                display: inline-block;
+                background: #edf2f7;
+                color: #4a5568;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+                margin-left: 8px;
+            }
+            
+            .job-skills {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin: 12px 0;
+            }
+            
+            .skill-tag {
+                background: #e6fffa;
+                color: #234e52;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            
+            .skill-more {
+                background: #f7fafc;
+                color: #718096;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-style: italic;
+            }
+            
+            .experience-level {
+                background: #fef5e7;
+                color: #744210;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            
+            .job-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 16px;
+                padding-top: 12px;
+                border-top: 1px solid #f7fafc;
                 font-size: 12px;
                 color: #a0aec0;
             }
             
-            /* Search Suggestions */
-            .search-suggestions {
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 60px;
-                background: white;
-                border: 1px solid #e2e8f0;
-                border-radius: 0 0 8px 8px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                z-index: 1000;
-                max-height: 200px;
-                overflow-y: auto;
+            .btn-tertiary {
+                background-color: #f0fff4;
+                color: #276749;
+                border: 1px solid #9ae6b4;
             }
             
-            .suggestion-item {
-                padding: 8px 12px;
-                cursor: pointer;
-                border-bottom: 1px solid #f7fafc;
-                transition: background-color 0.2s ease;
+            .btn-tertiary:hover {
+                background-color: #c6f6d5;
             }
             
-            .suggestion-item:hover {
-                background-color: #f7fafc;
-            }
-            
-            .suggestion-item:last-child {
-                border-bottom: none;
-            }
-            
-            /* Loading and Error States */
-            .loading-state, .no-results, .error-state {
-                text-align: center;
-                padding: 40px 20px;
-                color: #718096;
-            }
-            
-            .loading-state {
-                background: #f7fafc;
-                border-radius: 8px;
-                margin: 20px 0;
-            }
-            
-            .no-results {
-                background: #fffbf0;
-                border: 1px solid #f6e05e;
-                border-radius: 8px;
-                margin: 20px 0;
-            }
-            
-            .error-state {
-                background: #fed7d7;
-                border: 1px solid #fc8181;
-                border-radius: 8px;
-                margin: 20px 0;
-            }
-            
-            /* Pagination styling improvements */
-            #search-pagination {
+            /* List View Styling */
+            .job-list-item {
                 display: flex;
+                justify-content: space-between;
                 align-items: center;
-                justify-content: center;
-                gap: 12px;
-                margin-top: 20px;
+                background: white;
                 padding: 16px;
-                background: #f7fafc;
-                border-radius: 8px;
-            }
-            
-            .page-btn {
-                padding: 8px 16px;
-                background-color: #3182ce;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-weight: 500;
+                border-bottom: 1px solid #e2e8f0;
                 transition: background-color 0.2s ease;
             }
             
-            .page-btn:hover:not(:disabled) {
-                background-color: #2c5aa0;
+            .job-list-item:hover {
+                background: #f7fafc;
             }
             
-            .page-btn:disabled {
-                background-color: #cbd5e0;
-                color: #a0aec0;
-                cursor: not-allowed;
+            .job-list-main {
+                flex: 1;
             }
             
-            .page-info {
+            .job-list-title {
+                margin: 0 0 4px 0;
+                color: #2d3748;
+                font-size: 16px;
+                font-weight: 600;
+            }
+            
+            .job-list-company {
+                color: #4a5568;
                 font-weight: 500;
+                margin-bottom: 4px;
+            }
+            
+            .job-list-meta {
+                color: #718096;
+                font-size: 14px;
+            }
+            
+            .job-list-actions {
+                display: flex;
+                gap: 8px;
+            }
+            
+            .btn-small {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            /* Compact View Styling */
+            .job-compact-item {
+                display: grid;
+                grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr;
+                gap: 16px;
+                padding: 12px 16px;
+                border-bottom: 1px solid #e2e8f0;
+                align-items: center;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+                font-size: 14px;
+            }
+            
+            .job-compact-item:hover {
+                background: #f7fafc;
+            }
+            
+            .compact-title {
+                font-weight: 600;
+                color: #2d3748;
+            }
+            
+            .compact-company {
                 color: #4a5568;
             }
             
-            /* Search input group positioning */
-            .search-input-group {
-                position: relative;
+            .compact-location, .compact-salary, .compact-date {
+                color: #718096;
+            }
+            
+            /* Enhanced No Results Styling */
+            .no-results {
+                text-align: center;
+                padding: 60px 20px;
+                background: white;
+                border-radius: 12px;
+                border: 1px solid #e2e8f0;
+            }
+            
+            .no-results-icon {
+                font-size: 48px;
+                margin-bottom: 16px;
+            }
+            
+            .no-results h3 {
+                color: #2d3748;
+                margin-bottom: 8px;
+            }
+            
+            .no-results-suggestions {
+                background: #f7fafc;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 20px 0;
+                text-align: left;
+                display: inline-block;
+            }
+            
+            .no-results-suggestions h4 {
+                margin: 0 0 12px 0;
+                color: #4a5568;
+            }
+            
+            .no-results-suggestions ul {
+                margin: 0;
+                padding-left: 20px;
+                color: #718096;
+            }
+            
+            .no-results-suggestions li {
+                margin-bottom: 4px;
+            }
+            
+            /* Advanced search button active state */
+            .search-button.active {
+                background-color: #3182ce;
+                color: white;
+            }
+            
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .filter-grid {
+                    grid-template-columns: 1fr;
+                }
+                
+                .search-controls {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+                
+                .job-compact-item {
+                    grid-template-columns: 1fr;
+                    gap: 8px;
+                    text-align: left;
+                }
+                
+                .salary-range {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
             }
         `;
         document.head.appendChild(style);
