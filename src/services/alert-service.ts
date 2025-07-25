@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 // Alert Service Implementation for Job Alerts Management
 import type { JobListing as Job } from '../types/index.js';
 import type { User } from './email-service.js';
+import type { EmailService } from './email-service.js';
 
 export interface AlertCriteria {
   keywords?: string[];
@@ -23,7 +24,7 @@ export interface Alert {
   criteria: AlertCriteria;
   frequency: 'immediate' | 'hourly' | 'daily' | 'weekly';
   isActive: boolean;
-  lastTriggered?: Date;
+  lastTriggered: Date | undefined;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,7 +71,13 @@ export class DatabaseAlertService implements AlertService {
 
   constructor(databasePath?: string, emailService?: EmailService) {
     this.db = new Database(databasePath || join(process.cwd(), 'jobs.db'));
-    this.emailService = emailService || emailService;
+    // Create a default email service if none provided
+    if (emailService) {
+      this.emailService = emailService;
+    } else {
+      // This will be assigned later when needed
+      this.emailService = null as any; // Temporary fix - should be injected
+    }
     this.initializeTables();
   }
 
@@ -155,6 +162,7 @@ export class DatabaseAlertService implements AlertService {
       criteria,
       frequency: frequency as Alert['frequency'],
       isActive: true,
+      lastTriggered: undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -384,24 +392,56 @@ export class DatabaseAlertService implements AlertService {
         title: 'Senior Software Engineer',
         company: 'Tech Corp',
         location: 'San Francisco, CA',
-        salary: '$120,000 - $160,000',
+        salary: {
+          min: 120000,
+          max: 160000,
+          currency: 'USD',
+          period: 'yearly'
+        },
         description: 'We are looking for a senior software engineer...',
         url: 'https://example.com/job/1',
-        postedDate: new Date().toISOString(),
-        scraped: true,
-        scrapedAt: new Date().toISOString(),
+        employmentType: 'full-time',
+        remote: false,
+        postedDate: new Date(),
+        requirements: ['TypeScript', 'React', 'Node.js'],
+        benefits: ['Health Insurance', '401k'],
+        tags: ['engineering', 'senior'],
+        source: {
+          site: 'example.com',
+          originalUrl: 'https://example.com/job/1',
+          scrapedAt: new Date()
+        },
+        metadata: {
+          confidence: 0.95
+        }
       },
       {
         id: '2',
         title: 'Full Stack Developer',
         company: 'Startup Inc',
         location: 'Remote',
-        salary: '$90,000 - $130,000',
+        salary: {
+          min: 90000,
+          max: 130000,
+          currency: 'USD',
+          period: 'yearly'
+        },
         description: 'Join our dynamic team as a full stack developer...',
         url: 'https://example.com/job/2',
-        postedDate: new Date().toISOString(),
-        scraped: true,
-        scrapedAt: new Date().toISOString(),
+        employmentType: 'full-time',
+        remote: true,
+        postedDate: new Date(),
+        requirements: ['JavaScript', 'Python', 'AWS'],
+        benefits: ['Remote Work', 'Flexible Hours'],
+        tags: ['fullstack', 'remote'],
+        source: {
+          site: 'example.com',
+          originalUrl: 'https://example.com/job/2',
+          scrapedAt: new Date()
+        },
+        metadata: {
+          confidence: 0.90
+        }
       },
     ];
 
@@ -505,8 +545,12 @@ export class DatabaseAlertService implements AlertService {
     const user: User = {
       id: userId,
       email,
-      name,
-      preferences: {},
+      name: name || undefined,
+      preferences: {
+        emailNotifications: true,
+        alertFrequency: 'daily',
+        digestFormat: 'summary'
+      },
     };
 
     // Send welcome email

@@ -1,4 +1,10 @@
 // Web Push Notification Service
+// This service is designed for browser environments only
+
+// Type guard to ensure browser environment
+declare const window: any;
+declare const navigator: any;
+
 interface PushSubscription {
   endpoint: string;
   keys: {
@@ -46,7 +52,7 @@ export class WebPushNotificationService {
   private async initializeServiceWorker(): Promise<void> {
     if ('serviceWorker' in navigator) {
       try {
-        const _registration = await navigator.serviceWorker.register('/sw-push.js');
+        await navigator.serviceWorker.register('/sw-push.js');
 
         // Listen for service worker messages
         navigator.serviceWorker.addEventListener(
@@ -250,13 +256,13 @@ export class WebPushNotificationService {
     totalJobs: number,
     alerts: Array<{ name: string; jobsFound: number }>,
   ): Promise<void> {
-    const _alertSummary = alerts
+    const alertSummary = alerts
       .map((alert) => `${alert.name}: ${alert.jobsFound} job${alert.jobsFound > 1 ? 's' : ''}`)
       .join(', ');
 
     const payload: NotificationPayload = {
       title: `📊 Your ${period.charAt(0).toUpperCase() + period.slice(1)} Job Summary`,
-      body: `${totalJobs} total jobs found across ${alerts.length} alert${alerts.length > 1 ? 's' : ''}`,
+      body: `${totalJobs} total jobs found across ${alerts.length} alert${alerts.length > 1 ? 's' : ''}: ${alertSummary}`,
       icon: '/icons/digest-icon.png',
       badge: '/icons/job-badge.png',
       data: {
@@ -487,7 +493,7 @@ export class WebPushNotificationService {
     const bytes = new Uint8Array(buffer);
     let binary = '';
     for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
+      binary += String.fromCharCode(bytes[i]!);
     }
     return window.btoa(binary);
   }
@@ -519,6 +525,11 @@ export class WebPushNotificationService {
       permission,
       subscribed: !!subscribed,
       subscription: subscribed ? userSubscriptions![0] : undefined,
+    } as {
+      supported: boolean;
+      permission: NotificationPermission;
+      subscribed: boolean;
+      subscription?: PushSubscription;
     };
   }
 
